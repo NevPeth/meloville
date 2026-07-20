@@ -7,19 +7,19 @@
 
 LibraryScanner::LibraryScanner(QObject *parent) : QObject(parent) {}
 
-void LibraryScanner::setCacheDir(const QString &cacheDir)
+void LibraryScanner::setCacheDir(const QString &cacheDirectory)
 {
-    m_cacheDir = cacheDir;
+    cacheDir = cacheDirectory;
 }
 
-void LibraryScanner::setFolderPath(const QString &folderPath)
+void LibraryScanner::setFolderPath(const QString &m_folderPath)
 {
-    m_folderPath = folderPath;
+    folderPath = m_folderPath;
 }
 
 void LibraryScanner::start()
 {
-    QDir dir(m_folderPath);
+    QDir dir(folderPath);
     QStringList filters = {"*.mp3", "*.flac", "*.wav", "*.m4a", "*.aac", "*.ogg"};
     QFileInfoList files = dir.entryInfoList(filters, QDir::Files);
 
@@ -30,7 +30,7 @@ void LibraryScanner::start()
     for (int i = 0; i < total; ++i) {
         const QFileInfo &fileInfo = files.at(i);
         SongData song = MetadataReader::readSong(fileInfo.absoluteFilePath());
-        song.coverPath = MetadataReader::cacheCoverArt(song.filePath, m_cacheDir, fileInfo.baseName());
+        song.coverPath = MetadataReader::cacheCoverArt(song.filePath, cacheDir, fileInfo.baseName());
         library.append(song);
         emit progress(i + 1, total);
 
@@ -43,5 +43,5 @@ void LibraryScanner::start()
                   return QString::compare(a.title, b.title, Qt::CaseInsensitive) < 0;
               });
 
-    emit finished(library, m_folderPath);
+    emit finished(library, folderPath);
 }

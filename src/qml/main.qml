@@ -9,6 +9,7 @@ ApplicationWindow {
     height: 600
     title: "Meloville"
     color: "#121212"
+    flags: Qt.FramelessWindowHint
     
     // Stack view to manage pages
     StackView {

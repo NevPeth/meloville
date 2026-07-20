@@ -8,21 +8,21 @@ SongModel::SongModel(QObject *parent)
 
 int SongModel::rowCount(const QModelIndex &parent) const
 {
-    if (parent.isValid() || !m_visibleSongs)
+    if (parent.isValid() || !visibleSongs)
         return 0;
-    return m_visibleSongs->size();
+    return visibleSongs->size();
 }
 
 QVariant SongModel::data(const QModelIndex &index, int role) const
 {
-    if (!index.isValid() || !m_library || !m_visibleSongs)
+    if (!index.isValid() || !library || !visibleSongs)
         return QVariant();
 
-    int songIndex = m_visibleSongs->at(index.row());
-    if (songIndex < 0 || songIndex >= m_library->size())
+    int songIndex = visibleSongs->at(index.row());
+    if (songIndex < 0 || songIndex >= library->size())
         return QVariant();
 
-    const SongData &song = m_library->at(songIndex);
+    const SongData &song = library->at(songIndex);
 
     switch (role) {
     case TitleRole:
@@ -66,7 +66,7 @@ QHash<int, QByteArray> SongModel::roleNames() const
 void SongModel::setSongs(const QVector<SongData> *library, const QVector<int> *visibleSongs)
 {
     beginResetModel();
-    m_library = library;
-    m_visibleSongs = visibleSongs;
+    library = library;
+    visibleSongs = visibleSongs;
     endResetModel();
 }

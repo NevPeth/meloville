@@ -23,8 +23,8 @@ signals:
     void error(const QString &message);
 
 private:
-    QString m_cacheDir;
-    QString m_folderPath;
+    QString cacheDir;
+    QString folderPath;
 };
 
 #endif // LIBRARYSCANNER_H

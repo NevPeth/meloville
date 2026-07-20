@@ -16,27 +16,27 @@ class PlaylistManager;
 class MainWindow : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(SongModel* songModel READ songModel CONSTANT)
-    Q_PROPERTY(bool playlistIsInView READ playlistIsInView NOTIFY playlistChanged)
+    Q_PROPERTY(SongModel* songModel READ getSongModel CONSTANT)
+    Q_PROPERTY(bool playlistIsInView READ getPlaylistIsInView NOTIFY playlistChanged)
 
-    Q_PROPERTY(double progress READ progress NOTIFY progressChanged)
-    Q_PROPERTY(QString statusMessage READ statusMessage NOTIFY statusMessageChanged)
-    Q_PROPERTY(bool scanning READ scanning NOTIFY scanningChanged)
+    Q_PROPERTY(double progress READ getProgress NOTIFY progressChanged)
+    Q_PROPERTY(QString statusMessage READ getStatusMessage NOTIFY statusMessageChanged)
+    Q_PROPERTY(bool scanning READ getScanning NOTIFY scanningChanged)
 
 public:
     explicit MainWindow(QObject *parent = nullptr);
     ~MainWindow();
 
-    SongModel* songModel() const { return m_songModel; }
-    bool playlistIsInView() const { return m_playlistIsInView; }
+    SongModel* getSongModel() const { return songModel; }
+    bool getPlaylistIsInView() const { return playlistIsInView; }
 
     Q_INVOKABLE void openFolder();
     Q_INVOKABLE void saveLibrary();
     Q_INVOKABLE void loadLibrary();
 
-    double progress() const { return m_progress; }
-    QString statusMessage() const { return m_statusMessage; }
-    bool scanning() const { return m_scanning; }
+    double getProgress() const { return progress; }
+    QString getStatusMessage() const { return statusMessage; }
+    bool getScanning() const { return scanning; }
 
 public slots:
     void onScanProgress(int current, int total);
@@ -53,24 +53,24 @@ signals:
 private:
     static bool songTitleLess(const SongData &a, const SongData &b);
     
-    QVector<SongData> m_library;
-    QVector<int> m_currentViewSongs;
-    QVector<int> m_visibleSongs;
-    QVector<int> m_currentPlaybackSongs;
-    QString m_currentMusicFolder;
-    QString m_appDataPath;
-    bool m_playlistIsInView = false;
-    QString m_viewingPlaylist;
+    QVector<SongData> library;
+    QVector<int> currentViewSongs;
+    QVector<int> visibleSongs;
+    QVector<int> currentPlaybackSongs;
+    QString currentMusicFolder;
+    QString appDataPath;
+    bool playlistIsInView = false;
+    QString viewingPlaylist;
     
-    SongModel *m_songModel = nullptr;
-    PlaylistManager *m_playlistManager = nullptr;
+    SongModel *songModel = nullptr;
+    PlaylistManager *playlistManager = nullptr;
     
     void loadPlaylistView(const QString &playlistName);
 
-    double m_progress = 0.0;
-    QString m_statusMessage;
-    bool m_scanning = false;
-    QThread *m_scannerThread = nullptr;
+    double progress = 0.0;
+    QString statusMessage;
+    bool scanning = false;
+    QThread *scannerThread = nullptr;
 };
 
 #endif // MAINWINDOW_H

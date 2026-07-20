@@ -30,8 +30,8 @@ public:
     void setSongs(const QVector<SongData> *library, const QVector<int> *visibleSongs);
 
 private:
-    const QVector<SongData> *m_library = nullptr;
-    const QVector<int> *m_visibleSongs = nullptr;
+    const QVector<SongData> *library = nullptr;
+    const QVector<int> *visibleSongs = nullptr;
 };
 
 #endif // SONGMODEL_H
