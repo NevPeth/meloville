@@ -15,12 +15,21 @@ ApplicationWindow {
     StackView {
         id: stackView
         anchors.fill: parent
-        initialItem: loadPageComponent
+        initialItem: backend.libraryPresent ? mainPageComponent : loadPageComponent
     }
     
     Component {
         id: loadPageComponent
         LoadPage {}
+    }
+
+    Component {
+        id: loadedSongsPageComponent
+        LoadedSongsPage {
+            onContinueButtonClicked: {
+                stackView.replace(mainPageComponent)
+            }
+        }
     }
     
     // Main page component (placeholder for when music is loaded)
@@ -29,24 +38,7 @@ ApplicationWindow {
         Rectangle {
             color: "#121212"
             
-            ColumnLayout {
-                anchors.centerIn: parent
-                spacing: 20
-                
-                Text {
-                    text: "Music Player"
-                    color: "white"
-                    font.pixelSize: 24
-                    Layout.alignment: Qt.AlignHCenter
-                }
-                
-                Text {
-                    text: "Your music is loaded!"
-                    color: "#a3a3a3"
-                    font.pixelSize: 16
-                    Layout.alignment: Qt.AlignHCenter
-                }
-            }
+            
         }
     }
     
@@ -54,7 +46,7 @@ ApplicationWindow {
     Connections {
         target: backend
         function onLibraryLoaded() {
-            stackView.push(mainPageComponent)
+            stackView.push(loadedSongsPageComponent)
         }
     }
 }

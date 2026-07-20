@@ -162,6 +162,9 @@ void MainWindow::loadLibrary()
     QFile file(appDataPath + "/library.json");
     if (!file.exists()) return;
     if (!file.open(QIODevice::ReadOnly)) return;
+
+    libraryPresent = true;
+    emit libraryPresentChanged();
     
     QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
     file.close();
@@ -245,8 +248,6 @@ void MainWindow::loadLibrary()
     if (addedAny || removedAny) {
         saveLibrary();
     }
-    
-    emit libraryLoaded();
 }
 
 void MainWindow::loadPlaylistView(const QString &playlistName)
