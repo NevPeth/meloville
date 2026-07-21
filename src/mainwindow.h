@@ -4,6 +4,8 @@
 #include "songdata.h"
 #include "songmodel.h"
 #include "libraryscanner.h"
+#include "playbackcontroller.h"
+#include <pulse/pulseaudio.h>
 #include <QMainWindow>
 #include <QQuickView>
 #include <QStackedWidget>
@@ -70,8 +72,9 @@ private:
     QString statusMessage;
     bool scanning = false;
     QThread *scannerThread = nullptr;
-
     bool libraryPresent = false;
+
+    PlaybackController* playbackController;
 };
 
 #endif // MAINWINDOW_H

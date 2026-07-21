@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="256"
+     height="256"
+     viewBox="0 0 256 256">
+
+  <defs>
+    <linearGradient id="fillGradient"
+                  x1="8%"
+                  y1="5%"
+                  x2="92%"
+                  y2="95%">
+      <stop offset="0%" stop-color="{START_COLOR}"/>
+      <stop offset="22%" stop-color="{STOP1}"/>
+      <stop offset="52%" stop-color="{STOP2}"/>
+      <stop offset="78%" stop-color="{STOP3}"/>
+      <stop offset="100%" stop-color="{END_COLOR}"/>
+  </linearGradient>
+  </defs>
+
+  <rect
+    x="16"
+    y="16"
+    width="224"
+    height="224"
+    rx="24"
+    fill="url(#fillGradient)"/>
+
+
+  <line x1="96" y1="85.3333" x2="96" y2="170.6667"
+        stroke="white" stroke-width="10.6667" stroke-linecap="round"/>
+
+  <line x1="117.3333" y1="85.3333" x2="117.3333" y2="170.6667"
+        stroke="white" stroke-width="10.6667" stroke-linecap="round"/>
+
+  <!-- trapezoid -->
+  <polygon
+    points="138.6667,85.3333 165.3333,101.3333 165.3333,165.3333 138.6667,170.6667"
+    stroke="white"
+    stroke-width="10.6667"
+    fill="none"
+    stroke-linejoin="round"
+  />
+</svg>

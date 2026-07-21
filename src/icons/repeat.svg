@@ -1,0 +1,28 @@
+<svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+>
+    <!-- Open path: starts just after arrowhead tip, travels full rectangle, stops just before it -->
+    <path
+        d="M12.5 16 H17
+        Q20 16 20 13
+        V9
+        Q20 6 17 6
+        H7
+        Q4 6 4 9
+        V12
+        Q4 16 7 16
+        H9"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+    />
+
+    <!-- Arrowhead tip sits in the gap at x=9..12.5 -->
+    <path d="M12 16 L15 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M12 16 L15 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

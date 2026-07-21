@@ -3,6 +3,7 @@
 #include <QQmlContext>
 #include <QtQuickControls2/QQuickStyle>
 #include "mainwindow.h"
+#include "svgimageprovider.h"
 
 int main(int argc, char *argv[])
 {
@@ -22,6 +23,20 @@ int main(int argc, char *argv[])
     
     // Expose MainWindow to QML with a clear name
     engine.rootContext()->setContextProperty("backend", &mainWindow);
+
+    auto* provider = new SvgImageProvider();
+    provider->registerDualIcon("addPlaylistsIcon",
+        ":/icons/addPlaylistsIcon.svg",
+        Qt::white,
+        Qt::black,
+        QSize(70,70));
+
+    provider->registerIcon("skip",
+        ":/icons/skip.svg",
+        Qt::white,
+        QSize(70, 70));
+
+    engine.addImageProvider("svgicons", provider);
     
     // Load QML
     engine.load(QUrl(QStringLiteral("qrc:/qml/main.qml")));

@@ -1,0 +1,32 @@
+<!-- skip.svg -->
+<svg width="32"
+     height="32"
+     viewBox="0 0 32 32"
+     xmlns="http://www.w3.org/2000/svg">
+
+    <g fill="currentColor">
+
+        <!-- FIRST TRIANGLE -->
+        <path d="
+            M 4 6
+            L 4 26
+            L 18 16
+            Z
+        "/>
+
+        <!-- SECOND TRIANGLE -->
+        <path d="
+            M 16 6
+            L 16 26
+            L 30 16
+            Z
+        "/>
+
+        <!-- BAR -->
+        <rect x="29"
+              y="6"
+              width="2"
+              height="20"/>
+
+    </g>
+</svg>

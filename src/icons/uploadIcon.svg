@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+
+  <!-- Background circle (larger) -->
+  <circle cx="16" cy="16" r="15.5" fill="#000000" />
+
+  <!-- Icon (centered at 16,16) -->
+  <g
+     fill="none"
+     stroke="#FFFFFF"
+     stroke-width="2"
+     stroke-linecap="round"
+     stroke-linejoin="round">
+
+    <!-- Upload arrow -->
+    <path d="M16 17V11"/>
+    <path d="M12 13l4-4 4 4"/>
+
+    <!-- Open-top rectangle -->
+    <path d="M9 16v5"/>
+    <path d="M23 16v5"/>
+    <path d="M9 21h14"/>
+
+  </g>
+
+</svg>

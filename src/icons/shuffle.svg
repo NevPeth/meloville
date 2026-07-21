@@ -1,0 +1,48 @@
+<svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="56"
+    height="40"
+    viewBox="0 0 56 40"
+>
+    <g
+        fill="none"
+        stroke="currentColor"
+        stroke-width="3"
+        stroke-linecap="square"
+        stroke-linejoin="miter"
+    >
+
+        <!-- TOP PATH -->
+        <path d="
+            M 4 10
+            L 12 10
+            L 24 18
+            L 36 30
+            L 50 30
+        "/>
+
+        <!-- TOP ARROW -->
+        <path d="
+            M 48 26
+            L 52 30
+            L 48 34
+        "/>
+
+        <!-- BOTTOM PATH -->
+        <path d="
+            M 4 30
+            L 12 30
+            L 24 22
+            L 36 10
+            L 50 10
+        "/>
+
+        <!-- BOTTOM ARROW -->
+        <path d="
+            M 48 6
+            L 52 10
+            L 48 14
+        "/>
+
+    </g>
+</svg>

@@ -1,0 +1,32 @@
+<!-- reverse.svg -->
+<svg width="32"
+     height="32"
+     viewBox="0 0 32 32"
+     xmlns="http://www.w3.org/2000/svg">
+
+    <g fill="currentColor">
+
+        <!-- BAR -->
+        <rect x="1"
+              y="6"
+              width="2"
+              height="20"/>
+
+        <!-- FIRST TRIANGLE -->
+        <path d="
+            M 16 6
+            L 16 26
+            L 2 16
+            Z
+        "/>
+
+        <!-- SECOND TRIANGLE -->
+        <path d="
+            M 28 6
+            L 28 26
+            L 14 16
+            Z
+        "/>
+
+    </g>
+</svg>

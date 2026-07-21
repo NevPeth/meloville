@@ -12,6 +12,8 @@ find_package(Qt6 REQUIRED COMPONENTS
     Quick 
     QuickControls2
     Widgets
+    Multimedia
+    Svg
 )
 
 find_package(PkgConfig REQUIRED)
@@ -33,6 +35,13 @@ qt_add_executable(Meloville
     playlistmanager.cpp
     libraryscanner.h
     libraryscanner.cpp
+    pulseaudioservice.h
+    pulseaudioservice.cpp
+    playbackcontroller.h
+    playbackcontroller.cpp
+    svgcreator.h
+    svgcreator.cpp
+    svgimageprovider.h
     resources.qrc
 )
 
@@ -41,7 +50,10 @@ target_link_libraries(Meloville PRIVATE
     Qt6::Quick
     Qt6::QuickControls2
     Qt6::Widgets
+    Qt6::Multimedia
+    Qt6::Svg
     ${TAGLIB_LIBRARIES}
+    pulse
 )
 
 target_include_directories(Meloville PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

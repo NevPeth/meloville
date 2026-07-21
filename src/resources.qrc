@@ -4,4 +4,27 @@
         <file>qml/LoadPage.qml</file>
         <file>qml/LoadedSongsPage.qml</file>
     </qresource>
+    <qresource prefix="/">
+        <file>icons/addPlaylistsIcon.svg</file>
+        <file>icons/libraryIcon.svg</file>
+        <file>icons/dots.svg</file>
+        <file>icons/playButton.svg</file>
+        <file>icons/pauseButton.svg</file>
+        <file>icons/uploadIcon.svg</file>
+        <file>icons/menuPauseIcon.svg</file>
+        <file>icons/menuPlayIcon.svg</file>
+        <file>icons/closeIcon.svg</file>
+        <file>icons/connectIcon.svg</file>
+        <file>icons/reverse.svg</file>
+        <file>icons/reverseBig.svg</file>
+        <file>icons/shuffle.svg</file>
+        <file>icons/skip.svg</file>
+        <file>icons/skipBig.svg</file>
+        <file>icons/speakerFullVolume.svg</file>
+        <file>icons/speakerLowVolume.svg</file>
+        <file>icons/repeat.svg</file>
+        <file>icons/jumpToIcon.svg</file>
+        <file>icons/albumIcon.svg</file>
+        <file>icons/bigPictureIcon.svg</file>
+    </qresource>
 </RCC>

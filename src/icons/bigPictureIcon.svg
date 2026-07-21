@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <g transform="translate(10 10)">
+    <!-- Rounded box -->
+    <rect
+      x="0" y="0"
+      width="180" height="180"
+      rx="28" ry="28"
+      fill="none"
+      stroke="white"
+      stroke-width="10"/>
+
+    <!-- Stem + beam (drawn first so note heads overlap cleanly on top) -->
+    <path
+      d="
+        M70 114
+        L70 55
+        L128 40
+        L128 100
+      "
+      fill="none"
+      stroke="white"
+      stroke-width="12"
+      stroke-linecap="round"
+      stroke-linejoin="round"/>
+
+    <!-- Left note head -->
+    <ellipse
+      cx="64.1" cy="120"
+      rx="16" ry="12"
+      transform="rotate(-18 58 132)"
+      fill="white"/>
+
+    <!-- Right note head -->
+    <ellipse
+      cx="118" cy="104"
+      rx="16" ry="12"
+      transform="rotate(-18 116 104)"
+      fill="white"/>
+  </g>
+</svg>
