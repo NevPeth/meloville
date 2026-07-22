@@ -39,9 +39,12 @@ qt_add_executable(Meloville
     pulseaudioservice.cpp
     playbackcontroller.h
     playbackcontroller.cpp
-    svgcreator.h
-    svgcreator.cpp
-    svgimageprovider.h
+
+    svgLogic/svgcreator.h
+    svgLogic/svgcreator.cpp
+    svgLogic/svgimageprovider.h
+    svgLogic/seticons.h
+
     resources.qrc
 )
 
@@ -56,4 +59,7 @@ target_link_libraries(Meloville PRIVATE
     pulse
 )
 
-target_include_directories(Meloville PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(Meloville PRIVATE 
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/svgLogic
+)

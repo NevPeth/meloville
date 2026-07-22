@@ -6,10 +6,10 @@
         cx="24"
         cy="24"
         r="22"
-        fill="#FFFFFF"/>
+        fill="{background}"/>
 
     <path
         d="M18 15 L33 24 L18 33 Z"
-        fill="#000000"/>
+        fill="{foreground}"/>
 
 </svg>

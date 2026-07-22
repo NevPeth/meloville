@@ -13,8 +13,6 @@ QImage SvgCreator::makeImage(const QString& path, const QColor& color, const QSi
     image.fill(Qt::transparent);
 
     QPainter painter(&image);
-    painter.setRenderHint(QPainter::Antialiasing);
-    painter.setRenderHint(QPainter::SmoothPixmapTransform);
 
     QSvgRenderer renderer(path);
     renderer.render(&painter, QRectF(0, 0, size.width(), size.height()));
@@ -64,8 +62,6 @@ QImage SvgCreator::colorizeSvgDual(
     QSvgRenderer renderer(svg.toUtf8());
 
     QPainter painter(&image);
-    painter.setRenderHint(QPainter::Antialiasing);
-    painter.setRenderHint(QPainter::SmoothPixmapTransform);
 
     renderer.render(
         &painter,

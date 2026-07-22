@@ -4,6 +4,7 @@
 #include <QtQuickControls2/QQuickStyle>
 #include "mainwindow.h"
 #include "svgimageprovider.h"
+#include "seticons.h"
 
 int main(int argc, char *argv[])
 {
@@ -25,16 +26,8 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("backend", &mainWindow);
 
     auto* provider = new SvgImageProvider();
-    provider->registerDualIcon("addPlaylistsIcon",
-        ":/icons/addPlaylistsIcon.svg",
-        Qt::white,
-        Qt::black,
-        QSize(70,70));
 
-    provider->registerIcon("skip",
-        ":/icons/skip.svg",
-        Qt::white,
-        QSize(70, 70));
+    registerIcons(*provider); //function can be found in the seticons.h
 
     engine.addImageProvider("svgicons", provider);
     

@@ -25,11 +25,6 @@ public:
 
         QSize size;
     };
-    // struct IconConfig {
-    //     QString path;
-    //     QColor color;
-    //     QSize  size;
-    // };
 
     SvgImageProvider()
         : QQuickImageProvider(QQuickImageProvider::Image) {}
@@ -48,19 +43,13 @@ public:
         configs[id] = cfg;
     }
 
-    // // Call this from C++ before QML loads, e.g. in main.cpp
-    // void registerIcon(const QString& id, const QString& svgPath,
-    //                   const QColor& color, const QSize& size)
-    // {
-    //     configs[id] = { svgPath, color, size };
-    // }
-
-    void registerDualIcon(const QString& id,
-                      const QString& path,
-                      const QColor& backgroundColor,
-                      const QColor& foregroundColor,
-                      const QSize& size)
-    {
+    void registerDualIcon(
+        const QString& id,
+        const QString& path,
+        const QColor& backgroundColor,
+        const QColor& foregroundColor,
+        const QSize& size
+    ){
         IconConfig cfg;
         cfg.path = path;
         cfg.renderType = IconConfig::RenderType::DualColor;
@@ -71,10 +60,11 @@ public:
         configs[id] = cfg;
     }
 
-    QImage requestImage(const QString& id,
-                                      QSize* size,
-                                      const QSize& requestedSize)
-    {
+    QImage requestImage(
+        const QString& id,
+        QSize* size,
+        const QSize& requestedSize
+    ){
         const auto &cfg = configs[id];
 
         qreal dpr = qApp->primaryScreen()->devicePixelRatio();
@@ -105,19 +95,6 @@ public:
 
         return {};
     }
-
-    // QImage requestImage(const QString& id, QSize* size,
-    //                 const QSize& requestedSize) override
-    // {
-    //     const IconConfig& cfg = configs[id];
-    //     qreal dpr = qApp->primaryScreen()->devicePixelRatio();
-    //     QSize logicalSize = requestedSize.isValid() ? requestedSize : cfg.size;
-
-    //     // Report LOGICAL size so QML lays it out at the right dimensions
-    //     if (size) *size = logicalSize;
-
-    //     return SvgCreator::makeImage(cfg.path, cfg.color, logicalSize, dpr);
-    // }
 
 private:
     QMap<QString, IconConfig> configs;
