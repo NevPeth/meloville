@@ -31,8 +31,8 @@ ApplicationWindow {
             }
         }
     }
-    property int playlistButtonSize: 60
-    property int libraryButtonSize: 70
+    property int playlistButtonSize: 65
+    property int libraryButtonSize: 65
     Component {
         id: mainPageComponent
         Rectangle {
@@ -41,7 +41,7 @@ ApplicationWindow {
             ColumnLayout {
                 id: mainLayout
                 anchors.fill: parent
-                spacing: 5
+                spacing: 0
                 // margins are 0 by default in QML
 
                 // -------- SIDEBAR + RIGHT CONTENT (horizontal) --------
@@ -54,9 +54,9 @@ ApplicationWindow {
                     // --- SIDEBAR (frameSidebar) ---
                     Rectangle {
                         id: frameSidebar
-                        Layout.preferredWidth: 60
-                        Layout.minimumWidth: 60
-                        Layout.maximumWidth: 60
+                        Layout.preferredWidth: 65
+                        Layout.minimumWidth: 65
+                        Layout.maximumWidth: 65
                         Layout.fillHeight: true
                         color: "transparent"
                         
@@ -193,25 +193,209 @@ ApplicationWindow {
                                 }
                             }
                         }
+
                         ListView {
                             id: listViewSongs
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             Layout.minimumHeight: 150
                             clip: true
-                            ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+                            ScrollBar.vertical:   ScrollBar { policy: ScrollBar.AsNeeded }
                             ScrollBar.horizontal: ScrollBar { policy: ScrollBar.AsNeeded }
-                        }
 
-                        // listViewAlbums (AlbumGridView)
-                        ListView {
-                            id: listViewAlbums
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            Layout.minimumHeight: 150
-                            clip: true
-                            ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
-                            ScrollBar.horizontal: ScrollBar { policy: ScrollBar.AsNeeded }
+                            model: backend.songModel
+
+                            property real scrollVelocity: 0
+
+                            Timer {
+                                id: momentum
+                                interval: 16
+                                repeat: true
+
+                                onTriggered: {
+                                    listViewSongs.contentY -= listViewSongs.scrollVelocity
+
+                                    // Clamp to valid scroll bounds
+                                    var minY = 0
+                                    var maxY = Math.max(0, listViewSongs.contentHeight - listViewSongs.height)
+
+                                    if (listViewSongs.contentY < minY) {
+                                        listViewSongs.contentY = minY
+                                        listViewSongs.scrollVelocity = 0
+                                        stop()
+                                    } else if (listViewSongs.contentY > maxY) {
+                                        listViewSongs.contentY = maxY
+                                        listViewSongs.scrollVelocity = 0
+                                        stop()
+                                    }
+
+                                    listViewSongs.scrollVelocity *= 0.84
+
+                                    if (Math.abs(listViewSongs.scrollVelocity) < 0.04) {
+                                        stop()
+                                        listViewSongs.scrollVelocity = 0
+                                    }
+                                }
+                            }
+
+                            WheelHandler {
+                                acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+
+                                onWheel: function(event) {
+
+                                    var delta = event.pixelDelta.y !== 0
+                                            ? event.pixelDelta.y
+                                            : event.angleDelta.y / 8
+
+                                    listViewSongs.scrollVelocity += delta * 0.44
+
+                                    listViewSongs.scrollVelocity = Math.max(
+                                        -1020,
+                                        Math.min(1020, listViewSongs.scrollVelocity)
+                                    )
+
+                                    if (!momentum.running)
+                                        momentum.start()
+
+                                    event.accepted = true
+                                }
+                            }
+
+                            delegate: Rectangle {
+                                id: songRow
+                                width: listViewSongs.width
+                                height: 62         // matches SongDelegate::sizeHint
+                                color: "transparent"
+
+                                // ── state from model roles ──────────────────────────────────────
+                                property bool isPlaying: model.isPlaying   // IsPlayingRole
+                                property bool isPaused:  model.isPaused    // IsPausedRole
+                                property bool isActive:  model.isActive    // IsActiveRole
+
+                                // ── background ─────────────────────────────────────────────────
+                                Rectangle {
+                                    anchors.fill: parent
+                                    color: songRow.isPlaying ? "#3a3a3a"
+                                        : songRow.isActive  ? "#2f2f2f"
+                                        : hoverHandler.hovered ? "#2a2a2a"
+                                        : "#181818"
+                                }
+
+                                // ── play/pause button area (left 50 px) ─────────────────────────
+                                Item {
+                                    id: playArea
+                                    x: 0; y: 0
+                                    width: 50; height: parent.height
+
+                                    // Track number shown when not hovered and not playing
+                                    Text {
+                                        anchors.centerIn: parent
+                                        visible: !songRow.isPlaying && !hoverHandler.hovered
+                                        text: (index + 1).toString()
+                                        color: "#b3b3b3"
+                                        font.pixelSize: 13
+                                    }
+
+                                    // Play / pause icon shown on hover or while playing
+                                    Image {
+                                        anchors.centerIn: parent
+                                        visible: songRow.isPlaying || hoverHandler.hovered
+                                        width: 22; height: 22
+                                        // Show pause icon when actively playing (not paused), play icon otherwise
+                                        source: (songRow.isPlaying && !songRow.isPaused)
+                                                ? "qrc:/icons/menuPauseIcon.svg"
+                                                : "qrc:/icons/menuPlayIcon.svg"
+                                        // Tint white — wrap in a ColorOverlay if you use Qt.labs.platform,
+                                        // or just keep your SVGs pre-coloured white for the play area.
+                                    }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        onClicked: {
+                                            if (songRow.isPlaying)
+                                                backend.playAndPause()          // toggles play/pause
+                                            else
+                                                backend.playSongAtVisibleIndex(index)
+                                        }
+                                    }
+                                }
+
+                                // ── album cover (left: 50, same margin logic as C++) ────────────
+                                Image {
+                                    id: coverImage
+                                    x: 50
+                                    y: (parent.height - height) / 2      // margin = height/10 → centred
+                                    width: 50; height: 50
+                                    fillMode: Image.PreserveAspectCrop
+                                    source: model.coverPath !== "" ? "file://" + model.coverPath
+                                                            : "qrc:/images/default_cover.png"
+                                }
+
+                                // ── title + artist ──────────────────────────────────────────────
+                                Column {
+                                    x: coverImage.x + coverImage.width + 10
+                                    width: parent.width - x - 120
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    spacing: 4
+
+                                    Text {
+                                        width: parent.width
+                                        text: model.title
+                                        color: "white"
+                                        font.pixelSize: 13
+                                        font.bold: true
+                                        elide: Text.ElideRight
+                                    }
+                                    Text {
+                                        width: parent.width
+                                        text: model.artist
+                                        color: "#b3b3b3"
+                                        font.pixelSize: 12
+                                        elide: Text.ElideRight
+                                    }
+                                }
+
+                                // ── duration ────────────────────────────────────────────────────
+                                Text {
+                                    x: parent.width - 110
+                                    width: 60
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: model.duration
+                                    color: "#b3b3b3"
+                                    font.pixelSize: 12
+                                    horizontalAlignment: Text.AlignHCenter
+                                }
+
+                                // ── dots / context-menu button ───────────────────────────────────
+                                Item {
+                                    id: menuArea
+                                    x: parent.width - 35
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 30; height: 30
+
+                                    Image {
+                                        anchors.centerIn: parent
+                                        width: 18; height: 4
+                                        source: "image://svgicons/dots"
+                                    }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        onClicked: {
+                                            // Map item-local position to global for a context menu,
+                                            // mirroring menuRequested() in the C++ delegate.
+                                            var globalPos = menuArea.mapToGlobal(0, 0)
+                                            backend.showContextMenu(index, globalPos.x, globalPos.y)
+                                            // expose a Q_INVOKABLE showContextMenu(int, int, int) in MainWindow
+                                        }
+                                    }
+                                }
+
+                                // ── hover detection for the whole row ───────────────────────────
+                                HoverHandler {
+                                    id: hoverHandler
+                                }
+                            }
                         }
                     }
                 }
@@ -255,18 +439,31 @@ ApplicationWindow {
                                     Layout.maximumHeight: 64
                                     color: "#222222"
                                     radius: 4
+                                    clip: true
+
+                                    Image {
+                                        anchors.fill: parent
+                                        fillMode: Image.PreserveAspectCrop
+                                        source: backend.currentSongCoverPath !== ""
+                                                ? "file://" + backend.currentSongCoverPath
+                                                : "qrc:/images/default_cover.png"
+                                        visible: backend.currentPlayingIndex >= 0
+                                    }
                                 }
 
                                 // labelSongInfo
-
                                 Text {
                                     id: labelSongInfo
-                                    text: "Nothing Playing<br><span style='color:#b3b3b3; font-size:11px;'>Unknown Artist</span>"
+                                    text: backend.currentPlayingIndex >= 0
+                                          ? backend.currentSongTitle + "<br><span style='color:#b3b3b3; font-size:11px;'>"
+                                            + backend.currentSongArtist + "</span>"
+                                          : "Nothing Playing<br><span style='color:#b3b3b3; font-size:11px;'>Unknown Artist</span>"
                                     textFormat: Text.RichText
                                     color: "white"
                                     font.pixelSize: 14
                                     font.weight: Font.DemiBold
                                     wrapMode: Text.NoWrap
+                                    elide: Text.ElideRight
                                     Layout.alignment: Qt.AlignLeft
                                     Layout.fillWidth: true
                                     Layout.leftMargin: 8
@@ -327,9 +524,43 @@ ApplicationWindow {
                                         Layout.preferredWidth: 60
                                         Layout.preferredHeight: 60
                                         background: Item {}
+
+                                        // Tracks whether a song is actively playing (not paused)
+                                        property bool isCurrentlyPlaying: false
+
+                                        Connections {
+                                            target: backend.songModel
+                                            function onDataChanged(topLeft, bottomRight, roles) {
+                                                // Re-evaluate playing state whenever the model updates
+                                                // We check if any row reports isPlaying && !isPaused.
+                                                // A simpler proxy: currentPlayingIndex >= 0 and not paused.
+                                                // We drive this via the playbackState signal below instead.
+                                            }
+                                        }
+
                                         contentItem: Image {
-                                            source: "image://svgicons/playButtonIcon"
+                                            source: btnPlay.isCurrentlyPlaying
+                                                    ? "image://svgicons/pauseButtonIcon"
+                                                    : "image://svgicons/playButtonIcon"
                                             fillMode: Image.PreserveAspectFit
+                                        }
+
+                                        onClicked: backend.playAndPause()
+                                    }
+
+                                    // Connections block to update btnPlay.isCurrentlyPlaying
+                                    // from QMediaPlayer's playbackStateChanged signal exposed via
+                                    // PlaybackController -> backend.
+                                    Connections {
+                                        target: backend
+                                        function onPlaybackStateChanged(state) {
+                                            // QMediaPlayer::PlayingState == 1
+                                            btnPlay.isCurrentlyPlaying = (state === 1)
+                                        }
+                                        // Also reset when no song is selected
+                                        function onCurrentPlayingIndexChanged() {
+                                            if (backend.currentPlayingIndex < 0)
+                                                btnPlay.isCurrentlyPlaying = false
                                         }
                                     }
 
@@ -372,11 +603,18 @@ ApplicationWindow {
                                     // labelCurrentTime
                                     Text {
                                         id: labelCurrentTime
-                                        text: "0:00"
+                                        text: formatTime(backend.playerPosition)
                                         color: "#b3b3b3"
                                         font.pixelSize: 11
                                         horizontalAlignment: Text.AlignRight
                                         Layout.minimumWidth: 32
+
+                                        function formatTime(ms) {
+                                            var totalSecs = Math.floor(ms / 1000)
+                                            var mins = Math.floor(totalSecs / 60)
+                                            var secs = totalSecs % 60
+                                            return mins + ":" + (secs < 10 ? "0" : "") + secs
+                                        }
                                     }
 
                                     // sliderPosition
@@ -385,9 +623,18 @@ ApplicationWindow {
                                         Layout.minimumWidth: 320
                                         Layout.maximumWidth: 420
                                         Layout.preferredHeight: 20
-                                        from: 0; to: 100; value: 0
+                                        from: 0
+                                        to: Math.max(1, backend.playerDuration)
+                                        // Only update from backend when the user isn't dragging
+                                        value: sliderPosition.pressed ? sliderPosition.value : backend.playerPosition
 
                                         hoverEnabled: true
+
+                                        // Seek when the user releases the handle
+                                        onPressedChanged: {
+                                            if (!pressed)
+                                                backend.seekTo(sliderPosition.value)
+                                        }
 
                                         handle: Rectangle {
                                             implicitWidth: 10
@@ -402,8 +649,8 @@ ApplicationWindow {
                                             radius: width / 2
                                             color: "white"
 
-                                            visible: sliderPosition.hovered
-                                            opacity: sliderPosition.hovered ? 1 : 0
+                                            visible: sliderPosition.hovered || sliderPosition.pressed
+                                            opacity: (sliderPosition.hovered || sliderPosition.pressed) ? 1 : 0
                                         }
 
                                         background: Rectangle {
@@ -428,11 +675,18 @@ ApplicationWindow {
                                     // labelTotalTime
                                     Text {
                                         id: labelTotalTime
-                                        text: "0:00"
+                                        text: formatTime(backend.playerDuration)
                                         color: "#b3b3b3"
                                         font.pixelSize: 11
                                         horizontalAlignment: Text.AlignLeft
                                         Layout.minimumWidth: 32
+
+                                        function formatTime(ms) {
+                                            var totalSecs = Math.floor(ms / 1000)
+                                            var mins = Math.floor(totalSecs / 60)
+                                            var secs = totalSecs % 60
+                                            return mins + ":" + (secs < 10 ? "0" : "") + secs
+                                        }
                                     }
                                 }
                             }

@@ -31,6 +31,9 @@ signals:
 
     void volumeChanged(int volume);
 
+    void positionChanged(qint64 position);
+    void durationChanged(qint64 duration);
+
 private:
     QMediaPlayer* mediaPlayer;
     QAudioOutput* audioOutput;

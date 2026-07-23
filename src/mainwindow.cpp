@@ -17,6 +17,27 @@ MainWindow::MainWindow(QObject *parent)
     appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     songModel = new SongModel(this);
     playlistManager = new PlaylistManager(this);
+
+    playbackController = new PlaybackController(this);
+    // connect(playbackController, &PlaybackController::songFinished,
+    //         this, &MainWindow::playNextSong);
+
+    connect(playbackController, &PlaybackController::positionChanged,
+            this, [this](qint64 pos) {
+                playerPosition = pos;
+                emit playerPositionChanged(pos);
+            });
+
+    connect(playbackController, &PlaybackController::durationChanged,
+            this, [this](qint64 dur) {
+                playerDuration = dur;
+                emit playerDurationChanged(dur);
+            });
+
+    connect(playbackController, &PlaybackController::playbackStateChanged,
+            this, [this](QMediaPlayer::PlaybackState state) {
+                emit playbackStateChanged(static_cast<int>(state));
+            });
     
     QDir().mkpath(appDataPath + "/cache");
     
@@ -254,4 +275,51 @@ void MainWindow::loadPlaylistView(const QString &playlistName)
 {
     viewingPlaylist = playlistName;
     // Implementation would load the playlist view
+}
+
+void MainWindow::playSongAtVisibleIndex(int visibleIndex)
+{
+    if (visibleIndex < 0 || visibleIndex >= visibleSongs.size())
+        return;
+
+    int libraryIndex = visibleSongs[visibleIndex];
+    currentPlaybackSongs = currentViewSongs; // or whatever you need
+    currentPlayingIndex = libraryIndex;
+    emit currentPlayingIndexChanged();
+
+    // Update model's playing index (if your SongModel supports it)
+    // songModel->setPlayingIndex(libraryIndex);
+
+    playSong(libraryIndex);
+}
+
+void MainWindow::playSong(int libraryIndex)
+{
+    if (libraryIndex < 0 || libraryIndex >= library.size())
+        return;
+
+    const SongData &song = library[libraryIndex];
+    playbackController->player()->setSource(QUrl::fromLocalFile(song.filePath));
+    playbackController->player()->play();
+
+    songModel->setPlayingIndex(libraryIndex); 
+    currentPlayingIndex = libraryIndex;
+    emit currentPlayingIndexChanged();
+    emit currentSongChanged();
+}
+
+void MainWindow::playAndPause()
+{
+    if (playbackController->player()->playbackState() == QMediaPlayer::PlayingState) {
+        playbackController->player()->pause();
+        songModel->setPausedState(true);
+    } else {
+        playbackController->player()->play();
+        songModel->setPausedState(false);
+    }
+}
+
+void MainWindow::seekTo(qint64 positionMs)
+{
+    playbackController->player()->setPosition(positionMs);
 }

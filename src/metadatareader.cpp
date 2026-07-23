@@ -104,21 +104,20 @@ QString MetadataReader::cacheCoverArt(
 {
     QDir().mkpath(cacheDir);
 
+    // Sanitize filename for use in a URL
+    QString safeFileName = fileName;
+    safeFileName.replace("?", "_");
+
     QPixmap cover = extractCoverArt(filePath);
-
-    QString coverPath = cacheDir + "/" + fileName + ".png";
-
-    cover.save(
-        coverPath,
-        "JPG",
-        90
-    );
-
+    QString coverPath = cacheDir + "/" + safeFileName + ".jpg";
+    cover.save(coverPath, "JPG", 90);
     return coverPath;
 }
 
 bool MetadataReader::removeCachedCoverArt(const QString& cacheDir, const QString& fileName){
-    QString coverPath = cacheDir + "/" + fileName + ".png";
+    QString safeFileName = fileName;
+    safeFileName.replace("?", "_");
+    QString coverPath = cacheDir + "/" + safeFileName + ".jpg";
     return QFile::remove(coverPath);
 }
 

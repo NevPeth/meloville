@@ -32,6 +32,26 @@ PlaybackController::PlaybackController(QObject *parent)
             }
         }
     );
+
+    connect(
+        mediaPlayer,
+        &QMediaPlayer::positionChanged,
+        this,
+        [this](qint64 pos)
+        {
+            emit positionChanged(pos);
+        }
+    );
+
+    connect(
+        mediaPlayer,
+        &QMediaPlayer::durationChanged,
+        this,
+        [this](qint64 dur)
+        {
+            emit durationChanged(dur);
+        }
+    );
 }
 
 QMediaPlayer* PlaybackController::player() const

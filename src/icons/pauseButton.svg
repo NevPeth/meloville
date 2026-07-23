@@ -8,20 +8,20 @@
         cx="24"
         cy="24"
         r="22"
-        fill="#FFFFFF" />
+        fill="{background}" />
 
     <rect
         x="17"
         y="15"
         width="5"
         height="18"
-        fill="#000000" />
+        fill="{foreground}" />
 
     <rect
         x="26"
         y="15"
         width="5"
         height="18"
-        fill="#000000" />
+        fill="{foreground}" />
 
 </svg>

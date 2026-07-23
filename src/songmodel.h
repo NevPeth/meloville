@@ -18,7 +18,10 @@ public:
         FilePathRole,
         CoverPathRole,
         TrackNumberRole,
-        GenreRole
+        GenreRole,
+        IsPlayingRole,
+        IsActiveRole,
+        IsPausedRole
     };
 
     explicit SongModel(QObject *parent = nullptr);
@@ -28,10 +31,14 @@ public:
     QHash<int, QByteArray> roleNames() const override;
 
     void setSongs(const QVector<SongData> *library, const QVector<int> *visibleSongs);
+    void setPlayingIndex(int libraryIndex);
+    void setPausedState(bool paused);
 
 private:
     const QVector<SongData> *library = nullptr;
     const QVector<int> *visibleSongs = nullptr;
+    int  playingLibraryIndex = -1;
+    bool paused = false;
 };
 
 #endif // SONGMODEL_H

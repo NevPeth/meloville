@@ -24,6 +24,13 @@ inline void registerIcons(SvgImageProvider& provider)
         Qt::black,
         QSize(60, 60));
 
+    provider.registerDualIcon(
+        "pauseButtonIcon",
+        ":/icons/pauseButton.svg",
+        Qt::white,
+        Qt::black,
+        QSize(60, 60));
+
     provider.registerIcon("skipIconNormal",":/icons/skip.svg",QColor("#b3b3b3"),QSize(48, 48));
     provider.registerIcon("skipIconHovered",":/icons/skip.svg",Qt::white, QSize(48, 48));
 
@@ -44,4 +51,6 @@ inline void registerIcons(SvgImageProvider& provider)
 
     provider.registerIcon("jumpToCurrentSongIconNormal",":/icons/jumpToIcon.svg",QColor("#b3b3b3"), QSize(60, 40));
     provider.registerIcon("jumpToCurrentSongIconHovered",":/icons/jumpToIcon.svg",Qt::white,QSize(60, 40));
+
+    provider.registerIcon("dots", ":/icons/dots.svg", QColor("#b3b3b3"), QSize(18,4));
 }
