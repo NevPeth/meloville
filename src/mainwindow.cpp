@@ -414,10 +414,7 @@ void MainWindow::playAndPause()
     }
 }
 
-void MainWindow::seekTo(qint64 positionMs)
-{
-    playbackController->player()->setPosition(positionMs);
-}
+void MainWindow::seekTo(qint64 positionMs){ playbackController->player()->setPosition(positionMs); }
 
 void MainWindow::rebuildShufflePool()
 {
@@ -440,10 +437,16 @@ void MainWindow::rebuildShufflePool()
 
 void MainWindow::toggleShuffle(){
     shuffleMode = !shuffleMode;
+    emit shuffleModeChanged();
 
     while (!nextUp.isEmpty())
         nextUp.pop();
 
     if (shuffleMode)
         rebuildShufflePool();
+}
+
+void MainWindow::toggleRepeat(){
+    repeatMode = !repeatMode;
+    emit repeatModeChanged();
 }

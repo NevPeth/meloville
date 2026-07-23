@@ -97,6 +97,7 @@ ApplicationWindow {
                                 Layout.maximumWidth: libraryButtonSize
                                 Layout.maximumHeight: libraryButtonSize
                                 Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+                                Layout.topMargin: -10
 
                                 background: Item {}
 
@@ -275,9 +276,9 @@ ApplicationWindow {
                                 // ── background ─────────────────────────────────────────────────
                                 Rectangle {
                                     anchors.fill: parent
-                                    color: songRow.isPlaying ? "#3a3a3a"
+                                    color: songRow.isPlaying ? "#2a2a2a"
                                         : songRow.isActive  ? "#2f2f2f"
-                                        : hoverHandler.hovered ? "#2a2a2a"
+                                        : hoverHandler.hovered ? "#202020"
                                         : "#181818"
                                 }
 
@@ -357,7 +358,7 @@ ApplicationWindow {
 
                                 // ── duration ────────────────────────────────────────────────────
                                 Text {
-                                    x: parent.width - 110
+                                    x: parent.width - 105
                                     width: 60
                                     anchors.verticalCenter: parent.verticalCenter
                                     text: model.duration
@@ -369,7 +370,7 @@ ApplicationWindow {
                                 // ── dots / context-menu button ───────────────────────────────────
                                 Item {
                                     id: menuArea
-                                    x: parent.width - 35
+                                    x: parent.width - 45
                                     anchors.verticalCenter: parent.verticalCenter
                                     width: 30; height: 30
 
@@ -495,7 +496,7 @@ ApplicationWindow {
                                         Layout.rightMargin: 0
                                         background: Item {}
                                         contentItem: Image {
-                                            source: btnShuffle.hovered
+                                            source: (btnShuffle.hovered || backend.shuffleMode)
                                                 ? "image://svgicons/shuffleIconHovered"
                                                 : "image://svgicons/shuffleIconNormal"
                                             fillMode: Image.PreserveAspectFit
@@ -587,11 +588,12 @@ ApplicationWindow {
                                         Layout.leftMargin: 0
                                         background: Item {}
                                         contentItem: Image {
-                                            source: btnRepeat.hovered
+                                            source: (btnRepeat.hovered || backend.repeatMode)
                                                 ? "image://svgicons/repeatIconHovered"
                                                 : "image://svgicons/repeatIconNormal"
                                             fillMode: Image.PreserveAspectFit
                                         }
+                                        onClicked: backend.toggleRepeat()
                                     }
                                 }
 
@@ -786,6 +788,7 @@ ApplicationWindow {
                                         id: btnJumpToCurrentSong
                                         Layout.preferredWidth: 48
                                         Layout.preferredHeight: 32
+                                        Layout.rightMargin: -10
                                         background: Item {}
                                         contentItem: Image {
                                             source: btnJumpToCurrentSong.hovered
@@ -799,6 +802,7 @@ ApplicationWindow {
                                         id: btnGoToAlbums
                                         Layout.preferredWidth: 47
                                         Layout.preferredHeight: 47
+                                        Layout.rightMargin: -10
                                         background: Item {}
                                         contentItem: Image {
                                             source: btnGoToAlbums.hovered
@@ -812,6 +816,7 @@ ApplicationWindow {
                                         id: btnGoToBigPicture
                                         Layout.preferredWidth: 40
                                         Layout.preferredHeight: 40
+                                        Layout.rightMargin: -14
                                         background: Item {}
                                         contentItem: Image {
                                             source: btnGoToBigPicture.hovered
@@ -825,6 +830,7 @@ ApplicationWindow {
                                         id: btnListenAlong
                                         Layout.preferredWidth: 60
                                         Layout.preferredHeight: 60
+                                        Layout.rightMargin: -20
                                         background: Item {}
                                         contentItem: Image {
                                             source: btnListenAlong.hovered

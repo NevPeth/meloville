@@ -26,13 +26,14 @@ class MainWindow : public QObject
     Q_PROPERTY(bool scanning READ getScanning NOTIFY scanningChanged)
     Q_PROPERTY(bool libraryPresent READ getLibraryPresent NOTIFY libraryPresentChanged)
     Q_PROPERTY(int currentLibraryIndex READ getCurrentLibraryIndex NOTIFY currentLibraryIndexChanged)
-
     Q_PROPERTY(QString currentSongTitle READ getCurrentSongTitle NOTIFY currentSongChanged)
     Q_PROPERTY(QString currentSongArtist READ getCurrentSongArtist NOTIFY currentSongChanged)
     Q_PROPERTY(QString currentSongCoverPath READ getCurrentSongCoverPath NOTIFY currentSongChanged)
     Q_PROPERTY(int currentSongDuration READ getCurrentSongDuration NOTIFY currentSongChanged)
     Q_PROPERTY(qint64 playerPosition READ getPlayerPosition NOTIFY playerPositionChanged)
     Q_PROPERTY(qint64 playerDuration READ getPlayerDuration NOTIFY playerDurationChanged)
+    Q_PROPERTY(bool repeatMode READ getRepeatMode NOTIFY repeatModeChanged)
+    Q_PROPERTY(bool shuffleMode READ getShuffleMode NOTIFY shuffleModeChanged)
 
 public:
     explicit MainWindow(QObject *parent = nullptr);
@@ -50,6 +51,7 @@ public:
     Q_INVOKABLE void playPreviousSong();
     Q_INVOKABLE void seekTo(qint64 positionMs);
     Q_INVOKABLE void toggleShuffle();
+    Q_INVOKABLE void toggleRepeat();
 
     double getProgress() const { return progress; }
     QString getStatusMessage() const { return statusMessage; }
@@ -68,6 +70,10 @@ public:
         if (currentLibraryIndex < 0 || currentLibraryIndex >= library.size()) return QString();
         return library[currentLibraryIndex].coverPath;
     }
+
+    bool getRepeatMode() const { return repeatMode; }
+    bool getShuffleMode() const { return shuffleMode; }
+
     int getCurrentSongDuration() const {
         if (currentLibraryIndex < 0 || currentLibraryIndex >= library.size()) return 0;
         return library[currentLibraryIndex].duration;
@@ -96,6 +102,8 @@ signals:
     void playerPositionChanged(qint64 position);
     void playerDurationChanged(qint64 duration);
     void playbackStateChanged(int state);
+    void repeatModeChanged();
+    void shuffleModeChanged();
 
 private:
     static bool songTitleLess(const SongData &a, const SongData &b);
