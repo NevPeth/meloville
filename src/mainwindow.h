@@ -46,6 +46,8 @@ public:
     Q_INVOKABLE void loadLibrary();
     Q_INVOKABLE void playSongAtVisibleIndex(int visibleIndex);
     Q_INVOKABLE void playAndPause();
+    Q_INVOKABLE void playNextSong();
+    Q_INVOKABLE void playPreviousSong();
     Q_INVOKABLE void seekTo(qint64 positionMs);
 
     double getProgress() const { return progress; }
@@ -115,10 +117,13 @@ private:
 
     PlaybackController *playbackController = nullptr;
     int currentPlayingIndex = -1;
+    int currentVisibleIndex = -1;
+    int currentPlaybackIndex = -1;
     qint64 playerPosition = 0;
     qint64 playerDuration = 0;
     QVector<int> playHistory;
     QStack<int> nextUp;
+    QVector<int> unplayedIndices;
     bool shuffleMode = false;
     bool repeatMode = false;
 };

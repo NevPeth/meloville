@@ -9,6 +9,7 @@
 #include <QJsonArray>
 #include <QStandardPaths>
 #include <QFileInfo>
+#include <QRandomGenerator>
 #include <algorithm>
 
 MainWindow::MainWindow(QObject *parent)
@@ -19,8 +20,8 @@ MainWindow::MainWindow(QObject *parent)
     playlistManager = new PlaylistManager(this);
 
     playbackController = new PlaybackController(this);
-    // connect(playbackController, &PlaybackController::songFinished,
-    //         this, &MainWindow::playNextSong);
+    connect(playbackController, &PlaybackController::songFinished,
+            this, &MainWindow::playNextSong);
 
     connect(playbackController, &PlaybackController::positionChanged,
             this, [this](qint64 pos) {
@@ -284,6 +285,7 @@ void MainWindow::playSongAtVisibleIndex(int visibleIndex)
 
     int libraryIndex = visibleSongs[visibleIndex];
     currentPlaybackSongs = currentViewSongs; // or whatever you need
+    currentVisibleIndex = visibleIndex;
     currentPlayingIndex = libraryIndex;
     emit currentPlayingIndexChanged();
 
@@ -301,11 +303,109 @@ void MainWindow::playSong(int libraryIndex)
     const SongData &song = library[libraryIndex];
     playbackController->player()->setSource(QUrl::fromLocalFile(song.filePath));
     playbackController->player()->play();
+    currentPlaybackIndex =
+        currentPlaybackSongs.indexOf(
+            libraryIndex
+        );
 
     songModel->setPlayingIndex(libraryIndex); 
     currentPlayingIndex = libraryIndex;
     emit currentPlayingIndexChanged();
     emit currentSongChanged();
+}
+
+void MainWindow::playNextSong()
+{
+    if (visibleSongs.isEmpty())
+        return;
+
+    if (currentPlayingIndex >= 0){
+        playHistory.append(currentPlayingIndex);
+    }
+
+    int nextLibraryIndex = currentPlayingIndex;
+
+    if (!repeatMode){
+        if (!nextUp.isEmpty()){
+            nextLibraryIndex = nextUp.pop();
+        }
+        else if (shuffleMode){
+            if (unplayedIndices.isEmpty()){
+                for (int libraryIndex : currentPlaybackSongs){
+                    unplayedIndices.append(
+                        libraryIndex
+                    );
+                }
+            }
+
+            unplayedIndices.removeAll(currentPlayingIndex);
+
+            int randomIndex =
+                QRandomGenerator::global()->bounded(
+                    unplayedIndices.size()
+                );
+
+            nextLibraryIndex = unplayedIndices[randomIndex];
+
+            unplayedIndices.removeAt(randomIndex);
+
+            currentVisibleIndex =
+                visibleSongs.indexOf(
+                    nextLibraryIndex
+                );
+        }
+        else{
+            int nextPlaybackIndex = currentPlaybackIndex + 1;
+
+            if (nextPlaybackIndex >= currentPlaybackSongs.size()){
+                nextPlaybackIndex = 0;
+            }
+            currentPlaybackIndex = nextPlaybackIndex;
+
+            nextLibraryIndex = currentPlaybackSongs[nextPlaybackIndex];
+        }
+    }
+    playSong(nextLibraryIndex);
+}
+
+void MainWindow::playPreviousSong()
+{
+    if (library.isEmpty())
+        return;
+
+    if (playbackController->player()->position() > 5000){
+        playbackController->player()->setPosition(0);
+        return;
+    }
+
+    if (!playHistory.isEmpty()){
+        int previousLibraryIndex = playHistory.takeLast();
+
+        playSong(previousLibraryIndex);
+        return;
+    }
+
+    if (!shuffleMode){
+        if (currentPlayingIndex <= 0)
+            return;
+
+        nextUp.push(currentPlayingIndex);
+
+        int previousPlaybackIndex = currentPlaybackIndex - 1;
+
+        if (previousPlaybackIndex < 0)
+            return;
+
+        nextUp.push(
+            currentPlayingIndex
+        );
+
+        playSong(
+            currentPlaybackSongs[
+                previousPlaybackIndex
+            ]
+        );
+    }
 }
 
 void MainWindow::playAndPause()

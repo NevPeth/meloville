@@ -488,7 +488,6 @@ ApplicationWindow {
                                     Layout.alignment: Qt.AlignHCenter
                                     spacing: 0
 
-                                    // btnShuffle
                                     Button {
                                         id: btnShuffle
                                         Layout.preferredWidth: 42
@@ -503,7 +502,6 @@ ApplicationWindow {
                                         }
                                     }
 
-                                    // btnReverse
                                     Button {
                                         id: btnReverse
                                         Layout.preferredWidth: 48
@@ -516,16 +514,15 @@ ApplicationWindow {
                                                 : "image://svgicons/reverseIconNormal"
                                             fillMode: Image.PreserveAspectFit
                                         }
+                                        onClicked: backend.playPreviousSong()
                                     }
 
-                                    // btnPlay
                                     Button {
                                         id: btnPlay
                                         Layout.preferredWidth: 60
                                         Layout.preferredHeight: 60
                                         background: Item {}
 
-                                        // Tracks whether a song is actively playing (not paused)
                                         property bool isCurrentlyPlaying: false
 
                                         Connections {
@@ -577,6 +574,8 @@ ApplicationWindow {
                                                 : "image://svgicons/skipIconNormal"
                                             fillMode: Image.PreserveAspectFit
                                         }
+
+                                        onClicked: backend.playNextSong()
                                     }
 
                                     // btnRepeat
