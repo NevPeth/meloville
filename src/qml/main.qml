@@ -447,14 +447,14 @@ ApplicationWindow {
                                         source: backend.currentSongCoverPath !== ""
                                                 ? "file://" + backend.currentSongCoverPath
                                                 : "qrc:/images/default_cover.png"
-                                        visible: backend.currentPlayingIndex >= 0
+                                        visible: backend.currentLibraryIndex >= 0
                                     }
                                 }
 
                                 // labelSongInfo
                                 Text {
                                     id: labelSongInfo
-                                    text: backend.currentPlayingIndex >= 0
+                                    text: backend.currentLibraryIndex >= 0
                                           ? backend.currentSongTitle + "<br><span style='color:#b3b3b3; font-size:11px;'>"
                                             + backend.currentSongArtist + "</span>"
                                           : "Nothing Playing<br><span style='color:#b3b3b3; font-size:11px;'>Unknown Artist</span>"
@@ -500,6 +500,7 @@ ApplicationWindow {
                                                 : "image://svgicons/shuffleIconNormal"
                                             fillMode: Image.PreserveAspectFit
                                         }
+                                        onClicked: backend.toggleShuffle()
                                     }
 
                                     Button {
@@ -530,7 +531,7 @@ ApplicationWindow {
                                             function onDataChanged(topLeft, bottomRight, roles) {
                                                 // Re-evaluate playing state whenever the model updates
                                                 // We check if any row reports isPlaying && !isPaused.
-                                                // A simpler proxy: currentPlayingIndex >= 0 and not paused.
+                                                // A simpler proxy: currentLibraryIndex >= 0 and not paused.
                                                 // We drive this via the playbackState signal below instead.
                                             }
                                         }
@@ -555,8 +556,8 @@ ApplicationWindow {
                                             btnPlay.isCurrentlyPlaying = (state === 1)
                                         }
                                         // Also reset when no song is selected
-                                        function onCurrentPlayingIndexChanged() {
-                                            if (backend.currentPlayingIndex < 0)
+                                        function onCurrentLibraryIndexChanged() {
+                                            if (backend.currentLibraryIndex < 0)
                                                 btnPlay.isCurrentlyPlaying = false
                                         }
                                     }

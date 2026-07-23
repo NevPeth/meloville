@@ -286,8 +286,8 @@ void MainWindow::playSongAtVisibleIndex(int visibleIndex)
     int libraryIndex = visibleSongs[visibleIndex];
     currentPlaybackSongs = currentViewSongs; // or whatever you need
     currentVisibleIndex = visibleIndex;
-    currentPlayingIndex = libraryIndex;
-    emit currentPlayingIndexChanged();
+    currentLibraryIndex = libraryIndex;
+    emit currentLibraryIndexChanged();
 
     // Update model's playing index (if your SongModel supports it)
     // songModel->setPlayingIndex(libraryIndex);
@@ -309,8 +309,8 @@ void MainWindow::playSong(int libraryIndex)
         );
 
     songModel->setPlayingIndex(libraryIndex); 
-    currentPlayingIndex = libraryIndex;
-    emit currentPlayingIndexChanged();
+    currentLibraryIndex = libraryIndex;
+    emit currentLibraryIndexChanged();
     emit currentSongChanged();
 }
 
@@ -319,11 +319,11 @@ void MainWindow::playNextSong()
     if (visibleSongs.isEmpty())
         return;
 
-    if (currentPlayingIndex >= 0){
-        playHistory.append(currentPlayingIndex);
+    if (currentLibraryIndex >= 0){
+        playHistory.append(currentLibraryIndex);
     }
 
-    int nextLibraryIndex = currentPlayingIndex;
+    int nextLibraryIndex = currentLibraryIndex;
 
     if (!repeatMode){
         if (!nextUp.isEmpty()){
@@ -338,7 +338,7 @@ void MainWindow::playNextSong()
                 }
             }
 
-            unplayedIndices.removeAll(currentPlayingIndex);
+            unplayedIndices.removeAll(currentLibraryIndex);
 
             int randomIndex =
                 QRandomGenerator::global()->bounded(
@@ -386,19 +386,14 @@ void MainWindow::playPreviousSong()
     }
 
     if (!shuffleMode){
-        if (currentPlayingIndex <= 0)
-            return;
 
-        nextUp.push(currentPlayingIndex);
+        nextUp.push(currentLibraryIndex);
 
         int previousPlaybackIndex = currentPlaybackIndex - 1;
 
         if (previousPlaybackIndex < 0)
-            return;
+            previousPlaybackIndex = currentPlaybackSongs.size()-1;
 
-        nextUp.push(
-            currentPlayingIndex
-        );
 
         playSong(
             currentPlaybackSongs[
@@ -422,4 +417,33 @@ void MainWindow::playAndPause()
 void MainWindow::seekTo(qint64 positionMs)
 {
     playbackController->player()->setPosition(positionMs);
+}
+
+void MainWindow::rebuildShufflePool()
+{
+    if (shuffleMode)
+    {
+        unplayedIndices.clear();
+
+        for (int libraryIndex : currentPlaybackSongs)
+        {
+            unplayedIndices.append(
+                libraryIndex
+            );
+        }
+
+        unplayedIndices.removeAll(
+            currentLibraryIndex
+        );
+    }
+}
+
+void MainWindow::toggleShuffle(){
+    shuffleMode = !shuffleMode;
+
+    while (!nextUp.isEmpty())
+        nextUp.pop();
+
+    if (shuffleMode)
+        rebuildShufflePool();
 }

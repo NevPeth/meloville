@@ -25,7 +25,7 @@ class MainWindow : public QObject
     Q_PROPERTY(QString statusMessage READ getStatusMessage NOTIFY statusMessageChanged)
     Q_PROPERTY(bool scanning READ getScanning NOTIFY scanningChanged)
     Q_PROPERTY(bool libraryPresent READ getLibraryPresent NOTIFY libraryPresentChanged)
-    Q_PROPERTY(int currentPlayingIndex READ getCurrentPlayingIndex NOTIFY currentPlayingIndexChanged)
+    Q_PROPERTY(int currentLibraryIndex READ getCurrentLibraryIndex NOTIFY currentLibraryIndexChanged)
 
     Q_PROPERTY(QString currentSongTitle READ getCurrentSongTitle NOTIFY currentSongChanged)
     Q_PROPERTY(QString currentSongArtist READ getCurrentSongArtist NOTIFY currentSongChanged)
@@ -49,27 +49,28 @@ public:
     Q_INVOKABLE void playNextSong();
     Q_INVOKABLE void playPreviousSong();
     Q_INVOKABLE void seekTo(qint64 positionMs);
+    Q_INVOKABLE void toggleShuffle();
 
     double getProgress() const { return progress; }
     QString getStatusMessage() const { return statusMessage; }
     bool getScanning() const { return scanning; }
     bool getLibraryPresent() const { return libraryPresent; }
-    int getCurrentPlayingIndex() const { return currentPlayingIndex; }
+    int getCurrentLibraryIndex() const { return currentLibraryIndex; }
     QString getCurrentSongTitle() const {
-        if (currentPlayingIndex < 0 || currentPlayingIndex >= library.size()) return QString();
-        return library[currentPlayingIndex].title;
+        if (currentLibraryIndex < 0 || currentLibraryIndex >= library.size()) return QString();
+        return library[currentLibraryIndex].title;
     }
     QString getCurrentSongArtist() const {
-        if (currentPlayingIndex < 0 || currentPlayingIndex >= library.size()) return QString();
-        return library[currentPlayingIndex].artist;
+        if (currentLibraryIndex < 0 || currentLibraryIndex >= library.size()) return QString();
+        return library[currentLibraryIndex].artist;
     }
     QString getCurrentSongCoverPath() const {
-        if (currentPlayingIndex < 0 || currentPlayingIndex >= library.size()) return QString();
-        return library[currentPlayingIndex].coverPath;
+        if (currentLibraryIndex < 0 || currentLibraryIndex >= library.size()) return QString();
+        return library[currentLibraryIndex].coverPath;
     }
     int getCurrentSongDuration() const {
-        if (currentPlayingIndex < 0 || currentPlayingIndex >= library.size()) return 0;
-        return library[currentPlayingIndex].duration;
+        if (currentLibraryIndex < 0 || currentLibraryIndex >= library.size()) return 0;
+        return library[currentLibraryIndex].duration;
     }
     qint64 getPlayerPosition() const { return playerPosition; }
     qint64 getPlayerDuration() const { return playerDuration; }
@@ -81,6 +82,7 @@ public slots:
 
 private slots:
     void playSong(int libraryIndex);
+    void rebuildShufflePool();
 
 signals:
     void playlistChanged();
@@ -89,7 +91,7 @@ signals:
     void statusMessageChanged();
     void scanningChanged();
     void libraryPresentChanged();
-    void currentPlayingIndexChanged();
+    void currentLibraryIndexChanged();
     void currentSongChanged();
     void playerPositionChanged(qint64 position);
     void playerDurationChanged(qint64 duration);
@@ -116,7 +118,7 @@ private:
     bool libraryPresent = false;
 
     PlaybackController *playbackController = nullptr;
-    int currentPlayingIndex = -1;
+    int currentLibraryIndex = -1;
     int currentVisibleIndex = -1;
     int currentPlaybackIndex = -1;
     qint64 playerPosition = 0;
