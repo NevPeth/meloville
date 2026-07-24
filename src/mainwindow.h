@@ -35,6 +35,9 @@ class MainWindow : public QObject
     Q_PROPERTY(bool repeatMode READ getRepeatMode NOTIFY repeatModeChanged)
     Q_PROPERTY(bool shuffleMode READ getShuffleMode NOTIFY shuffleModeChanged)
 
+    Q_PROPERTY(int volume READ getVolume WRITE setVolume NOTIFY volumeChanged)
+    Q_PROPERTY(bool playing READ getPlaying NOTIFY playingChanged)
+
 public:
     explicit MainWindow(QObject *parent = nullptr);
     ~MainWindow();
@@ -81,6 +84,11 @@ public:
     qint64 getPlayerPosition() const { return playerPosition; }
     qint64 getPlayerDuration() const { return playerDuration; }
 
+    int getVolume() const;
+    void setVolume(int vol);
+    bool getPlaying() const { return playing; }
+    void setPlaying(bool p);
+
 public slots:
     void onScanProgress(int current, int total);
     void onScanFinished(const QVector<SongData>& songs, const QString& folderPath);
@@ -104,6 +112,9 @@ signals:
     void playbackStateChanged(int state);
     void repeatModeChanged();
     void shuffleModeChanged();
+
+    void volumeChanged(int vol);
+    void playingChanged(bool playing);
 
 private:
     static bool songTitleLess(const SongData &a, const SongData &b);
@@ -136,6 +147,7 @@ private:
     QVector<int> unplayedIndices;
     bool shuffleMode = false;
     bool repeatMode = false;
+    bool playing = false;
 };
 
 #endif // MAINWINDOW_H

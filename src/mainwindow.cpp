@@ -39,6 +39,9 @@ MainWindow::MainWindow(QObject *parent)
             this, [this](QMediaPlayer::PlaybackState state) {
                 emit playbackStateChanged(static_cast<int>(state));
             });
+
+    connect(playbackController, &PlaybackController::volumeChanged,
+        this, &MainWindow::volumeChanged);
     
     QDir().mkpath(appDataPath + "/cache");
     
@@ -303,6 +306,7 @@ void MainWindow::playSong(int libraryIndex)
     const SongData &song = library[libraryIndex];
     playbackController->player()->setSource(QUrl::fromLocalFile(song.filePath));
     playbackController->player()->play();
+    setPlaying(true);
     currentPlaybackIndex =
         currentPlaybackSongs.indexOf(
             libraryIndex
@@ -408,9 +412,11 @@ void MainWindow::playAndPause()
     if (playbackController->player()->playbackState() == QMediaPlayer::PlayingState) {
         playbackController->player()->pause();
         songModel->setPausedState(true);
+        setPlaying(false);
     } else {
         playbackController->player()->play();
         songModel->setPausedState(false);
+        setPlaying(true);
     }
 }
 
@@ -449,4 +455,23 @@ void MainWindow::toggleShuffle(){
 void MainWindow::toggleRepeat(){
     repeatMode = !repeatMode;
     emit repeatModeChanged();
+}
+
+int MainWindow::getVolume() const
+{
+    return playbackController->volume();
+}
+
+void MainWindow::setVolume(int vol)
+{
+    playbackController->setVolume(vol);
+    // volumeChanged will be emitted from playbackController, which will trigger our signal.
+}
+
+void MainWindow::setPlaying(bool p)
+{
+    if (playing != p) {
+        playing = p;
+        emit playingChanged(playing);
+    }
 }

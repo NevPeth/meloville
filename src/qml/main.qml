@@ -525,8 +525,6 @@ ApplicationWindow {
                                         Layout.preferredHeight: 60
                                         background: Item {}
 
-                                        property bool isCurrentlyPlaying: false
-
                                         Connections {
                                             target: backend.songModel
                                             function onDataChanged(topLeft, bottomRight, roles) {
@@ -538,29 +536,13 @@ ApplicationWindow {
                                         }
 
                                         contentItem: Image {
-                                            source: btnPlay.isCurrentlyPlaying
+                                            source: backend.playing
                                                     ? "image://svgicons/pauseButtonIcon"
                                                     : "image://svgicons/playButtonIcon"
                                             fillMode: Image.PreserveAspectFit
                                         }
 
                                         onClicked: backend.playAndPause()
-                                    }
-
-                                    // Connections block to update btnPlay.isCurrentlyPlaying
-                                    // from QMediaPlayer's playbackStateChanged signal exposed via
-                                    // PlaybackController -> backend.
-                                    Connections {
-                                        target: backend
-                                        function onPlaybackStateChanged(state) {
-                                            // QMediaPlayer::PlayingState == 1
-                                            btnPlay.isCurrentlyPlaying = (state === 1)
-                                        }
-                                        // Also reset when no song is selected
-                                        function onCurrentLibraryIndexChanged() {
-                                            if (backend.currentLibraryIndex < 0)
-                                                btnPlay.isCurrentlyPlaying = false
-                                        }
                                     }
 
                                     // btnSkip
@@ -719,7 +701,8 @@ ApplicationWindow {
 
                                     from: 0
                                     to: 100
-                                    value: 50
+                                    value: backend.volume
+                                    onMoved: backend.volume = value
 
                                     hoverEnabled: true
 

@@ -79,17 +79,12 @@ bool PlaybackController::isPlaying() const
     return mediaPlayer && mediaPlayer->playbackState() == QMediaPlayer::PlayingState;
 }
 
-void PlaybackController::setVolume(
-    int volume
-)
-{
-    volume =
-        std::clamp(volume, 0, 100);
+void PlaybackController::setVolume(int volume){
 
-    audioOutput->setVolume(
-        volume / 100.0
-    );
+    volume = std::clamp(volume, 0, 100);
+    audioOutput->setVolume(volume / 100.0);
 
+    emit volumeChanged(volume);
     saveSettings();
 }
 
