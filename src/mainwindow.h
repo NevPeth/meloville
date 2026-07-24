@@ -55,6 +55,7 @@ public:
     Q_INVOKABLE void seekTo(qint64 positionMs);
     Q_INVOKABLE void toggleShuffle();
     Q_INVOKABLE void toggleRepeat();
+    Q_INVOKABLE void filterSongsAndAlbums(const QString &text);
 
     double getProgress() const { return progress; }
     QString getStatusMessage() const { return statusMessage; }

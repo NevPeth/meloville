@@ -38,6 +38,10 @@ ApplicationWindow {
         Rectangle {
             color: "#121212"
 
+            TapHandler {
+                onTapped: searchField.focus = false
+            }
+
             ColumnLayout {
                 id: mainLayout
                 anchors.fill: parent
@@ -59,6 +63,10 @@ ApplicationWindow {
                         Layout.maximumWidth: 65
                         Layout.fillHeight: true
                         color: "transparent"
+
+                        TapHandler {
+                            onTapped: searchField.focus = false
+                        }
                         
                         ColumnLayout {
                             id: layoutSidebar
@@ -122,6 +130,10 @@ ApplicationWindow {
                                 clip: true
                                 ScrollBar.horizontal: ScrollBar { policy: ScrollBar.AlwaysOff }
                                 delegate: Item { width: 60; height: 48 }
+
+                                TapHandler {
+                                    onTapped: searchField.focus = false
+                                }
                             }
                         }
                     }
@@ -181,6 +193,8 @@ ApplicationWindow {
                                         color: "white"
                                         font.pixelSize: 13
 
+                                        onTextChanged: backend.filterSongsAndAlbums(text)
+
                                         Text {
                                             anchors.fill: parent
                                             anchors.leftMargin: 0
@@ -207,6 +221,10 @@ ApplicationWindow {
                             model: backend.songModel
 
                             property real scrollVelocity: 0
+
+                            TapHandler {
+                                onTapped: searchField.focus = false
+                            }
 
                             Timer {
                                 id: momentum

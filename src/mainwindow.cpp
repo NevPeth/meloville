@@ -475,3 +475,50 @@ void MainWindow::setPlaying(bool p)
         emit playingChanged(playing);
     }
 }
+
+void MainWindow::filterSongsAndAlbums(const QString& text)
+{
+    QString search = text.trimmed().toLower();
+
+    // if(inAlbumsView){
+    //     if (search.isEmpty()) {
+    //         albumModel->setAlbums(allAlbums);
+    //     } else {
+    //         QVector<AlbumInfo> filtered;
+    //         for (const AlbumInfo& album : allAlbums) {
+    //             QString searchable = (album.title + " " + album.artist).toLower();
+    //             if (searchable.contains(search)) {
+    //                 filtered.push_back(album);
+    //             }
+    //         }
+    //         albumModel->setAlbums(filtered);
+    //     }
+
+    //     ui->listViewAlbums->refreshGrid();
+    // }
+    // else{
+        visibleSongs.clear();
+
+        if (search.isEmpty()){
+            visibleSongs = currentViewSongs;
+        }
+        else{
+            for (int libraryIndex : currentViewSongs){
+                const SongData& song = library[libraryIndex];
+
+                QString searchable = (song.title+" "+song.artist+" " +song.album).toLower();
+
+                if (searchable.contains(search)){
+                    visibleSongs.push_back(
+                        libraryIndex
+                    );
+                }
+            }
+        }
+        songModel->setSongs(
+            &library,
+            &visibleSongs
+        );
+
+   // }
+}
