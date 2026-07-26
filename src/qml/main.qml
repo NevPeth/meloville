@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import Qt5Compat.GraphicalEffects
 
 ApplicationWindow {
     id: appWindow
@@ -16,6 +17,23 @@ ApplicationWindow {
         id: stackView
         anchors.fill: parent
         initialItem: backend.libraryPresent ? mainPageComponent : loadPageComponent
+    }
+
+    NewPlaylistDialog {
+        id: playlistDialog
+        anchors.fill: parent
+        visible: false   // initially hidden
+
+        onAccepted: {
+            // Optionally refresh playlist list or other UI
+            // The backend will emit playlistsChanged, so we can update the ListView.
+        }
+        onRejected: {
+            // just close
+        }
+        onDeleted: {
+            // The backend will handle deletion; we might want to close playlist view if editing
+        }
     }
     
     Component {
@@ -38,15 +56,15 @@ ApplicationWindow {
         Rectangle {
             color: "#121212"
 
-            TapHandler {
-                onTapped: searchField.focus = false
-            }
-
             ColumnLayout {
                 id: mainLayout
                 anchors.fill: parent
                 spacing: 0
                 // margins are 0 by default in QML
+
+                TapHandler {
+                    onTapped: searchField.focus = false
+                }
 
                 // -------- SIDEBAR + RIGHT CONTENT (horizontal) --------
                 RowLayout {
@@ -63,10 +81,6 @@ ApplicationWindow {
                         Layout.maximumWidth: 65
                         Layout.fillHeight: true
                         color: "transparent"
-
-                        TapHandler {
-                            onTapped: searchField.focus = false
-                        }
                         
                         ColumnLayout {
                             id: layoutSidebar
@@ -95,6 +109,8 @@ ApplicationWindow {
                                     height: playlistButtonSize
                                     fillMode: Image.PreserveAspectFit
                                 }
+
+                                    onClicked: playlistDialog.openCreate()
                             }
 
                             Button {
@@ -119,6 +135,8 @@ ApplicationWindow {
                                     height: libraryButtonSize
                                     fillMode: Image.PreserveAspectFit
                                 }
+
+                                onClicked: backend.returnToLibrary()
                             }
 
                             ListView {
@@ -129,11 +147,53 @@ ApplicationWindow {
                                 Layout.maximumWidth: 60
                                 clip: true
                                 ScrollBar.horizontal: ScrollBar { policy: ScrollBar.AlwaysOff }
-                                delegate: Item { width: 60; height: 48 }
+                                delegate: Rectangle {
+                                    width: 60
+                                    height: 60
+                                    radius: 8
+                                    color: "transparent"
+
+                                    // Highlight when this playlist is selected (optional)
+                                    property bool isSelected: backend.viewingPlaylist === model.name
+
+                                    Rectangle {
+                                        anchors.fill: parent
+                                        radius: parent.radius
+                                        color: isSelected ? "#2a2a2a" : "transparent"
+                                    }
+
+                                    // Image with rounded corners
+                                    Image {
+                                        id: playlistImage
+                                        anchors.fill: parent
+                                        anchors.margins: 2
+                                        fillMode: Image.PreserveAspectCrop
+                                        source: model.imagePath ? model.imagePath : "qrc:/images/default_cover.png"
+                                        visible: source !== ""
+                                        layer.enabled: true
+                                        layer.effect: OpacityMask {
+                                            maskSource: Rectangle {
+                                                width: playlistImage.width
+                                                height: playlistImage.height
+                                                radius: 8
+                                            }
+                                        }
+                                    }
+
+                                    // Click area
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        onClicked: {
+                                            backend.loadPlaylistView(model.name)
+                                        }
+                                    }
+                                }
 
                                 TapHandler {
                                     onTapped: searchField.focus = false
                                 }
+
+                                model: backend.playlistModel
                             }
                         }
                     }
@@ -220,11 +280,11 @@ ApplicationWindow {
 
                             model: backend.songModel
 
-                            property real scrollVelocity: 0
-
                             TapHandler {
                                 onTapped: searchField.focus = false
                             }
+
+                            property real scrollVelocity: 0
 
                             Timer {
                                 id: momentum

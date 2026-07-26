@@ -17,6 +17,7 @@ class PlaylistManager : public QObject
 
 public:
     explicit PlaylistManager(QObject* parent = nullptr);
+    Q_INVOKABLE QString fullImagePath(const QString& playlistName) const;
     /*Getter Functions:*/
     QString playlistImage(const QString& playlistName) const;
     QStringList playlistNames() const;
@@ -51,6 +52,8 @@ public:
 
 signals:
     void playlistCreated(const QString& playlistName);
+    void playlistDeleted(const QString& playlistName);
+    void playlistChanged(const QString& playlistName);
 
 private:
     QStringList playlistOrder;

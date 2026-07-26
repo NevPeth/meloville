@@ -53,4 +53,11 @@ inline void registerIcons(SvgImageProvider& provider)
     provider.registerIcon("jumpToCurrentSongIconHovered",":/icons/jumpToIcon.svg",Qt::white,QSize(60, 40));
 
     provider.registerIcon("dots", ":/icons/dots.svg", QColor("#b3b3b3"), QSize(18,4));
+
+    provider.registerDualIcon(
+        "uploadIcon",
+        ":/icons/uploadIcon.svg",
+        QColor("#2d2d2d"),
+        Qt::white,
+        QSize(60, 60));
 }

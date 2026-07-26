@@ -39,6 +39,8 @@ qt_add_executable(Meloville
     pulseaudioservice.cpp
     playbackcontroller.h
     playbackcontroller.cpp
+    playlistmodel.h
+    playlistmodel.cpp
 
     svgLogic/svgcreator.h
     svgLogic/svgcreator.cpp

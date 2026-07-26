@@ -29,6 +29,7 @@ void PlaylistManager::createPlaylist(
     playlistOrder.append(name);
 
     savePlaylists();
+    emit playlistCreated(name);
 }
 
 void PlaylistManager::addSongToPlaylist(
@@ -289,45 +290,41 @@ void PlaylistManager::editPlaylist(
     if (!playlists.contains(oldName))
         return;
 
-    // // Rename playlist if necessary.
-    if (oldName != newName)
-    {
-        playlists[newName] = playlists.take(oldName);
+    bool changed = false;
 
+    if (oldName != newName){
+        playlists[newName] = playlists.take(oldName);
         playlistDefinitions[newName] = playlistDefinitions.take(oldName);
 
         QString oldImage = playlistImages.take(oldName);
-
         playlistImages[newName] = oldImage;
-
         playlistTitleFontSizes[newName] = playlistTitleFontSizes.take(oldName);
-
         playlistTitleFontSizes[newName] = calculateTitleSize(newName);
 
         int index = playlistOrder.indexOf(oldName);
-
-        if (index >= 0)
-        {
+        if (index >= 0){
             playlistOrder[index] = newName;
         }
+        changed = true;
     }
 
-    if (!imagePath.isEmpty())
-    {
+    if (!imagePath.isEmpty()){
         QString currentImage = playlistImages.value(newName);
 
-        if (currentImage != imagePath)
-        {
-            if (!currentImage.isEmpty())
-            {
+        if (currentImage != imagePath){
+            if (!currentImage.isEmpty()){
                 QFile::remove(playlistPath+currentImage);
             }
 
             playlistImages[newName] = imagePath;
         }
+        changed = true;
     }
-
-    savePlaylists();
+    
+    if (changed){
+        savePlaylists();
+        emit playlistChanged(newName);
+    }
 }
 
 void PlaylistManager::deletePlaylist(
@@ -336,6 +333,8 @@ void PlaylistManager::deletePlaylist(
 {
     if (!playlists.contains(playlistName))
         return;
+
+    emit playlistDeleted(playlistName);
 
     QString cover = playlistImages.value(playlistName);
 
@@ -371,4 +370,12 @@ int PlaylistManager::calculateTitleSize(const QString& text)
     }
 
     return minSize;
+}
+
+QString PlaylistManager::fullImagePath(const QString& playlistName) const
+{
+    QString relative = playlistImages.value(playlistName);
+    if (relative.isEmpty())
+        return QString();
+    return playlistPath + relative;
 }

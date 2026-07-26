@@ -5,6 +5,8 @@
 #include "songmodel.h"
 #include "libraryscanner.h"
 #include "playbackcontroller.h"
+#include "playlistmanager.h"
+#include "playlistmodel.h"
 #include <pulse/pulseaudio.h>
 #include <QMainWindow>
 #include <QQuickView>
@@ -34,9 +36,12 @@ class MainWindow : public QObject
     Q_PROPERTY(qint64 playerDuration READ getPlayerDuration NOTIFY playerDurationChanged)
     Q_PROPERTY(bool repeatMode READ getRepeatMode NOTIFY repeatModeChanged)
     Q_PROPERTY(bool shuffleMode READ getShuffleMode NOTIFY shuffleModeChanged)
-
     Q_PROPERTY(int volume READ getVolume WRITE setVolume NOTIFY volumeChanged)
     Q_PROPERTY(bool playing READ getPlaying NOTIFY playingChanged)
+
+    Q_PROPERTY(QString viewingPlaylist READ getViewingPlaylist NOTIFY viewingPlaylistChanged)
+    Q_PROPERTY(PlaylistManager* playlistManager READ getPlaylistManager CONSTANT)
+    Q_PROPERTY(PlaylistModel* playlistModel READ getPlaylistModel CONSTANT)
 
 public:
     explicit MainWindow(QObject *parent = nullptr);
@@ -56,8 +61,12 @@ public:
     Q_INVOKABLE void toggleShuffle();
     Q_INVOKABLE void toggleRepeat();
     Q_INVOKABLE void filterSongsAndAlbums(const QString &text);
+    Q_INVOKABLE void createPlaylistFromDialog(const QString& name, const QString& sourceImagePath);
+    Q_INVOKABLE void loadPlaylistView(const QString& playlistName);
+    Q_INVOKABLE void returnToLibrary();
 
     double getProgress() const { return progress; }
+    PlaylistModel* getPlaylistModel() const { return playlistModel; }
     QString getStatusMessage() const { return statusMessage; }
     bool getScanning() const { return scanning; }
     bool getLibraryPresent() const { return libraryPresent; }
@@ -89,6 +98,8 @@ public:
     void setVolume(int vol);
     bool getPlaying() const { return playing; }
     void setPlaying(bool p);
+    QString getViewingPlaylist() const { return viewingPlaylist; }
+    PlaylistManager* getPlaylistManager() const { return playlistManager; }
 
 public slots:
     void onScanProgress(int current, int total);
@@ -113,13 +124,13 @@ signals:
     void playbackStateChanged(int state);
     void repeatModeChanged();
     void shuffleModeChanged();
-
     void volumeChanged(int vol);
     void playingChanged(bool playing);
 
+    void viewingPlaylistChanged();
+
 private:
     static bool songTitleLess(const SongData &a, const SongData &b);
-    void loadPlaylistView(const QString &playlistName);
     
     QVector<SongData> library;
     QVector<int> currentViewSongs;
@@ -149,6 +160,7 @@ private:
     bool shuffleMode = false;
     bool repeatMode = false;
     bool playing = false;
+    PlaylistModel *playlistModel = nullptr;
 };
 
 #endif // MAINWINDOW_H

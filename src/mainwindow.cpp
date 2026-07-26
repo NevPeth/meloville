@@ -46,6 +46,10 @@ MainWindow::MainWindow(QObject *parent)
     QDir().mkpath(appDataPath + "/cache");
     
     loadLibrary();
+    playlistManager->setPath(appDataPath);
+    playlistManager->loadPlaylists(library, true);
+
+    playlistModel = new PlaylistModel(playlistManager, this);
 }
 
 MainWindow::~MainWindow()
@@ -273,12 +277,6 @@ void MainWindow::loadLibrary()
     if (addedAny || removedAny) {
         saveLibrary();
     }
-}
-
-void MainWindow::loadPlaylistView(const QString &playlistName)
-{
-    viewingPlaylist = playlistName;
-    // Implementation would load the playlist view
 }
 
 void MainWindow::playSongAtVisibleIndex(int visibleIndex)
@@ -521,4 +519,82 @@ void MainWindow::filterSongsAndAlbums(const QString& text)
         );
 
    // }
+}
+
+void MainWindow::createPlaylistFromDialog(
+    const QString& name,
+    const QString& sourceImagePath
+)
+{
+    QDir().mkpath(appDataPath + "/playlistCovers");
+
+    QFileInfo info(sourceImagePath);
+
+    QString selectedImagePath =
+        "/playlistCovers/" +
+        QUuid::createUuid().toString(QUuid::WithoutBraces) +
+        "." +
+        info.suffix();
+
+    QString localSource = sourceImagePath;
+    if (localSource.startsWith("file://"))
+        localSource = QUrl(localSource).toLocalFile();
+
+    QFile::copy(
+        localSource,
+        appDataPath+selectedImagePath
+    );
+
+    playlistManager->createPlaylist(
+        name,
+        selectedImagePath
+    );
+
+    viewingPlaylist = name;
+
+}
+
+void MainWindow::loadPlaylistView(const QString& playlistName)
+{
+    int fontSize =
+        playlistManager->playlistTitleFontSize(
+            playlistName
+        );
+
+    QString coverPath = appDataPath + 
+        playlistManager->playlistImage(
+            playlistName
+        );
+
+    QList<int> songs = playlistManager->getPlaylistSongs(playlistName);
+    currentViewSongs.clear();
+    for (int libraryIndex : songs){
+        currentViewSongs.push_back(
+            libraryIndex
+        );
+    }
+
+    visibleSongs = currentViewSongs;
+
+    songModel->setSongs(
+        &library,
+        &visibleSongs
+    );
+    rebuildShufflePool();
+}
+
+void MainWindow::returnToLibrary(){
+    currentViewSongs.clear();
+
+    for (int i = 0; i < library.size(); i++){
+        currentViewSongs.push_back(i);
+    }
+
+    visibleSongs = currentViewSongs;
+
+    songModel->setSongs(
+        &library,
+        &visibleSongs
+    );
+    rebuildShufflePool();
 }
