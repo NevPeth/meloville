@@ -60,4 +60,12 @@ inline void registerIcons(SvgImageProvider& provider)
         QColor("#2d2d2d"),
         Qt::white,
         QSize(60, 60));
+
+    provider.registerGradientIcon(
+        "libraryIcon",                 // id used in QML
+        ":/icons/libraryIcon.svg",          // path to your SVG with {START_COLOR}, {STOP1}, etc.
+        QColor("#2a2a2a"),                   // start color
+        QColor("#666666"),                   // end color
+        QSize(60, 60)                        // logical size
+    );
 }

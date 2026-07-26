@@ -10,18 +10,23 @@ public:
     {
         enum class RenderType {
             SingleColor,
-            DualColor
+            DualColor,
+            GradientColor      // <-- new
         };
 
         QString path;
         RenderType renderType = RenderType::SingleColor;
 
-        // Single-color
+        // Single‑color
         QColor color;
 
-        // Dual-color
+        // Dual‑color
         QColor backgroundColor;
         QColor foregroundColor;
+
+        // Gradient
+        QColor startColor;
+        QColor endColor;
 
         QSize size;
     };
@@ -60,39 +65,38 @@ public:
         configs[id] = cfg;
     }
 
-    QImage requestImage(
+    void registerGradientIcon(
         const QString& id,
-        QSize* size,
-        const QSize& requestedSize
-    ){
+        const QString& path,
+        const QColor& startColor,
+        const QColor& endColor,
+        const QSize& size)
+    {
+        IconConfig cfg;
+        cfg.path = path;
+        cfg.renderType = IconConfig::RenderType::GradientColor;
+        cfg.startColor = startColor;
+        cfg.endColor = endColor;
+        cfg.size = size;
+        configs[id] = cfg;
+    }
+
+    QImage requestImage(const QString& id, QSize* size, const QSize& requestedSize) override
+    {
         const auto &cfg = configs[id];
-
         qreal dpr = qApp->primaryScreen()->devicePixelRatio();
-        QSize logicalSize = requestedSize.isValid()
-                                ? requestedSize
-                                : cfg.size;
-
-        if (size)
-            *size = logicalSize;
+        QSize logicalSize = requestedSize.isValid() ? requestedSize : cfg.size;
+        if (size) *size = logicalSize;
 
         switch (cfg.renderType)
         {
         case IconConfig::RenderType::SingleColor:
-            return SvgCreator::makeImage(
-                cfg.path,
-                cfg.color,
-                logicalSize,
-                dpr);
-
+            return SvgCreator::makeImage(cfg.path, cfg.color, logicalSize, dpr);
         case IconConfig::RenderType::DualColor:
-            return SvgCreator::colorizeSvgDual(
-                cfg.path,
-                cfg.backgroundColor,
-                cfg.foregroundColor,
-                logicalSize,
-                dpr);
+            return SvgCreator::colorizeSvgDual(cfg.path, cfg.backgroundColor, cfg.foregroundColor, logicalSize, dpr);
+        case IconConfig::RenderType::GradientColor:   // <-- new
+            return SvgCreator::colorizeGradientSvg(cfg.path, cfg.startColor, cfg.endColor, logicalSize, dpr);
         }
-
         return {};
     }
 

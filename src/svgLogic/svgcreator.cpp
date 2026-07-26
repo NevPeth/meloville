@@ -100,7 +100,7 @@ static QColor interpolateHsv(
     return QColor::fromHsvF(h, s, v, alpha);
 }
 
-QIcon SvgCreator::colorizeGradientSvg(
+QImage SvgCreator::colorizeGradientSvg(
     const QString& path,
     const QColor& startColor,
     const QColor& endColor,
@@ -108,11 +108,11 @@ QIcon SvgCreator::colorizeGradientSvg(
     qreal dpr)
 {
     QFile file(path);
-
     if (!file.open(QIODevice::ReadOnly))
         return {};
 
     QString svg = QString::fromUtf8(file.readAll());
+    file.close();
 
     const QColor stop1 = interpolateHsv(startColor, endColor, 0.22f);
     const QColor stop2 = interpolateHsv(startColor, endColor, 0.52f);
@@ -124,62 +124,16 @@ QIcon SvgCreator::colorizeGradientSvg(
     svg.replace("{STOP3}", stop3.name(QColor::HexRgb));
     svg.replace("{END_COLOR}", endColor.name(QColor::HexRgb));
 
-    QPixmap pixmap(size * dpr);
-    pixmap.setDevicePixelRatio(dpr);
-    pixmap.fill(Qt::transparent);
+    QImage image(size.width() * dpr, size.height() * dpr, QImage::Format_ARGB32_Premultiplied);
+    image.setDevicePixelRatio(dpr);
+    image.fill(Qt::transparent);
 
     QSvgRenderer renderer(svg.toUtf8());
-
-    QPainter painter(&pixmap);
+    QPainter painter(&image);
     painter.setRenderHint(QPainter::Antialiasing);
     painter.setRenderHint(QPainter::SmoothPixmapTransform);
-
-    renderer.render(
-        &painter,
-        QRectF(0, 0, size.width(), size.height()));
-
-    return QIcon(pixmap);
-}
-
-QIcon SvgCreator::colorizeAlbumSvg(
-    const QString& path,
-    const QColor& outerColor,
-    const QColor& ringColor,
-    const QColor& centerColor,
-    const QColor& dotColor,
-    const QSize& size,
-    const qreal dpr
-)
-{
-    QFile file(path);
-
-    if (!file.open(QIODevice::ReadOnly))
-        return {};
-
-    QString svg = QString::fromUtf8(file.readAll());
-    file.close();
-
-    svg.replace("{outer}", outerColor.name(), Qt::CaseInsensitive);
-    svg.replace("{rings}", ringColor.name(), Qt::CaseInsensitive);
-    svg.replace("{center}", centerColor.name(), Qt::CaseInsensitive);
-    svg.replace("{dot}", dotColor.name(), Qt::CaseInsensitive);
-
-    QPixmap pixmap(size.width() * dpr,
-                   size.height() * dpr);
-
-    pixmap.setDevicePixelRatio(dpr);
-    pixmap.fill(Qt::transparent);
-
-    QSvgRenderer renderer(svg.toUtf8());
-
-    QPainter painter(&pixmap);
-    painter.setRenderHint(QPainter::Antialiasing);
-    painter.setRenderHint(QPainter::SmoothPixmapTransform);
-
-    renderer.render(&painter,
-                    QRectF(0, 0, size.width(), size.height()));
-
+    renderer.render(&painter, QRectF(0, 0, size.width(), size.height()));
     painter.end();
 
-    return QIcon(pixmap);
+    return image;
 }

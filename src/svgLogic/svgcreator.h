@@ -19,21 +19,11 @@ public:
         const qreal dpr
     );
 
-    static QIcon colorizeGradientSvg(
+    static QImage colorizeGradientSvg(
         const QString& path,
         const QColor& startColor,
         const QColor& endColor,
         const QSize& size,
         qreal dpr
-    );
-
-    static QIcon colorizeAlbumSvg(
-        const QString& path,
-        const QColor& outerColor,
-        const QColor& ringColor,
-        const QColor& centerColor,
-        const QColor& dotColor,
-        const QSize& size,
-        const qreal dpr
     );
 };

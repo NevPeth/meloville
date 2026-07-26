@@ -125,12 +125,11 @@ ApplicationWindow {
 
                                 background: Item {}
 
-                                icon.source: "qrc:/icons/libraryIcon.svg"
                                 icon.width: libraryButtonSize
                                 icon.height: libraryButtonSize
 
                                 contentItem: Image {
-                                    source: btnLibrary.icon.source
+                                    source: "image://svgicons/libraryIcon"
                                     width: libraryButtonSize
                                     height: libraryButtonSize
                                     fillMode: Image.PreserveAspectFit
@@ -148,10 +147,12 @@ ApplicationWindow {
                                 clip: true
                                 ScrollBar.horizontal: ScrollBar { policy: ScrollBar.AlwaysOff }
                                 delegate: Rectangle {
-                                    width: 60
-                                    height: 60
-                                    radius: 8
+                                    width: 54
+                                    height: 54
+                                    radius: 4
                                     color: "transparent"
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    anchors.horizontalCenterOffset: 2
 
                                     // Highlight when this playlist is selected (optional)
                                     property bool isSelected: backend.viewingPlaylist === model.name
@@ -175,7 +176,7 @@ ApplicationWindow {
                                             maskSource: Rectangle {
                                                 width: playlistImage.width
                                                 height: playlistImage.height
-                                                radius: 8
+                                                radius: 4
                                             }
                                         }
                                     }
