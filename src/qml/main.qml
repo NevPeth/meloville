@@ -570,9 +570,9 @@ ApplicationWindow {
 
                                     Button {
                                         id: btnShuffle
-                                        Layout.preferredWidth: 42
-                                        Layout.preferredHeight: 30
-                                        Layout.rightMargin: 0
+                                        Layout.preferredWidth: 40
+                                        Layout.preferredHeight: 28
+                                        Layout.rightMargin: -5
                                         background: Item {}
                                         contentItem: Image {
                                             source: (btnShuffle.hovered || backend.shuffleMode)
@@ -644,9 +644,10 @@ ApplicationWindow {
                                     // btnRepeat
                                     Button {
                                         id: btnRepeat
-                                        Layout.preferredWidth: 44
-                                        Layout.preferredHeight: 44
-                                        Layout.leftMargin: 0
+                                        Layout.preferredWidth: 40
+                                        Layout.preferredHeight: 40
+                                        Layout.topMargin: 2
+                                        Layout.leftMargin: -5
                                         background: Item {}
                                         contentItem: Image {
                                             source: (btnRepeat.hovered || backend.repeatMode)
