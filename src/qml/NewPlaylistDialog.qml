@@ -203,6 +203,8 @@ Item {
                 Button {
                     id: confirmButton
                     text: mode === "create" ? "Create" : "Save"
+                    Layout.minimumWidth: 80
+                    Layout.minimumHeight: 30
                     background: Rectangle {
                         color: "white"
                         radius: 10
@@ -211,6 +213,8 @@ Item {
                         text: confirmButton.text
                         color: "black"
                         font.bold: true
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
                     }
                     onClicked: {
                         if (nameInput.text.trim() === "") return

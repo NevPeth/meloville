@@ -142,17 +142,19 @@ ApplicationWindow {
                                 id: listWidgetPlaylists
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
+                                Layout.topMargin: 0
                                 Layout.minimumWidth: 60
                                 Layout.maximumWidth: 60
                                 clip: true
+                                spacing: 7
                                 ScrollBar.horizontal: ScrollBar { policy: ScrollBar.AlwaysOff }
                                 delegate: Rectangle {
-                                    width: 54
-                                    height: 54
+                                    width: 53
+                                    height: 53
                                     radius: 4
                                     color: "transparent"
                                     anchors.horizontalCenter: parent.horizontalCenter
-                                    anchors.horizontalCenterOffset: 2
+                                    anchors.horizontalCenterOffset: 2.5
 
                                     // Highlight when this playlist is selected (optional)
                                     property bool isSelected: backend.viewingPlaylist === model.name
@@ -498,9 +500,9 @@ ApplicationWindow {
                         // LEFT — cover art + song info
                         Item {
                             id: leftSection
-                            Layout.preferredWidth: 300
-                            Layout.minimumWidth: 300
-                            Layout.maximumWidth: 300
+                            Layout.preferredWidth: 100
+                            Layout.minimumWidth: 100
+                            Layout.maximumWidth: 100
                             Layout.fillHeight: true
 
                             RowLayout {
@@ -554,6 +556,7 @@ ApplicationWindow {
                         // CENTER — playback controls + seek bar
                         Item {
                             id: centerSection
+                            anchors.centerIn: parent
                             Layout.fillWidth: true
                             Layout.fillHeight: true
 
