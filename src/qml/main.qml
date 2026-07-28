@@ -35,6 +35,57 @@ ApplicationWindow {
             // The backend will handle deletion; we might want to close playlist view if editing
         }
     }
+
+    SongContextMenu {
+        id: contextMenu
+
+        onAddToPlaylist: function(playlistName) {
+            backend.addToPlaylist(currentVisibleIndex, playlistName)
+        }
+        onRemoveFromPlaylist: backend.removeFromCurrentPlaylist(currentVisibleIndex)
+        onEditSong: backend.editCurrentSong(currentVisibleIndex)
+    }
+
+    Connections {
+        target: backend
+
+        // FIX 1: Renamed from onOpenSongContextMenuRequested — the signal in C++ is
+        // openContextMenuRequested, so Qt generates onOpenContextMenuRequested.
+        function onOpenContextMenuRequested(visibleIndex, x, y) {
+            contextMenu.currentVisibleIndex = visibleIndex
+            contextMenu.playlistModel = backend.playlistNames
+            contextMenu.showRemoveAction = backend.isInPlaylistView
+            contextMenu.filterText = ""
+
+            // FIX 2: Convert global screen coords to window-local coords.
+            // Popup.x/y are relative to the window's contentItem, not the screen.
+            var local = appWindow.contentItem.mapFromGlobal(x, y)
+
+            // FIX 3: contextMenu.height is 0 before layout. Use a fixed estimate
+            // for the overflow check so the flip-above logic works correctly.
+            var estimatedHeight = 300
+            var popupWidth = contextMenu.width  // width is fixed at 240, safe to read
+            var gap = 8
+
+            var posX = local.x - popupWidth
+            var posY = local.y + gap
+
+            // Flip above the click point if it would go off the bottom of the window
+            if (posY + estimatedHeight > appWindow.contentItem.height) {
+                posY = local.y - gap - estimatedHeight
+            }
+
+            // Clamp horizontally within the window
+            if (posX < 0) posX = 0
+            if (posX + popupWidth > appWindow.contentItem.width)
+                posX = appWindow.contentItem.width - popupWidth
+
+            contextMenu.x = posX
+            contextMenu.y = posY
+
+            contextMenu.open()
+        }
+    }
     
     Component {
         id: loadPageComponent
@@ -464,11 +515,8 @@ ApplicationWindow {
                                     MouseArea {
                                         anchors.fill: parent
                                         onClicked: {
-                                            // Map item-local position to global for a context menu,
-                                            // mirroring menuRequested() in the C++ delegate.
                                             var globalPos = menuArea.mapToGlobal(0, 0)
-                                            backend.showContextMenu(index, globalPos.x, globalPos.y)
-                                            // expose a Q_INVOKABLE showContextMenu(int, int, int) in MainWindow
+                                            backend.openSongContextMenu(index, globalPos.x, globalPos.y)
                                         }
                                     }
                                 }

@@ -10,6 +10,7 @@
 #include <QStandardPaths>
 #include <QFileInfo>
 #include <QRandomGenerator>
+#include <QTimer>
 #include <algorithm>
 
 MainWindow::MainWindow(QObject *parent)
@@ -18,6 +19,13 @@ MainWindow::MainWindow(QObject *parent)
     appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     songModel = new SongModel(this);
     playlistManager = new PlaylistManager(this);
+
+    connect(playlistManager, &PlaylistManager::playlistCreated,
+            this, &MainWindow::updatePlaylistNames);
+    connect(playlistManager, &PlaylistManager::playlistDeleted,
+            this, &MainWindow::updatePlaylistNames);
+    connect(playlistManager, &PlaylistManager::playlistChanged,
+            this, &MainWindow::updatePlaylistNames);
 
     playbackController = new PlaybackController(this);
     connect(playbackController, &PlaybackController::songFinished,
@@ -48,6 +56,7 @@ MainWindow::MainWindow(QObject *parent)
     loadLibrary();
     playlistManager->setPath(appDataPath);
     playlistManager->loadPlaylists(library, true);
+    updatePlaylistNames();
 
     playlistModel = new PlaylistModel(playlistManager, this);
 }
@@ -289,6 +298,13 @@ void MainWindow::playSongAtVisibleIndex(int visibleIndex)
     currentVisibleIndex = visibleIndex;
     currentLibraryIndex = libraryIndex;
     emit currentLibraryIndexChanged();
+
+    if (isInPlaylistView){
+        currentlyPlayingPlaylist = viewingPlaylist;
+    }else{
+        currentlyPlayingPlaylist = QString();
+    }
+    
 
     // Update model's playing index (if your SongModel supports it)
     // songModel->setPlayingIndex(libraryIndex);
@@ -556,6 +572,9 @@ void MainWindow::createPlaylistFromDialog(
 
 void MainWindow::loadPlaylistView(const QString& playlistName)
 {
+    isInPlaylistView = true;
+    viewingPlaylist = playlistName;
+    emit isInPlaylistViewChanged();
     int fontSize =
         playlistManager->playlistTitleFontSize(
             playlistName
@@ -585,6 +604,8 @@ void MainWindow::loadPlaylistView(const QString& playlistName)
 
 void MainWindow::returnToLibrary(){
     currentViewSongs.clear();
+    viewingPlaylist = QString();
+    isInPlaylistView = false;
 
     for (int i = 0; i < library.size(); i++){
         currentViewSongs.push_back(i);
@@ -597,4 +618,71 @@ void MainWindow::returnToLibrary(){
         &visibleSongs
     );
     rebuildShufflePool();
+}
+
+void MainWindow::openSongContextMenu(int visibleIndex, int x, int y)
+{
+    if (visibleIndex < 0 || visibleIndex >= visibleSongs.size())
+        return;
+    
+    // Update playlist names (in case they changed)
+    updatePlaylistNames();
+    
+    // Ask QML to open the popup with the visible index and position
+    emit openContextMenuRequested(visibleIndex, x, y);
+}
+
+void MainWindow::addToPlaylist(int visibleIndex, const QString& playlistName)
+{
+    if (visibleIndex < 0 || visibleIndex >= visibleSongs.size())
+        return;
+    
+    int libraryIndex = visibleSongs[visibleIndex];
+    const SongData& song = library[libraryIndex];
+    
+    playlistManager->addSongToPlaylist(playlistName, libraryIndex, song);
+    
+    // Update other state
+    if (playlistName == currentlyPlayingPlaylist)
+        currentPlaybackSongs.push_back(libraryIndex);
+    if (shuffleMode)
+        unplayedIndices.append(libraryIndex);
+    
+    // Optionally emit signals to update UI
+}
+
+void MainWindow::editCurrentSong(int visibleIndex)
+{
+    if (visibleIndex < 0 || visibleIndex >= visibleSongs.size()) return;
+    
+    int libraryIndex = visibleSongs[visibleIndex];
+    SongData& song = library[libraryIndex];
+    
+    // TODO Paste rest of code from my old stuff
+}
+
+void MainWindow::removeFromCurrentPlaylist(int visibleIndex)
+{
+    if (!isInPlaylistView) return;
+    if (visibleIndex < 0 || visibleIndex >= visibleSongs.size()) return;
+    
+    int libraryIndex = visibleSongs[visibleIndex];
+    
+    // Use timer to avoid segfault (as in your original code)
+    QTimer::singleShot(0, this, [this, libraryIndex]() {
+        playlistManager->removeSongFromPlaylist(viewingPlaylist, libraryIndex);
+        loadPlaylistView(viewingPlaylist);
+        // Update all the lists
+        visibleSongs = currentPlaybackSongs; // Assuming currentViewSongs is same
+        unplayedIndices.removeOne(libraryIndex);
+        playHistory.removeAll(libraryIndex);
+        nextUp.removeOne(libraryIndex);
+        updatePlaylistNames();
+    });
+}
+
+void MainWindow::updatePlaylistNames()
+{
+    playlistNames = playlistManager->playlistNames();
+    emit playlistNamesChanged();
 }

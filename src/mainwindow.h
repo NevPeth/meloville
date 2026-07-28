@@ -22,7 +22,6 @@ class MainWindow : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(SongModel* songModel READ getSongModel CONSTANT)
-    Q_PROPERTY(bool playlistIsInView READ getPlaylistIsInView NOTIFY playlistChanged)
     Q_PROPERTY(double progress READ getProgress NOTIFY progressChanged)
     Q_PROPERTY(QString statusMessage READ getStatusMessage NOTIFY statusMessageChanged)
     Q_PROPERTY(bool scanning READ getScanning NOTIFY scanningChanged)
@@ -38,17 +37,17 @@ class MainWindow : public QObject
     Q_PROPERTY(bool shuffleMode READ getShuffleMode NOTIFY shuffleModeChanged)
     Q_PROPERTY(int volume READ getVolume WRITE setVolume NOTIFY volumeChanged)
     Q_PROPERTY(bool playing READ getPlaying NOTIFY playingChanged)
-
     Q_PROPERTY(QString viewingPlaylist READ getViewingPlaylist NOTIFY viewingPlaylistChanged)
     Q_PROPERTY(PlaylistManager* playlistManager READ getPlaylistManager CONSTANT)
     Q_PROPERTY(PlaylistModel* playlistModel READ getPlaylistModel CONSTANT)
+    Q_PROPERTY(QStringList playlistNames READ getPlaylistNames NOTIFY playlistNamesChanged)
+    Q_PROPERTY(bool isInPlaylistView READ getIsInPlaylistView NOTIFY isInPlaylistViewChanged)
 
 public:
     explicit MainWindow(QObject *parent = nullptr);
     ~MainWindow();
 
     SongModel* getSongModel() const { return songModel; }
-    bool getPlaylistIsInView() const { return playlistIsInView; }
 
     Q_INVOKABLE void openFolder();
     Q_INVOKABLE void saveLibrary();
@@ -64,6 +63,11 @@ public:
     Q_INVOKABLE void createPlaylistFromDialog(const QString& name, const QString& sourceImagePath);
     Q_INVOKABLE void loadPlaylistView(const QString& playlistName);
     Q_INVOKABLE void returnToLibrary();
+
+    Q_INVOKABLE void openSongContextMenu(int visibleIndex, int x, int y);
+    Q_INVOKABLE void addToPlaylist(int visibleIndex, const QString& playlistName);
+    Q_INVOKABLE void removeFromCurrentPlaylist(int visibleIndex);
+    Q_INVOKABLE void editCurrentSong(int visibleIndex);
 
     double getProgress() const { return progress; }
     PlaylistModel* getPlaylistModel() const { return playlistModel; }
@@ -93,13 +97,15 @@ public:
     }
     qint64 getPlayerPosition() const { return playerPosition; }
     qint64 getPlayerDuration() const { return playerDuration; }
-
     int getVolume() const;
     void setVolume(int vol);
     bool getPlaying() const { return playing; }
     void setPlaying(bool p);
     QString getViewingPlaylist() const { return viewingPlaylist; }
     PlaylistManager* getPlaylistManager() const { return playlistManager; }
+
+    QStringList getPlaylistNames() const { return playlistNames; }
+    bool getIsInPlaylistView() const { return isInPlaylistView; }
 
 public slots:
     void onScanProgress(int current, int total);
@@ -109,6 +115,8 @@ public slots:
 private slots:
     void playSong(int libraryIndex);
     void rebuildShufflePool();
+
+    void updatePlaylistNames();
 
 signals:
     void playlistChanged();
@@ -126,8 +134,11 @@ signals:
     void shuffleModeChanged();
     void volumeChanged(int vol);
     void playingChanged(bool playing);
-
     void viewingPlaylistChanged();
+
+    void playlistNamesChanged();
+    void isInPlaylistViewChanged();
+    void openContextMenuRequested(int visibleIndex, int x, int y);
 
 private:
     static bool songTitleLess(const SongData &a, const SongData &b);
@@ -138,7 +149,7 @@ private:
     QVector<int> currentPlaybackSongs;
     QString currentMusicFolder;
     QString appDataPath;
-    bool playlistIsInView = false;
+    bool isInPlaylistView = false;
     QString viewingPlaylist;
     SongModel *songModel = nullptr;
     PlaylistManager *playlistManager = nullptr;
@@ -161,6 +172,9 @@ private:
     bool repeatMode = false;
     bool playing = false;
     PlaylistModel *playlistModel = nullptr;
+
+    QString currentlyPlayingPlaylist;
+    QVector<QString> playlistNames;
 };
 
 #endif // MAINWINDOW_H

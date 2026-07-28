@@ -4,6 +4,7 @@
         <file>qml/LoadPage.qml</file>
         <file>qml/LoadedSongsPage.qml</file>
         <file>qml/NewPlaylistDialog.qml</file>
+        <file>qml/SongContextMenu.qml</file>
     </qresource>
     <qresource prefix="/">
         <file>icons/addPlaylistsIcon.svg</file>
