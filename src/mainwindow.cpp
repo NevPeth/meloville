@@ -673,7 +673,8 @@ void MainWindow::removeFromCurrentPlaylist(int visibleIndex)
         playlistManager->removeSongFromPlaylist(viewingPlaylist, libraryIndex);
         loadPlaylistView(viewingPlaylist);
         // Update all the lists
-        visibleSongs = currentPlaybackSongs; // Assuming currentViewSongs is same
+        currentPlaybackSongs = currentViewSongs;
+        visibleSongs = currentViewSongs;
         unplayedIndices.removeOne(libraryIndex);
         playHistory.removeAll(libraryIndex);
         nextUp.removeOne(libraryIndex);

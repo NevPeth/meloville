@@ -1,4 +1,3 @@
-// SongContextMenu.qml
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
@@ -10,34 +9,34 @@ Popup {
 
     property int currentVisibleIndex: -1
     property var playlistModel: []
-    property bool showRemoveAction: false   // kept for compatibility
+    property bool showRemoveAction: false
     property string filterText: ""
 
     signal addToPlaylist(string playlistName)
     signal removeFromPlaylist()
     signal editSong()
 
-    width: 240
-    implicitHeight: columnLayout.implicitHeight + 20
+    width: 210
+    implicitHeight: columnLayout.implicitHeight
+    padding: 0
 
     background: Rectangle {
         color: "#121212"
-        radius: 4
-        border.color: "#333333"
-        border.width: 1
     }
 
     ColumnLayout {
         id: columnLayout
         anchors.fill: parent
-        anchors.margins: 4
         spacing: 0
 
-        // "Add to playlist" – hover opens submenu
+        // ----- "Add to playlist" -----
         ItemDelegate {
             id: addToPlaylistDelegate
             Layout.fillWidth: true
-            height: 32
+            leftPadding: 24
+            rightPadding: 24
+            topPadding: 8
+            bottomPadding: 8
             font.pixelSize: 14
 
             contentItem: RowLayout {
@@ -75,12 +74,15 @@ Popup {
             color: "#333333"
         }
 
-        // "Edit playlist" – click action
+        // ----- "Edit playlist" -----
         ItemDelegate {
             Layout.fillWidth: true
-            height: 32
-            text: "Edit playlist"
+            leftPadding: 24
+            rightPadding: 24
+            topPadding: 8
+            bottomPadding: 8
             font.pixelSize: 14
+            text: "Edit playlist"
 
             contentItem: Text {
                 text: parent.text
@@ -99,9 +101,38 @@ Popup {
                 popup.close()
             }
         }
+
+        // ----- "Remove from this playlist" -----
+        ItemDelegate {
+            visible: popup.showRemoveAction
+            Layout.fillWidth: true
+            leftPadding: 24
+            rightPadding: 24
+            topPadding: 8
+            bottomPadding: 8
+            font.pixelSize: 14
+            text: "Remove from playlist"
+
+            contentItem: Text {
+                text: parent.text
+                font: parent.font
+                elide: Text.ElideRight
+                verticalAlignment: Text.AlignVCenter
+                color: "white"
+            }
+
+            background: Rectangle {
+                color: parent.hovered ? "#222222" : "transparent"
+            }
+
+            onClicked: {
+                popup.removeFromPlaylist()
+                popup.close()
+            }
+        }
     }
 
-    // ---- Submenu (playlist list) ----
+    // ---- Submenu ----
     Popup {
         id: subMenu
         modal: false
@@ -109,23 +140,22 @@ Popup {
         parent: popup.parent
         z: 1
 
-        x: popup.x - width - 2
-        y: popup.y + 4
+        x: popup.x - width
+        y: popup.y
 
         width: 240
         height: Math.min(400, Math.max(200, subContent.implicitHeight + 20))
+        padding: 0
+
+        property bool containsMouse: false
 
         background: Rectangle {
             color: "#121212"
-            radius: 4
-            border.color: "#333333"
-            border.width: 1
         }
 
         ColumnLayout {
             id: subContent
             anchors.fill: parent
-            anchors.margins: 4
             spacing: 0
 
             TextField {
@@ -176,9 +206,12 @@ Popup {
                 model: filteredModel
                 delegate: ItemDelegate {
                     width: listView.width
-                    height: 32
-                    text: modelData
+                    leftPadding: 24
+                    rightPadding: 24
+                    topPadding: 8
+                    bottomPadding: 8
                     font.pixelSize: 14
+                    text: modelData
 
                     contentItem: Text {
                         text: parent.text
@@ -221,22 +254,36 @@ Popup {
             }
         }
 
-        // Mouse area to detect hover inside the submenu without blocking clicks
         MouseArea {
             anchors.fill: parent
             hoverEnabled: true
             preventStealing: false
             propagateComposedEvents: true
-            acceptedButtons: Qt.NoButton   // do not consume mouse button events
+            acceptedButtons: Qt.NoButton
 
-            onEntered: closeTimer.stop()
-            onExited: closeTimer.start()
+            onEntered: {
+                subMenu.containsMouse = true   // FIX #1
+                closeTimer.stop()
+            }
+            onExited: {
+                subMenu.containsMouse = false  // FIX #1
+                if (!addToPlaylistDelegate.hovered) {
+                    closeTimer.start()
+                }
+            }
+        }
+
+        onOpened: closeTimer.stop()
+        onClosed: {
+            subMenu.containsMouse = false
+            closeTimer.stop()
         }
 
         Timer {
             id: closeTimer
-            interval: 200
+            interval: 300   // FIX #2: slightly more forgiving for quick movements
             onTriggered: {
+                // FIX #1: now actually checks the submenu hover state
                 if (!addToPlaylistDelegate.hovered && !subMenu.containsMouse) {
                     subMenu.close()
                 }
