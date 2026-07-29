@@ -273,9 +273,8 @@ Popup {
 
         Timer {
             id: closeTimer
-            interval: 300   // FIX #2: slightly more forgiving for quick movements
+            interval: 200
             onTriggered: {
-                // FIX #1: now actually checks the submenu hover state
                 if (!addToPlaylistDelegate.hovered && !subMenu.containsMouse) {
                     subMenu.close()
                 }

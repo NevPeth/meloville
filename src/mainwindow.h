@@ -63,11 +63,12 @@ public:
     Q_INVOKABLE void createPlaylistFromDialog(const QString& name, const QString& sourceImagePath);
     Q_INVOKABLE void loadPlaylistView(const QString& playlistName);
     Q_INVOKABLE void returnToLibrary();
-
     Q_INVOKABLE void openSongContextMenu(int visibleIndex, int x, int y);
     Q_INVOKABLE void addToPlaylist(int visibleIndex, const QString& playlistName);
     Q_INVOKABLE void removeFromCurrentPlaylist(int visibleIndex);
     Q_INVOKABLE void editCurrentSong(int visibleIndex);
+
+    Q_INVOKABLE void jumpToCurrentSong();
 
     double getProgress() const { return progress; }
     PlaylistModel* getPlaylistModel() const { return playlistModel; }
@@ -135,10 +136,10 @@ signals:
     void volumeChanged(int vol);
     void playingChanged(bool playing);
     void viewingPlaylistChanged();
-
     void playlistNamesChanged();
     void isInPlaylistViewChanged();
     void openContextMenuRequested(int visibleIndex, int x, int y);
+    void jumpToSongIndex(int visibleIndex);
 
 private:
     static bool songTitleLess(const SongData &a, const SongData &b);

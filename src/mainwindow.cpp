@@ -687,3 +687,27 @@ void MainWindow::updatePlaylistNames()
     playlistNames = playlistManager->playlistNames();
     emit playlistNamesChanged();
 }
+
+void MainWindow::jumpToCurrentSong()
+{
+    if (currentLibraryIndex < 0)
+        return;
+
+    if (!currentlyPlayingPlaylist.isEmpty())
+        loadPlaylistView(currentlyPlayingPlaylist);
+    // else if(!currentlyPlayingAlbum.isEmpty())
+    //     loadAlbumView(currentlyPlayingAlbum, currentlyPlayingAlbumArtist, currentlyPlayingAlbumCoverPath);
+    else
+        returnToLibrary();
+
+    // Find the song in the active view.
+    int visibleIndex = visibleSongs.indexOf(currentLibraryIndex);
+    if (visibleIndex < 0)
+        return;
+
+    QModelIndex index = songModel->index(visibleIndex, 0);
+
+    // songModel->setActiveIndex(currentLibraryIndex);
+    //try index afterwards if vis index doesn't work
+    emit jumpToSongIndex(visibleIndex);
+}

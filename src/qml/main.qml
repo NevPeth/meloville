@@ -526,6 +526,14 @@ ApplicationWindow {
                                     id: hoverHandler
                                 }
                             }
+
+                            Connections {
+                                target: backend
+                                function onJumpToSongIndex(visibleIndex) {
+                                    listViewSongs.positionViewAtIndex(visibleIndex, ListView.Center)
+                                    listViewSongs.currentIndex = visibleIndex
+                                }
+                            }
                         }
                     }
                 }
@@ -910,6 +918,7 @@ ApplicationWindow {
                                                 : "image://svgicons/jumpToCurrentSongIconNormal"
                                             fillMode: Image.PreserveAspectFit
                                         }
+                                        onClicked: backend.jumpToCurrentSong()
                                     }
 
                                     Button {
