@@ -141,7 +141,7 @@ Popup {
         z: 1
 
         x: popup.x - width
-        y: popup.y
+        y: popup.y - 35
 
         width: 240
         height: Math.min(400, Math.max(200, subContent.implicitHeight + 20))
@@ -254,20 +254,12 @@ Popup {
             }
         }
 
-        MouseArea {
-            anchors.fill: parent
-            hoverEnabled: true
-            preventStealing: false
-            propagateComposedEvents: true
-            acceptedButtons: Qt.NoButton
-
-            onEntered: {
-                subMenu.containsMouse = true   // FIX #1
-                closeTimer.stop()
-            }
-            onExited: {
-                subMenu.containsMouse = false  // FIX #1
-                if (!addToPlaylistDelegate.hovered) {
+        HoverHandler {
+            onHoveredChanged: {
+                subMenu.containsMouse = hovered
+                if (hovered) {
+                    closeTimer.stop()
+                } else if (!addToPlaylistDelegate.hovered) {
                     closeTimer.start()
                 }
             }
