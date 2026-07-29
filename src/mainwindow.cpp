@@ -305,9 +305,8 @@ void MainWindow::playSongAtVisibleIndex(int visibleIndex)
         currentlyPlayingPlaylist = QString();
     }
     
-
-    // Update model's playing index (if your SongModel supports it)
-    // songModel->setPlayingIndex(libraryIndex);
+    while (!playHistory.isEmpty())
+        playHistory.pop_back();
 
     playSong(libraryIndex);
 }
@@ -438,12 +437,10 @@ void MainWindow::seekTo(qint64 positionMs){ playbackController->player()->setPos
 
 void MainWindow::rebuildShufflePool()
 {
-    if (shuffleMode)
-    {
+    if (shuffleMode){
         unplayedIndices.clear();
 
-        for (int libraryIndex : currentPlaybackSongs)
-        {
+        for (int libraryIndex : currentPlaybackSongs){
             unplayedIndices.append(
                 libraryIndex
             );
@@ -479,7 +476,6 @@ int MainWindow::getVolume() const
 void MainWindow::setVolume(int vol)
 {
     playbackController->setVolume(vol);
-    // volumeChanged will be emitted from playbackController, which will trigger our signal.
 }
 
 void MainWindow::setPlaying(bool p)
@@ -546,27 +542,28 @@ void MainWindow::createPlaylistFromDialog(
 
     QFileInfo info(sourceImagePath);
 
-    QString selectedImagePath =
-        "/playlistCovers/" +
-        QUuid::createUuid().toString(QUuid::WithoutBraces) +
-        "." +
-        info.suffix();
+    QString selectedImagePath = "";
+    if (!sourceImagePath.isEmpty()){
+        QString selectedImagePath =
+            "/playlistCovers/" +
+            QUuid::createUuid().toString(QUuid::WithoutBraces) +
+            "." +
+            info.suffix();
+    
+        QString localSource = sourceImagePath;
+        if (localSource.startsWith("file://"))
+            localSource = QUrl(localSource).toLocalFile();
 
-    QString localSource = sourceImagePath;
-    if (localSource.startsWith("file://"))
-        localSource = QUrl(localSource).toLocalFile();
-
-    QFile::copy(
-        localSource,
-        appDataPath+selectedImagePath
-    );
+        QFile::copy(
+            localSource,
+            appDataPath+selectedImagePath
+        );
+    }
 
     playlistManager->createPlaylist(
         name,
         selectedImagePath
     );
-
-    viewingPlaylist = name;
 
 }
 
@@ -704,6 +701,6 @@ void MainWindow::jumpToCurrentSong()
     int visibleIndex = visibleSongs.indexOf(currentLibraryIndex);
     if (visibleIndex < 0)
         return;
-    
+
     emit jumpToSongIndex(visibleIndex);
 }
