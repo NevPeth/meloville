@@ -177,7 +177,7 @@ Popup {
                     anchors.verticalCenter: parent.verticalCenter
                     width: 16
                     height: 16
-                    source: "qrc:/icons/closeIcon.svg"
+                    source: "image://svgicons/closeIcon"
                     visible: parent.text.length > 0
                     opacity: 0.5
                     MouseArea {

@@ -100,6 +100,13 @@ ApplicationWindow {
             }
         }
     }
+
+    Component {
+        id: bigPicturePageComponent
+        BigPicturePage {
+            onExitBigPicture: stackView.pop()
+        }
+    }
     property int playlistButtonSize: 65
     property int libraryButtonSize: 65
     Component {
@@ -947,6 +954,8 @@ ApplicationWindow {
                                                 : "image://svgicons/bigPictureIconNormal"
                                             fillMode: Image.PreserveAspectFit
                                         }
+
+                                        onClicked: stackView.push(bigPicturePageComponent)
                                     }
 
                                     Button {

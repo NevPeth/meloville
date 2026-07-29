@@ -704,10 +704,6 @@ void MainWindow::jumpToCurrentSong()
     int visibleIndex = visibleSongs.indexOf(currentLibraryIndex);
     if (visibleIndex < 0)
         return;
-
-    QModelIndex index = songModel->index(visibleIndex, 0);
-
-    // songModel->setActiveIndex(currentLibraryIndex);
-    //try index afterwards if vis index doesn't work
+    
     emit jumpToSongIndex(visibleIndex);
 }
