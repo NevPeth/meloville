@@ -49,22 +49,16 @@ ApplicationWindow {
     Connections {
         target: backend
 
-        // FIX 1: Renamed from onOpenSongContextMenuRequested — the signal in C++ is
-        // openContextMenuRequested, so Qt generates onOpenContextMenuRequested.
         function onOpenContextMenuRequested(visibleIndex, x, y) {
             contextMenu.currentVisibleIndex = visibleIndex
             contextMenu.playlistModel = backend.playlistNames
             contextMenu.showRemoveAction = backend.isInPlaylistView
             contextMenu.filterText = ""
 
-            // FIX 2: Convert global screen coords to window-local coords.
-            // Popup.x/y are relative to the window's contentItem, not the screen.
             var local = appWindow.contentItem.mapFromGlobal(x, y)
 
-            // FIX 3: contextMenu.height is 0 before layout. Use a fixed estimate
-            // for the overflow check so the flip-above logic works correctly.
             var estimatedHeight = 300
-            var popupWidth = contextMenu.width  // width is fixed at 240, safe to read
+            var popupWidth = contextMenu.width
             var gap = 8
 
             var posX = local.x - popupWidth
@@ -109,6 +103,8 @@ ApplicationWindow {
     }
     property int playlistButtonSize: 65
     property int libraryButtonSize: 65
+    property string currentPlaylistName: ""
+    property string currentPlaylistCover: ""
     Component {
         id: mainPageComponent
         Rectangle {
@@ -285,7 +281,6 @@ ApplicationWindow {
                                 anchors.leftMargin: 8
                                 anchors.rightMargin: 8
 
-                                // currentLibraryLabel
                                 Text {
                                     id: currentLibraryLabel
                                     text: "Library"
@@ -339,66 +334,143 @@ ApplicationWindow {
                             ScrollBar.vertical:   ScrollBar { policy: ScrollBar.AsNeeded }
                             ScrollBar.horizontal: ScrollBar { policy: ScrollBar.AsNeeded }
 
-                            model: backend.songModel
 
-                            TapHandler {
-                                onTapped: searchField.focus = false
-                            }
+                            // ----- Pixel‑accurate scrolling on Wayland -----
+                            pixelAligned: true
 
-                            property real scrollVelocity: 0
+                            boundsBehavior: Flickable.StopAtBounds
+                            boundsMovement: Flickable.StopAtBounds
 
-                            Timer {
-                                id: momentum
-                                interval: 16
-                                repeat: true
-
-                                onTriggered: {
-                                    listViewSongs.contentY -= listViewSongs.scrollVelocity
-
-                                    // Clamp to valid scroll bounds
-                                    var minY = 0
-                                    var maxY = Math.max(0, listViewSongs.contentHeight - listViewSongs.height)
-
-                                    if (listViewSongs.contentY < minY) {
-                                        listViewSongs.contentY = minY
-                                        listViewSongs.scrollVelocity = 0
-                                        stop()
-                                    } else if (listViewSongs.contentY > maxY) {
-                                        listViewSongs.contentY = maxY
-                                        listViewSongs.scrollVelocity = 0
-                                        stop()
-                                    }
-
-                                    listViewSongs.scrollVelocity *= 0.84
-
-                                    if (Math.abs(listViewSongs.scrollVelocity) < 0.04) {
-                                        stop()
-                                        listViewSongs.scrollVelocity = 0
-                                    }
-                                }
-                            }
+                            property real velocity: 0
+                            property real threshold: 40
 
                             WheelHandler {
                                 acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
 
                                 onWheel: function(event) {
-
                                     var delta = event.pixelDelta.y !== 0
                                             ? event.pixelDelta.y
-                                            : event.angleDelta.y / 8
+                                            : event.angleDelta.y / 4
 
-                                    listViewSongs.scrollVelocity += delta * 0.44
-
-                                    listViewSongs.scrollVelocity = Math.max(
-                                        -1020,
-                                        Math.min(1020, listViewSongs.scrollVelocity)
-                                    )
-
-                                    if (!momentum.running)
-                                        momentum.start()
+                                    if (Math.abs(delta) < listViewSongs.threshold) {
+                                        // Small gestures stop almost immediately.
+                                        listViewSongs.velocity += delta
+                                    } else {
+                                        // Larger gestures get extra momentum.
+                                        var excess = Math.abs(delta) - listViewSongs.threshold
+                                        listViewSongs.velocity += delta + Math.sign(delta) * excess * 0.8
+                                    }
 
                                     event.accepted = true
                                 }
+                            }
+
+                            Timer {
+                                interval: 8
+                                running: true
+                                repeat: true
+
+                                onTriggered: {
+                                    if (Math.abs(listViewSongs.velocity) < 0.05) {
+                                        listViewSongs.velocity = 0
+                                        return
+                                    }
+
+                                    listViewSongs.contentY -= listViewSongs.velocity
+
+                                    if (Math.abs(listViewSongs.velocity) < listViewSongs.threshold)
+                                        listViewSongs.velocity *= 0.55    // stop quickly
+                                    else
+                                        listViewSongs.velocity *= 0.90    // glide
+                                }
+                            }
+
+                            Connections {
+                                target: backend
+                                function onIsInPlaylistViewChanged() {
+                                    listViewSongs.contentY = 0
+                                }
+                            }
+
+                            model: backend.songModel
+
+                            // ── Playlist hero header ─────────────────────────────────────────
+                            header: backend.isInPlaylistView ? playlistHeroComponent : null
+
+                            Component {
+                                id: playlistHeroComponent
+
+                                Item {
+                                    id: playlistHero
+                                    width:  ListView.width
+                                    height: 200
+
+                                    Rectangle {
+                                        anchors.fill: parent
+                                        color: "#111111"
+                                    }
+
+                                    Image {
+                                        id: heroCover
+                                        x: 20
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        width: 150; height: 150
+                                        fillMode: Image.PreserveAspectCrop
+                                        source: currentPlaylistCover
+                                                ? "file://" + currentPlaylistCover
+                                                : "qrc:/images/default_cover.png"
+                                        opacity: 1.0// - playlistHero.fadeFraction
+                                        layer.enabled: true
+                                        layer.effect: OpacityMask {
+                                            maskSource: Rectangle {
+                                                width: heroCover.width; height: heroCover.height
+                                                radius: 8
+                                            }
+                                        }
+                                    }
+
+                                    Column {
+                                        anchors.left:           heroCover.right
+                                        anchors.leftMargin:     20
+                                        anchors.right:          parent.right
+                                        anchors.rightMargin:    20
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        spacing: 6
+                                        opacity: 1.0
+
+                                        Text {
+                                            text: "Playlist"
+                                            color: "#888888"
+                                            font.pixelSize: 12
+                                            font.letterSpacing: 1.5
+                                        }
+                                        Text {
+                                            width: parent.width
+                                            text: currentPlaylistName
+                                            color: "white"
+                                            font.pixelSize: 28
+                                            font.bold: true
+                                            wrapMode: Text.Wrap
+                                            maximumLineCount: 2
+                                            elide: Text.ElideRight
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        anchors.bottom: parent.bottom
+                                        width: parent.width
+                                        height: 48
+                                        opacity: 1.0
+                                        gradient: Gradient {
+                                            GradientStop { position: 0.0; color: "transparent" }
+                                            GradientStop { position: 1.0; color: "#181818" }
+                                        }
+                                    }
+                                }
+                            }
+
+                            TapHandler {
+                                onTapped: searchField.focus = false
                             }
 
                             delegate: Rectangle {
@@ -975,6 +1047,18 @@ ApplicationWindow {
                                 }
                             }
                         }
+                    }
+                }
+            }
+
+            Connections {
+                target: backend
+                function onIsInPlaylistViewChanged() {
+                    currentPlaylistName = backend.viewingPlaylist
+                    if (backend.playlistManager) {
+                        currentPlaylistCover = backend.playlistManager.fullImagePath(backend.viewingPlaylist)
+                    } else {
+                        currentPlaylistCover = ""
                     }
                 }
             }
