@@ -603,6 +603,7 @@ void MainWindow::returnToLibrary(){
     currentViewSongs.clear();
     viewingPlaylist = QString();
     isInPlaylistView = false;
+    emit isInPlaylistViewChanged();
 
     for (int i = 0; i < library.size(); i++){
         currentViewSongs.push_back(i);

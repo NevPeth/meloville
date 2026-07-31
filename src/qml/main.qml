@@ -266,13 +266,13 @@ ApplicationWindow {
 
                         // albumInfo — visible: false on startup, omitted
 
-                        // libraryHeader
                         Rectangle {
                             id: libraryHeader
                             Layout.fillWidth: true
                             Layout.preferredHeight: 50
                             Layout.minimumHeight: 50
                             Layout.maximumHeight: 50
+                            visible: !backend.isInPlaylistView
                             color: "transparent"
 
                             RowLayout {
@@ -452,7 +452,6 @@ ApplicationWindow {
                                             font.bold: true
                                             wrapMode: Text.Wrap
                                             maximumLineCount: 2
-                                            elide: Text.ElideRight
                                         }
                                     }
 
@@ -1055,6 +1054,7 @@ ApplicationWindow {
                 target: backend
                 function onIsInPlaylistViewChanged() {
                     currentPlaylistName = backend.viewingPlaylist
+                    console.log(currentPlaylistName)
                     if (backend.playlistManager) {
                         currentPlaylistCover = backend.playlistManager.fullImagePath(backend.viewingPlaylist)
                     } else {
