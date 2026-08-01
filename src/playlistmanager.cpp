@@ -24,7 +24,6 @@ void PlaylistManager::createPlaylist(
     playlists[name] = {};
     playlistDefinitions[name] = {};
     playlistImages[name] = imagePath;
-    playlistTitleFontSizes[name] = calculateTitleSize(name);
 
     playlistOrder.append(name);
 
@@ -131,10 +130,6 @@ QString PlaylistManager::playlistImage(
     );
 }
 
-int PlaylistManager::playlistTitleFontSize(const QString& playlist) const{
-    return playlistTitleFontSizes.value(playlist, 60);
-}
-
 void PlaylistManager::setPath(const QString& path){
     playlistPath = path;
 }
@@ -155,7 +150,6 @@ void PlaylistManager::savePlaylists()
     for (const QString& playlist : playlistOrder){
         QJsonObject playlistObject;
         playlistObject["image"] = playlistImages.value(playlist);
-        playlistObject["titleFontSize"] = playlistTitleFontSizes.value(playlist);
         QJsonArray songs;
         for (const PlaylistSong& song : playlistDefinitions.value(playlist)){
             QJsonObject songObject;
@@ -211,7 +205,6 @@ void PlaylistManager::loadPlaylists(
         QJsonObject playlistObject = playlistsObject[playlist].toObject();
 
         playlistImages[playlist] = playlistObject["image"].toString();
-        playlistTitleFontSizes[playlist] = playlistObject["titleFontSize"].toInt();
 
         QList<int> indices;
         QList<PlaylistSong> songs;
@@ -298,8 +291,6 @@ void PlaylistManager::editPlaylist(
 
         QString oldImage = playlistImages.take(oldName);
         playlistImages[newName] = oldImage;
-        playlistTitleFontSizes[newName] = playlistTitleFontSizes.take(oldName);
-        playlistTitleFontSizes[newName] = calculateTitleSize(newName);
 
         int index = playlistOrder.indexOf(oldName);
         if (index >= 0){

@@ -14,8 +14,7 @@ class PlaylistModel : public QAbstractListModel
 public:
     enum Roles {
         NameRole = Qt::UserRole + 1,
-        ImagePathRole,
-        TitleFontSizeRole
+        ImagePathRole
     };
 
     explicit PlaylistModel(PlaylistManager *manager, QObject *parent = nullptr);

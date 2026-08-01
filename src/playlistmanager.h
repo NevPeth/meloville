@@ -22,7 +22,6 @@ public:
     QString playlistImage(const QString& playlistName) const;
     QStringList playlistNames() const;
     QList<int> getPlaylistSongs(const QString& playlistName) const;
-    int playlistTitleFontSize(const QString& playlist) const;
     /*Functions that actually manipulate the playlist contents*/
     void createPlaylist(
         const QString& name,
@@ -61,5 +60,4 @@ private:
     QMap<QString, QList<int>> playlists;
     QMap<QString, QList<PlaylistSong>> playlistDefinitions;
     QString playlistPath;
-    QMap<QString, int> playlistTitleFontSizes;
 };

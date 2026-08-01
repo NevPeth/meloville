@@ -108,10 +108,10 @@ ApplicationWindow {
     Component {
         id: mainPageComponent
         Rectangle {
+            id: mainPageRoot
             color: "#121212"
 
             ColumnLayout {
-                id: mainLayout
                 anchors.fill: parent
                 spacing: 0
                 // margins are 0 by default in QML
@@ -325,6 +325,73 @@ ApplicationWindow {
                             }
                         }
 
+                        // ── Sticky playlist bar (overlays the top of listViewSongs) ────────────
+                        Rectangle {
+                            id: stickyPlaylistBar
+
+                            // Only relevant when in playlist view
+                            visible: backend.isInPlaylistView
+
+                            // Sit on top of listViewSongs — anchor to the same parent (layoutRightContent)
+                            // but position it manually so it floats over the list
+                            parent: mainPageRoot//layoutRightContent
+                            x: frameSidebar.width
+                            y: libraryHeader.visible ? libraryHeader.height : 0
+                            width: layoutRightContent.width
+                            height: 50
+
+                            // Fade in as the user scrolls past the hero (200 px tall)
+                            // Fully transparent at contentY=0, fully opaque at contentY=heroHeight
+                            readonly property real heroHeight: 200
+                            opacity: Math.min(1.0, Math.max(0.0, listViewSongs.contentY / heroHeight))
+
+                            color: "#111111"
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 8
+                                anchors.rightMargin: 8
+                                spacing: 12
+
+                                Text {
+                                    text: currentPlaylistName
+                                    color: "white"
+                                    font.pixelSize: 16
+                                    font.bold: true
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                }
+
+                                Rectangle {
+                                    Layout.preferredWidth: 500
+                                    Layout.preferredHeight: 32
+                                    radius: 16
+                                    color: "#222222"
+
+                                    TextInput {
+                                        id: stickySearchField
+                                        anchors.fill: parent
+                                        anchors.leftMargin: 10
+                                        anchors.rightMargin: 10
+                                        verticalAlignment: TextInput.AlignVCenter
+                                        color: "white"
+                                        font.pixelSize: 13
+
+                                        //onTextChanged: backend.filterSongsAndAlbums(text)
+
+                                        Text {
+                                            anchors.fill: parent
+                                            verticalAlignment: Text.AlignVCenter
+                                            text: "Search playlist..."
+                                            color: "#666666"
+                                            font.pixelSize: 13
+                                            visible: stickySearchField.text.length === 0 && !stickySearchField.activeFocus
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         ListView {
                             id: listViewSongs
                             Layout.fillWidth: true
@@ -403,7 +470,7 @@ ApplicationWindow {
                                 Item {
                                     id: playlistHero
                                     width:  ListView.width
-                                    height: 200
+                                    height: 270
 
                                     Rectangle {
                                         anchors.fill: parent
@@ -412,9 +479,9 @@ ApplicationWindow {
 
                                     Image {
                                         id: heroCover
-                                        x: 20
+                                        x: 30
                                         anchors.verticalCenter: parent.verticalCenter
-                                        width: 150; height: 150
+                                        width: 200; height: 200
                                         fillMode: Image.PreserveAspectCrop
                                         source: currentPlaylistCover
                                                 ? "file://" + currentPlaylistCover
@@ -1054,7 +1121,6 @@ ApplicationWindow {
                 target: backend
                 function onIsInPlaylistViewChanged() {
                     currentPlaylistName = backend.viewingPlaylist
-                    console.log(currentPlaylistName)
                     if (backend.playlistManager) {
                         currentPlaylistCover = backend.playlistManager.fullImagePath(backend.viewingPlaylist)
                     } else {

@@ -36,8 +36,6 @@ QVariant PlaylistModel::data(const QModelIndex &index, int role) const
             path = "file:///" + path;
         return path;
     }
-    case TitleFontSizeRole:
-        return m_manager->playlistTitleFontSize(name);
     default:
         return QVariant();
     }
@@ -47,8 +45,7 @@ QHash<int, QByteArray> PlaylistModel::roleNames() const
 {
     return {
         {NameRole, "name"},
-        {ImagePathRole, "imagePath"},
-        {TitleFontSizeRole, "titleFontSize"}
+        {ImagePathRole, "imagePath"}
     };
 }
 

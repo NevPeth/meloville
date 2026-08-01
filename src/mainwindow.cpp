@@ -544,7 +544,7 @@ void MainWindow::createPlaylistFromDialog(
 
     QString selectedImagePath = "";
     if (!sourceImagePath.isEmpty()){
-        QString selectedImagePath =
+        selectedImagePath =
             "/playlistCovers/" +
             QUuid::createUuid().toString(QUuid::WithoutBraces) +
             "." +
@@ -572,10 +572,6 @@ void MainWindow::loadPlaylistView(const QString& playlistName)
     isInPlaylistView = true;
     viewingPlaylist = playlistName;
     emit isInPlaylistViewChanged();
-    int fontSize =
-        playlistManager->playlistTitleFontSize(
-            playlistName
-        );
 
     QString coverPath = appDataPath + 
         playlistManager->playlistImage(
