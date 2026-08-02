@@ -80,11 +80,11 @@ public:
     int getCurrentLibraryIndex() const { return currentLibraryIndex; }
     QString getCurrentSongTitle() const {
         if (currentLibraryIndex < 0 || currentLibraryIndex >= library.size()) return QString();
-        return library[currentLibraryIndex].title;
+        return library[currentLibraryIndex].title.toHtmlEscaped();
     }
     QString getCurrentSongArtist() const {
         if (currentLibraryIndex < 0 || currentLibraryIndex >= library.size()) return QString();
-        return library[currentLibraryIndex].artist;
+        return library[currentLibraryIndex].artist.toHtmlEscaped();
     }
     QString getCurrentSongCoverPath() const {
         if (currentLibraryIndex < 0 || currentLibraryIndex >= library.size()) return QString();
