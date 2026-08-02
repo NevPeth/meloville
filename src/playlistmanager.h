@@ -49,6 +49,8 @@ public:
     void editSongFromAllPlaylists(int libraryIndex, const QString& newSongTitle, const QString& newArtist);
     void removeSongFromAllPlaylists(int libraryIndex);
 
+    void reorderPlaylist(const QString& playlistName, int from, int to);
+
 signals:
     void playlistCreated(const QString& playlistName);
     void playlistDeleted(const QString& playlistName);

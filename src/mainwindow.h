@@ -42,6 +42,7 @@ class MainWindow : public QObject
     Q_PROPERTY(PlaylistModel* playlistModel READ getPlaylistModel CONSTANT)
     Q_PROPERTY(QStringList playlistNames READ getPlaylistNames NOTIFY playlistNamesChanged)
     Q_PROPERTY(bool isInPlaylistView READ getIsInPlaylistView NOTIFY isInPlaylistViewChanged)
+    Q_PROPERTY(bool dragReorderAllowed READ getDragReorderAllowed NOTIFY dragReorderAllowedChanged)
 
 public:
     explicit MainWindow(QObject *parent = nullptr);
@@ -67,8 +68,9 @@ public:
     Q_INVOKABLE void addToPlaylist(int visibleIndex, const QString& playlistName);
     Q_INVOKABLE void removeFromCurrentPlaylist(int visibleIndex);
     Q_INVOKABLE void editCurrentSong(int visibleIndex);
-
     Q_INVOKABLE void jumpToCurrentSong();
+
+    Q_INVOKABLE void reorderPlaylist(int from, int to);
 
     double getProgress() const { return progress; }
     PlaylistModel* getPlaylistModel() const { return playlistModel; }
@@ -107,6 +109,9 @@ public:
 
     QStringList getPlaylistNames() const { return playlistNames; }
     bool getIsInPlaylistView() const { return isInPlaylistView; }
+    bool getDragReorderAllowed() const {
+        return isInPlaylistView && filterText.isEmpty();
+    }
 
 public slots:
     void onScanProgress(int current, int total);
@@ -140,6 +145,7 @@ signals:
     void isInPlaylistViewChanged();
     void openContextMenuRequested(int visibleIndex, int x, int y);
     void jumpToSongIndex(int visibleIndex);
+    void dragReorderAllowedChanged();
 
 private:
     static bool songTitleLess(const SongData &a, const SongData &b);
@@ -173,9 +179,10 @@ private:
     bool repeatMode = false;
     bool playing = false;
     PlaylistModel *playlistModel = nullptr;
-
     QString currentlyPlayingPlaylist;
     QVector<QString> playlistNames;
+
+    QString filterText;
 };
 
 #endif // MAINWINDOW_H

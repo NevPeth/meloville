@@ -332,18 +332,16 @@ ApplicationWindow {
                             // Only relevant when in playlist view
                             visible: backend.isInPlaylistView
 
-                            // Sit on top of listViewSongs — anchor to the same parent (layoutRightContent)
-                            // but position it manually so it floats over the list
                             parent: mainPageRoot//layoutRightContent
                             x: frameSidebar.width
                             y: libraryHeader.visible ? libraryHeader.height : 0
                             width: layoutRightContent.width
                             height: 50
 
-                            // Fade in as the user scrolls past the hero (200 px tall)
-                            // Fully transparent at contentY=0, fully opaque at contentY=heroHeight
-                            readonly property real heroHeight: 200
-                            opacity: Math.min(1.0, Math.max(0.0, listViewSongs.contentY / heroHeight))
+                            readonly property real heroHeight: 270
+                            opacity: Math.min(1.0, Math.max(0.0,
+                                (listViewSongs.contentY + heroHeight) / 150
+                            ))
 
                             color: "#111111"
 
@@ -461,6 +459,30 @@ ApplicationWindow {
 
                             model: backend.songModel
 
+                            move: Transition {
+                                NumberAnimation {
+                                    properties: "x,y"
+                                    duration: 170
+                                    easing.type: Easing.OutCubic
+                                }
+                            }
+
+                            moveDisplaced: Transition {
+                                NumberAnimation {
+                                    properties: "x,y"
+                                    duration: 170
+                                    easing.type: Easing.OutCubic
+                                }
+                            }
+
+                            displaced: Transition {
+                                NumberAnimation {
+                                    properties: "x,y"
+                                    duration: 170
+                                    easing.type: Easing.OutCubic
+                                }
+                            }
+
                             // ── Playlist hero header ─────────────────────────────────────────
                             header: backend.isInPlaylistView ? playlistHeroComponent : null
 
@@ -537,6 +559,29 @@ ApplicationWindow {
 
                             TapHandler {
                                 onTapped: searchField.focus = false
+                            }
+
+                            Rectangle {
+                                id: dropIndicator
+                                visible: false
+                                x: 0
+                                y: 0
+                                width: listViewSongs.width
+                                height: 2
+                                color: "white"
+                                opacity: 0.85
+                                z: 9999
+                                Behavior on y {
+                                    NumberAnimation {
+                                        duration: 120
+                                        easing.type: Easing.OutCubic
+                                    }
+                                }
+                                Behavior on opacity {
+                                    NumberAnimation {
+                                        duration: 80
+                                    }
+                                }
                             }
 
                             delegate: Rectangle {
@@ -665,7 +710,71 @@ ApplicationWindow {
                                         }
                                     }
                                 }
+                                DragHandler {
+                                    id: reorderDrag
+                                    enabled: backend.dragReorderAllowed && !backend.filterText
+                                    grabPermissions: DragHandler.TakeOverForbidden
 
+                                    xAxis.enabled: false   // ① prevent horizontal drag
+
+                                    property int startIndex: -1
+                                    property int targetIndex: -1
+
+                                    onActiveChanged: {
+                                        if (active) {
+                                            startIndex = index
+                                            targetIndex = index
+
+                                            dropIndicator.visible = true
+                                            // ② indicator at visual position of dragged row
+                                            dropIndicator.y = songRow.y - listViewSongs.contentY
+                                        } else {
+                                            dropIndicator.visible = false
+                                            if (targetIndex >= 0 && targetIndex != startIndex)
+                                                backend.reorderPlaylist(startIndex, targetIndex)
+
+                                            startIndex = -1
+                                            targetIndex = -1
+                                        }
+                                    }
+
+                                    onCentroidChanged: {
+                                        if (!active)
+                                            return
+
+                                        // Map centroid to the contentItem to compute target index
+                                        var p = mapToItem(listViewSongs.contentItem,
+                                                        centroid.position.x,
+                                                        centroid.position.y)
+                                        var rowHeight = songRow.height
+                                        var idx = Math.floor(p.y / rowHeight)
+                                        idx = Math.max(0, Math.min(idx, listViewSongs.count))
+
+                                        if (idx !== targetIndex) {
+                                            targetIndex = idx
+                                            // ③ update indicator at visual position of the target row
+                                            dropIndicator.y = idx * rowHeight - listViewSongs.contentY
+                                        }
+
+                                        // Get visual Y relative to the ListView viewport
+                                        var posInListView = mapToItem(listViewSongs,
+                                                                    centroid.position.x,
+                                                                    centroid.position.y)
+
+                                        // ④ smooth auto‑scroll using velocity (instead of direct contentY)
+                                        var threshold = 20
+                                        if (posInListView.y < threshold) {
+                                            // Scroll up – positive velocity (contentY decreases)
+                                            if (listViewSongs.velocity < 5)   // avoid fighting against momentum
+                                                listViewSongs.velocity = 10
+                                        } else if (posInListView.y > listViewSongs.height - threshold) {
+                                            // Scroll down – negative velocity (contentY increases)
+                                            if (listViewSongs.velocity > -5)
+                                                listViewSongs.velocity = -10
+                                        }
+                                        // If not near edges, we leave velocity alone – it will naturally decelerate
+                                    }
+                                }
                                 // ── hover detection for the whole row ───────────────────────────
                                 HoverHandler {
                                     id: hoverHandler

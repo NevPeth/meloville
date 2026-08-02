@@ -370,3 +370,26 @@ QString PlaylistManager::fullImagePath(const QString& playlistName) const
         return QString();
     return playlistPath + relative;
 }
+
+void PlaylistManager::reorderPlaylist(const QString& playlistName, int from, int to)
+{
+    if (!playlists.contains(playlistName) || from == to)
+        return;
+
+    auto &list = playlists[playlistName];
+    auto &defs = playlistDefinitions[playlistName];
+
+    if (from < 0 || from >= list.size() || to < 0 || to >= list.size())
+        return;
+
+    // Move library index
+    int idx = list.takeAt(from);
+    list.insert(to, idx);
+
+    // Move corresponding playlist song definition
+    PlaylistSong song = defs.takeAt(from);
+    defs.insert(to, song);
+
+    savePlaylists();
+    emit playlistChanged(playlistName);
+}

@@ -308,6 +308,9 @@ void MainWindow::playSongAtVisibleIndex(int visibleIndex)
     while (!playHistory.isEmpty())
         playHistory.pop_back();
 
+    while (!nextUp.isEmpty())
+        nextUp.pop();
+
     playSong(libraryIndex);
 }
 
@@ -488,6 +491,9 @@ void MainWindow::setPlaying(bool p)
 
 void MainWindow::filterSongsAndAlbums(const QString& text)
 {
+    filterText = text.trimmed();
+    emit dragReorderAllowedChanged();
+
     QString search = text.trimmed().toLower();
 
     // if(inAlbumsView){
@@ -572,6 +578,8 @@ void MainWindow::loadPlaylistView(const QString& playlistName)
     isInPlaylistView = true;
     viewingPlaylist = playlistName;
     emit isInPlaylistViewChanged();
+    filterText.clear();
+    emit dragReorderAllowedChanged();
 
     QString coverPath = appDataPath + 
         playlistManager->playlistImage(
@@ -600,6 +608,8 @@ void MainWindow::returnToLibrary(){
     viewingPlaylist = QString();
     isInPlaylistView = false;
     emit isInPlaylistViewChanged();
+    filterText.clear();
+    emit dragReorderAllowedChanged();
 
     for (int i = 0; i < library.size(); i++){
         currentViewSongs.push_back(i);
@@ -700,4 +710,27 @@ void MainWindow::jumpToCurrentSong()
         return;
 
     emit jumpToSongIndex(visibleIndex);
+}
+
+void MainWindow::reorderPlaylist(int from, int to)
+{
+    // Only allowed in playlist view and when filter is empty
+    if (!isInPlaylistView || !filterText.isEmpty() || from == to)
+        return;
+
+    if (from < 0 || from >= visibleSongs.size() || to < 0 || to >= visibleSongs.size())
+        return;
+
+    // 1. Ask the model to move rows (modifies visibleSongs)
+    songModel->moveRow(from, to);
+
+    // 2. Update currentViewSongs to match visibleSongs (they are identical now)
+    currentViewSongs = visibleSongs;
+
+    // 3. Update playlist manager's internal order and save
+    playlistManager->reorderPlaylist(viewingPlaylist, from, to);
+
+    // 4. Rebuild shuffle pool if shuffle is on
+    if (shuffleMode)
+        rebuildShufflePool();
 }
