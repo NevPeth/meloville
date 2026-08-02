@@ -332,7 +332,7 @@ ApplicationWindow {
                             // Only relevant when in playlist view
                             visible: backend.isInPlaylistView
 
-                            parent: mainPageRoot//layoutRightContent
+                            parent: mainPageRoot
                             x: frameSidebar.width
                             y: libraryHeader.visible ? libraryHeader.height : 0
                             width: layoutRightContent.width
@@ -589,6 +589,7 @@ ApplicationWindow {
                                 width: listViewSongs.width
                                 height: 62         // matches SongDelegate::sizeHint
                                 color: "transparent"
+                                z: reorderDrag.active ? 1 : 0
 
                                 // ── state from model roles ──────────────────────────────────────
                                 property bool isPlaying: model.isPlaying   // IsPlayingRole
