@@ -399,6 +399,8 @@ ApplicationWindow {
                             ScrollBar.vertical:   ScrollBar { policy: ScrollBar.AsNeeded }
                             ScrollBar.horizontal: ScrollBar { policy: ScrollBar.AsNeeded }
 
+                            property int draggedIndex: -1
+                            property int dropIndex: -1
 
                             // ----- Pixel‑accurate scrolling on Wayland -----
                             pixelAligned: true
@@ -596,9 +598,29 @@ ApplicationWindow {
                                 transform: Translate {
                                     id: dragTranslate
 
-                                    y: reorderDrag.active
-                                    ? reorderDrag.translation.y
-                                    : 0
+                                    y: {
+                                        if (reorderDrag.active)
+                                            return reorderDrag.translation.y
+
+                                        if (listViewSongs.draggedIndex < 0)
+                                            return 0
+
+                                        var rowHeight = songRow.height
+
+                                        // dragging downward
+                                        if (listViewSongs.dropIndex > listViewSongs.draggedIndex) {
+                                            if (index > listViewSongs.draggedIndex && index <= listViewSongs.dropIndex)
+                                                return -rowHeight
+                                        }
+
+                                        // dragging upward
+                                        if (listViewSongs.dropIndex < listViewSongs.draggedIndex) {
+                                            if (index >= listViewSongs.dropIndex && index < listViewSongs.draggedIndex)
+                                                return rowHeight
+                                        }
+
+                                        return 0
+                                    }
 
                                     Behavior on y {
                                         NumberAnimation {
@@ -630,9 +652,33 @@ ApplicationWindow {
 
                                     // Track number shown when not hovered and not playing
                                     Text {
+                                        property int visualIndex: {
+                                            if (listViewSongs.draggedIndex < 0)
+                                                return index
+
+                                            // dragged item
+                                            if (index === listViewSongs.draggedIndex)
+                                                return listViewSongs.dropIndex
+
+                                            // dragging downward
+                                            if (listViewSongs.dropIndex > listViewSongs.draggedIndex) {
+                                                if (index > listViewSongs.draggedIndex &&
+                                                    index <= listViewSongs.dropIndex)
+                                                    return index - 1
+                                            }
+
+                                            // dragging upward
+                                            if (listViewSongs.dropIndex < listViewSongs.draggedIndex) {
+                                                if (index >= listViewSongs.dropIndex &&
+                                                    index < listViewSongs.draggedIndex)
+                                                    return index + 1
+                                            }
+
+                                            return index
+                                        }
                                         anchors.centerIn: parent
                                         visible: !songRow.isPlaying && !hoverHandler.hovered
-                                        text: (index + 1).toString()
+                                        text: (visualIndex+1).toString()
                                         color: "#b3b3b3"
                                         font.pixelSize: 13
                                     }
@@ -744,12 +790,18 @@ ApplicationWindow {
                                             startIndex = index
                                             targetIndex = index
 
+                                            listViewSongs.draggedIndex = index
+                                            listViewSongs.dropIndex = index
+
                                             dropIndicator.visible = true
                                             dropIndicator.y = songRow.y
                                         } else {
                                             dropIndicator.visible = false
                                             if (targetIndex >= 0 && targetIndex != startIndex)
                                                 backend.reorderPlaylist(startIndex, targetIndex)
+
+                                            listViewSongs.draggedIndex = -1
+                                            listViewSongs.dropIndex = -1
 
                                             startIndex = -1
                                             targetIndex = -1
@@ -770,9 +822,18 @@ ApplicationWindow {
 
                                         if (idx !== targetIndex) {
                                             targetIndex = idx
-                                            // ③ update indicator at visual position of the target row
+
+                                            listViewSongs.dropIndex = idx
+
+                                            // Update indicator at visual position of the target row
                                             dropIndicator.y = idx * rowHeight
                                         }
+
+                                        // if (idx !== targetIndex) {
+                                        //     targetIndex = idx
+                                        //     // ③ update indicator at visual position of the target row
+                                        //     dropIndicator.y = idx * rowHeight
+                                        // }
 
                                         // Get visual Y relative to the ListView viewport
                                         var posInListView = mapToItem(listViewSongs,
