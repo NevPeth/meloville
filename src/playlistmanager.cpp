@@ -25,7 +25,7 @@ void PlaylistManager::createPlaylist(
     playlistDefinitions[name] = {};
     playlistImages[name] = imagePath;
 
-    playlistOrder.append(name);
+    playlistOrder.prepend(name);
 
     savePlaylists();
     emit playlistCreated(name);
