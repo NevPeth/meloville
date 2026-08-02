@@ -566,11 +566,12 @@ ApplicationWindow {
                                 visible: false
                                 x: 0
                                 y: 0
+                                parent: listViewSongs.contentItem
                                 width: listViewSongs.width
                                 height: 2
                                 color: "white"
                                 opacity: 0.85
-                                z: 9999
+                                z: 1
                                 Behavior on y {
                                     NumberAnimation {
                                         duration: 120
@@ -589,7 +590,23 @@ ApplicationWindow {
                                 width: listViewSongs.width
                                 height: 62         // matches SongDelegate::sizeHint
                                 color: "transparent"
-                                z: reorderDrag.active ? 1 : 0
+                                opacity: reorderDrag.active ? 0.8 : 1
+                                z: reorderDrag.active ? 2 : 0
+
+                                transform: Translate {
+                                    id: dragTranslate
+
+                                    y: reorderDrag.active
+                                    ? reorderDrag.translation.y
+                                    : 0
+
+                                    Behavior on y {
+                                        NumberAnimation {
+                                            duration: 170
+                                            easing.type: Easing.OutCubic
+                                        }
+                                    }
+                                }
 
                                 // ── state from model roles ──────────────────────────────────────
                                 property bool isPlaying: model.isPlaying   // IsPlayingRole
@@ -715,6 +732,7 @@ ApplicationWindow {
                                     id: reorderDrag
                                     enabled: backend.dragReorderAllowed && !backend.filterText
                                     grabPermissions: DragHandler.TakeOverForbidden
+                                    target: null
 
                                     xAxis.enabled: false   // ① prevent horizontal drag
 
@@ -727,8 +745,7 @@ ApplicationWindow {
                                             targetIndex = index
 
                                             dropIndicator.visible = true
-                                            // ② indicator at visual position of dragged row
-                                            dropIndicator.y = songRow.y - listViewSongs.contentY
+                                            dropIndicator.y = songRow.y
                                         } else {
                                             dropIndicator.visible = false
                                             if (targetIndex >= 0 && targetIndex != startIndex)
@@ -749,12 +766,12 @@ ApplicationWindow {
                                                         centroid.position.y)
                                         var rowHeight = songRow.height
                                         var idx = Math.floor(p.y / rowHeight)
-                                        idx = Math.max(0, Math.min(idx, listViewSongs.count))
+                                        idx = Math.max(0, Math.min(idx, listViewSongs.count-1))
 
                                         if (idx !== targetIndex) {
                                             targetIndex = idx
                                             // ③ update indicator at visual position of the target row
-                                            dropIndicator.y = idx * rowHeight - listViewSongs.contentY
+                                            dropIndicator.y = idx * rowHeight
                                         }
 
                                         // Get visual Y relative to the ListView viewport
@@ -844,7 +861,6 @@ ApplicationWindow {
                                     }
                                 }
 
-                                // labelSongInfo
                                 Text {
                                     id: labelSongInfo
                                     text: backend.currentLibraryIndex >= 0
