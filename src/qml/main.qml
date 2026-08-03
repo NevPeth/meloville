@@ -452,6 +452,11 @@ ApplicationWindow {
                                 }
                             }
 
+                            onContentYChanged: {
+                                if (reorderDrag.active)
+                                    reorderDrag.updateDropTarget()
+                            }
+
                             Connections {
                                 target: backend
                                 function onIsInPlaylistViewChanged() {
@@ -785,6 +790,27 @@ ApplicationWindow {
                                     property int startIndex: -1
                                     property int targetIndex: -1
 
+                                    function updateDropTarget() {
+                                        if (!reorderDrag.active)
+                                            return
+
+                                        var p = reorderDrag.mapToItem(
+                                                    listViewSongs.contentItem,
+                                                    reorderDrag.centroid.position.x,
+                                                    reorderDrag.centroid.position.y)
+
+                                        var rowHeight = songRow.height
+
+                                        var idx = Math.floor(p.y / rowHeight)
+                                        idx = Math.max(0, Math.min(idx, listViewSongs.count - 1))
+
+                                        if (idx !== reorderDrag.targetIndex) {
+                                            reorderDrag.targetIndex = idx
+                                            listViewSongs.dropIndex = idx
+                                            dropIndicator.y = idx * rowHeight
+                                        }
+                                    }
+
                                     onActiveChanged: {
                                         if (active) {
                                             startIndex = index
@@ -829,20 +855,14 @@ ApplicationWindow {
                                             dropIndicator.y = idx * rowHeight
                                         }
 
-                                        // if (idx !== targetIndex) {
-                                        //     targetIndex = idx
-                                        //     // ③ update indicator at visual position of the target row
-                                        //     dropIndicator.y = idx * rowHeight
-                                        // }
-
                                         // Get visual Y relative to the ListView viewport
                                         var posInListView = mapToItem(listViewSongs,
                                                                     centroid.position.x,
                                                                     centroid.position.y)
 
                                         // ④ smooth auto‑scroll using velocity (instead of direct contentY)
-                                        var threshold = 20
-                                        if (posInListView.y < threshold) {
+                                        var threshold = 80
+                                        if (posInListView.y < threshold+30) {
                                             // Scroll up – positive velocity (contentY decreases)
                                             if (listViewSongs.velocity < 5)   // avoid fighting against momentum
                                                 listViewSongs.velocity = 10
