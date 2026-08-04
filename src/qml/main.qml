@@ -117,108 +117,55 @@ ApplicationWindow {
         model: backend.songModel
         delegate: songDelegate
     }
-
     Component {
     id: songDelegate
 
+    // The outer item is the DropArea — it receives drags from other delegates
     DropArea {
         id: delegateRoot
 
         property int visualIndex: DelegateModel.itemsIndex
 
-        width: ListView.view ? ListView.view.width : 0
+        width:  ListView.view ? ListView.view.width : 0
         height: 62
 
-        // ---- Drag mechanics ----
-        Drag.active: dragArea.held
-        Drag.source: delegateRoot
-        Drag.hotSpot.x: width / 2
-        Drag.hotSpot.y: height / 2
-
-        // Visual feedback while dragging
-        opacity: dragArea.held ? 0.7 : 1.0
-        z: dragArea.held ? 10 : 0
-
-        // The drag handle
-        MouseArea {
-            id: dragArea
-            anchors.fill: parent
-            enabled: backend.dragReorderAllowed && !backend.filterText
-            drag.target: parent          // moves the delegate root
-            drag.axis: Drag.YAxis
-            drag.filterChildren: true
-
-            property bool held: false
-            property int startIndex: -1
-            property int targetIndex: -1
-
-            onPressed: {
-                startIndex = delegateRoot.visualIndex
-                targetIndex = startIndex
-                held = true
-                // Show drop indicator at the starting position
-                listViewSongs.dropIndicatorY = delegateRoot.y
-                listViewSongs.dropIndicatorVisible = true
-            }
-
-            onPositionChanged: {
-                if (!held) return
-
-                // Map mouse position to the ListView's contentItem
-                var posInContent = mapToItem(listViewSongs.contentItem,
-                                             mouse.x, mouse.y)
-                var rowHeight = delegateRoot.height
-                var idx = Math.floor(posInContent.y / rowHeight)
-                idx = Math.max(0, Math.min(idx, listViewSongs.count - 1))
-
-                if (idx !== targetIndex) {
-                    targetIndex = idx
-                    // Update drop indicator position
-                    listViewSongs.dropIndicatorY = idx * rowHeight
-                }
-
-                // ---- Auto‑scroll ----
-                var viewportY = mapToItem(listViewSongs, mouse.x, mouse.y).y
-                var threshold = 150
-                if (viewportY < threshold) {
-                    // Scroll up (contentY decreases)
-                    listViewSongs.velocity = 15
-                } else if (viewportY > listViewSongs.height - threshold) {
-                    // Scroll down (contentY increases)
-                    listViewSongs.velocity = -15
-                } else {
-                    // Stop scrolling when not near edges
-                    listViewSongs.velocity = 0
-                }
-            }
-
-            onReleased: {
-                if (held) {
-                    held = false
-                    // Hide drop indicator
-                    listViewSongs.dropIndicatorVisible = false
-                    listViewSongs.velocity = 0
-
-                    // Apply the reorder only if position changed
-                    if (startIndex !== targetIndex) {
-                        backend.reorderPlaylist(startIndex, targetIndex)
-                    }
-                }
-            }
+        // ── Live visual reorder: fires as the dragged item enters this delegate ──
+        onEntered: function(drag) {
+            visualModel.items.move(
+                drag.source.DelegateModel.itemsIndex,   // where the dragged item currently sits
+                delegateRoot.DelegateModel.itemsIndex)  // where this delegate sits
         }
 
-        // ---- The visible row (your existing UI) ----
+        // ── The draggable content ──
         Rectangle {
             id: songRow
-            width: parent.width
+            width:  parent.width
             height: 62
-            color: "transparent"
+            color:  "transparent"
 
-            // Background (unchanged)
+            // Lift the row visually while dragging
+            Drag.active:     dragArea.held
+            Drag.source:     delegateRoot   // expose DelegateModel.itemsIndex to DropArea.onEntered
+            Drag.hotSpot.x:  width  / 2
+            Drag.hotSpot.y:  height / 2
+
+            states: State {
+                when: dragArea.held
+                ParentChange {
+                    target: songRow
+                    parent: listViewSongs   // reparent so it floats above everything
+                }
+                AnchorChanges {
+                    target: songRow
+                    anchors { horizontalCenter: undefined; verticalCenter: undefined }
+                }
+            }
+
+            // Background
             Rectangle {
                 anchors.fill: parent
-                color: isPlaying ? "#2a2a2a"
-                     : isActive  ? "#2f2f2f"
+                color: isPlaying          ? "#2a2a2a"
+                     : isActive           ? "#2f2f2f"
                      : hoverHandler.hovered ? "#202020"
                      : "#181818"
             }
@@ -227,7 +174,7 @@ ApplicationWindow {
             property bool isPaused:  model.isPaused
             property bool isActive:  model.isActive
 
-            // ---- play/pause area ----
+            // ── play/pause area ──────────────────────────────────────────────
             Item {
                 id: playArea
                 x: 0; y: 0; width: 50; height: parent.height
@@ -235,7 +182,7 @@ ApplicationWindow {
                 Text {
                     anchors.centerIn: parent
                     visible: !songRow.isPlaying && !hoverHandler.hovered
-                    text: (delegateRoot.visualIndex + 1).toString()
+                    text:    (delegateRoot.DelegateModel.itemsIndex + 1).toString()
                     color: "#b3b3b3"; font.pixelSize: 13
                 }
                 Image {
@@ -252,12 +199,12 @@ ApplicationWindow {
                         if (songRow.isPlaying)
                             backend.playAndPause()
                         else
-                            backend.playSongAtVisibleIndex(delegateRoot.visualIndex)
+                            backend.playSongAtVisibleIndex(delegateRoot.DelegateModel.itemsIndex)
                     }
                 }
             }
 
-            // ---- album cover ----
+            // ── album cover ──────────────────────────────────────────────────
             Image {
                 id: coverImage
                 x: 50
@@ -269,7 +216,7 @@ ApplicationWindow {
                         : "qrc:/images/default_cover.png"
             }
 
-            // ---- title + artist ----
+            // ── title + artist ───────────────────────────────────────────────
             Column {
                 x: coverImage.x + coverImage.width + 10
                 width: parent.width - x - 120
@@ -290,7 +237,7 @@ ApplicationWindow {
                 }
             }
 
-            // ---- duration ----
+            // ── duration ─────────────────────────────────────────────────────
             Text {
                 x: parent.width - 105
                 width: 60
@@ -300,7 +247,7 @@ ApplicationWindow {
                 horizontalAlignment: Text.AlignHCenter
             }
 
-            // ---- dots / context menu ----
+            // ── dots / context menu ──────────────────────────────────────────
             Item {
                 id: menuArea
                 x: parent.width - 45
@@ -316,15 +263,286 @@ ApplicationWindow {
                     anchors.fill: parent
                     onClicked: {
                         var gp = menuArea.mapToGlobal(0, 0)
-                        backend.openSongContextMenu(delegateRoot.visualIndex, gp.x, gp.y)
+                        backend.openSongContextMenu(delegateRoot.DelegateModel.itemsIndex, gp.x, gp.y)
                     }
                 }
             }
+
+            // ── drag handle ──────────────────────────────────────────────────
+            MouseArea {
+    id: dragArea
+    anchors.fill: parent
+    enabled: backend.dragReorderAllowed && !backend.filterText
+
+    drag.target:         held ? songRow : undefined
+    drag.axis:           Drag.YAxis
+    drag.filterChildren: true
+    drag.threshold:      10     // pixels before drag activates; lets taps through
+
+    property bool held: false
+    property int  startIndex: -1
+
+    onPressed: {
+        startIndex = delegateRoot.DelegateModel.itemsIndex
+        held = true
+        listViewSongs.interactive = false   // ← disable ListView flicking while dragging
+        listViewSongs.dropIndicatorVisible = true
+    }
+
+    onPositionChanged: {
+        if (!held) return
+
+        var posInList = songRow.mapToItem(listViewSongs, 0, 0)
+        listViewSongs.dropIndicatorY = posInList.y
+
+        // ── Auto-scroll ──────────────────────────────────────────────────
+        var viewportY = mapToItem(listViewSongs, mouse.x, mouse.y).y
+        var threshold = 80
+        if (viewportY < threshold)
+            listViewSongs.velocity = 15
+        else if (viewportY > listViewSongs.height - threshold)
+            listViewSongs.velocity = -15
+        else
+            listViewSongs.velocity = 0
+    }
+
+    onReleased: {
+        if (held) {
+            held = false
+            listViewSongs.interactive = true   // ← re-enable flicking
+            listViewSongs.dropIndicatorVisible = false
+            listViewSongs.velocity = 0
+
+            var endIndex = delegateRoot.DelegateModel.itemsIndex
+            if (startIndex !== endIndex)
+                backend.reorderPlaylist(startIndex, endIndex)
+
+            startIndex = -1
+        }
+    }
+
+    onCanceled: {
+        // Safety net if the drag gets stolen
+        held = false
+        listViewSongs.interactive = true
+        listViewSongs.dropIndicatorVisible = false
+        listViewSongs.velocity = 0
+        startIndex = -1
+    }
+}
 
             HoverHandler { id: hoverHandler }
         }
     }
 }
+
+//     Component {
+//     id: songDelegate
+
+//     DropArea {
+//         id: delegateRoot
+
+//         property int visualIndex: DelegateModel.itemsIndex
+
+//         width: ListView.view ? ListView.view.width : 0
+//         height: 62
+
+//         // ---- Drag mechanics ----
+//         Drag.active: dragArea.held
+//         Drag.source: delegateRoot
+//         Drag.hotSpot.x: width / 2
+//         Drag.hotSpot.y: height / 2
+
+//         // Visual feedback while dragging
+//         opacity: dragArea.held ? 0.7 : 1.0
+//         z: dragArea.held ? 10 : 0
+
+//         // The drag handle
+//         MouseArea {
+//             id: dragArea
+//             anchors.fill: parent
+//             enabled: backend.dragReorderAllowed && !backend.filterText
+//             drag.target: parent          // moves the delegate root
+//             drag.axis: Drag.YAxis
+//             drag.filterChildren: true
+
+//             property bool held: false
+//             property int startIndex: -1
+//             property int targetIndex: -1
+
+//             onPressed: {
+//                 startIndex = delegateRoot.visualIndex
+//                 targetIndex = startIndex
+//                 held = true
+//                 // Show drop indicator at the starting position
+//                 listViewSongs.dropIndicatorY = delegateRoot.y
+//                 listViewSongs.dropIndicatorVisible = true
+//             }
+
+//             onPositionChanged: {
+//                 if (!held) return
+
+//                 // Map mouse position to the ListView's contentItem
+//                 var posInContent = mapToItem(listViewSongs.contentItem,
+//                                              mouse.x, mouse.y)
+//                 var rowHeight = delegateRoot.height
+//                 var idx = Math.floor(posInContent.y / rowHeight)
+//                 idx = Math.max(0, Math.min(idx, listViewSongs.count - 1))
+
+//                 if (idx !== targetIndex) {
+//                     targetIndex = idx
+//                     // Update drop indicator position
+//                     listViewSongs.dropIndicatorY = idx * rowHeight
+//                 }
+
+//                 // ---- Auto‑scroll ----
+//                 var viewportY = mapToItem(listViewSongs, mouse.x, mouse.y).y
+//                 var threshold = 150
+//                 if (viewportY < threshold) {
+//                     // Scroll up (contentY decreases)
+//                     listViewSongs.velocity = 15
+//                 } else if (viewportY > listViewSongs.height - threshold) {
+//                     // Scroll down (contentY increases)
+//                     listViewSongs.velocity = -15
+//                 } else {
+//                     // Stop scrolling when not near edges
+//                     listViewSongs.velocity = 0
+//                 }
+//             }
+
+//             onReleased: {
+//                 if (held) {
+//                     held = false
+//                     // Hide drop indicator
+//                     listViewSongs.dropIndicatorVisible = false
+//                     listViewSongs.velocity = 0
+
+//                     // Apply the reorder only if position changed
+//                     if (startIndex !== targetIndex) {
+//                         backend.reorderPlaylist(startIndex, targetIndex)
+//                     }
+//                 }
+//             }
+//         }
+
+//         // ---- The visible row (your existing UI) ----
+//         Rectangle {
+//             id: songRow
+//             width: parent.width
+//             height: 62
+//             color: "transparent"
+
+//             // Background (unchanged)
+//             Rectangle {
+//                 anchors.fill: parent
+//                 color: isPlaying ? "#2a2a2a"
+//                      : isActive  ? "#2f2f2f"
+//                      : hoverHandler.hovered ? "#202020"
+//                      : "#181818"
+//             }
+
+//             property bool isPlaying: model.isPlaying
+//             property bool isPaused:  model.isPaused
+//             property bool isActive:  model.isActive
+
+//             // ---- play/pause area ----
+//             Item {
+//                 id: playArea
+//                 x: 0; y: 0; width: 50; height: parent.height
+
+//                 Text {
+//                     anchors.centerIn: parent
+//                     visible: !songRow.isPlaying && !hoverHandler.hovered
+//                     text: (delegateRoot.visualIndex + 1).toString()
+//                     color: "#b3b3b3"; font.pixelSize: 13
+//                 }
+//                 Image {
+//                     anchors.centerIn: parent
+//                     visible: songRow.isPlaying || hoverHandler.hovered
+//                     width: 22; height: 22
+//                     source: (songRow.isPlaying && !songRow.isPaused)
+//                             ? "qrc:/icons/menuPauseIcon.svg"
+//                             : "qrc:/icons/menuPlayIcon.svg"
+//                 }
+//                 MouseArea {
+//                     anchors.fill: parent
+//                     onClicked: {
+//                         if (songRow.isPlaying)
+//                             backend.playAndPause()
+//                         else
+//                             backend.playSongAtVisibleIndex(delegateRoot.visualIndex)
+//                     }
+//                 }
+//             }
+
+//             // ---- album cover ----
+//             Image {
+//                 id: coverImage
+//                 x: 50
+//                 y: (parent.height - height) / 2
+//                 width: 50; height: 50
+//                 fillMode: Image.PreserveAspectCrop
+//                 source: model.coverPath !== ""
+//                         ? "file://" + model.coverPath
+//                         : "qrc:/images/default_cover.png"
+//             }
+
+//             // ---- title + artist ----
+//             Column {
+//                 x: coverImage.x + coverImage.width + 10
+//                 width: parent.width - x - 120
+//                 anchors.verticalCenter: parent.verticalCenter
+//                 spacing: 4
+
+//                 Text {
+//                     width: parent.width
+//                     text: model.title
+//                     color: "white"; font.pixelSize: 13; font.bold: true
+//                     elide: Text.ElideRight
+//                 }
+//                 Text {
+//                     width: parent.width
+//                     text: model.artist
+//                     color: "#b3b3b3"; font.pixelSize: 12
+//                     elide: Text.ElideRight
+//                 }
+//             }
+
+//             // ---- duration ----
+//             Text {
+//                 x: parent.width - 105
+//                 width: 60
+//                 anchors.verticalCenter: parent.verticalCenter
+//                 text: model.duration
+//                 color: "#b3b3b3"; font.pixelSize: 12
+//                 horizontalAlignment: Text.AlignHCenter
+//             }
+
+//             // ---- dots / context menu ----
+//             Item {
+//                 id: menuArea
+//                 x: parent.width - 45
+//                 anchors.verticalCenter: parent.verticalCenter
+//                 width: 30; height: 30
+
+//                 Image {
+//                     anchors.centerIn: parent
+//                     width: 18; height: 4
+//                     source: "image://svgicons/dots"
+//                 }
+//                 MouseArea {
+//                     anchors.fill: parent
+//                     onClicked: {
+//                         var gp = menuArea.mapToGlobal(0, 0)
+//                         backend.openSongContextMenu(delegateRoot.visualIndex, gp.x, gp.y)
+//                     }
+//                 }
+//             }
+
+//             HoverHandler { id: hoverHandler }
+//         }
+//     }
+// }
 
             ColumnLayout {
                 anchors.fill: parent
