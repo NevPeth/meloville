@@ -414,6 +414,7 @@ ApplicationWindow {
                                 Layout.topMargin: 0
                                 Layout.minimumWidth: 60
                                 Layout.maximumWidth: 60
+                                Layout.leftMargin: 8
                                 clip: true
                                 spacing: 7
                                 ScrollBar.horizontal: ScrollBar { policy: ScrollBar.AlwaysOff }
@@ -422,8 +423,6 @@ ApplicationWindow {
                                     height: 53
                                     radius: 4
                                     color: "transparent"
-                                    anchors.horizontalCenter: parent.horizontalCenter
-                                    anchors.horizontalCenterOffset: 2.5
 
                                     // Highlight when this playlist is selected (optional)
                                     property bool isSelected: backend.viewingPlaylist === model.name
