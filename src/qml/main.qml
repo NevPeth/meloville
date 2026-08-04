@@ -170,6 +170,85 @@ ApplicationWindow {
                                 : "#181818"
                         }
 
+                        // ── drag handle ──────────────────────────────────────────────────
+                        MouseArea {
+                            id: dragArea
+                            anchors.fill: parent
+                            enabled: backend.dragReorderAllowed && !backend.filterText
+                            drag.target:         held ? songRow : undefined
+                            drag.axis:           Drag.YAxis
+                            drag.filterChildren: true
+                            drag.threshold:      10
+                            property bool held: false
+                            property int  startIndex: -1
+
+                            // ── Auto-scroll state ────────────────────────────────────────────────
+                            property real scrollSpeed: 0   // px per timer tick; negative = up
+
+                            Timer {
+                                id: autoScrollTimer
+                                interval: 16               // ~60 fps
+                                repeat:   true
+                                running:  dragArea.held && dragArea.scrollSpeed !== 0
+                                onTriggered: {
+                                    var newY = listViewSongs.contentY + dragArea.scrollSpeed
+                                    // clamp to valid range
+                                    var maxY = listViewSongs.contentHeight - listViewSongs.height
+                                    listViewSongs.contentY = Math.max(-270, Math.min(newY, maxY))
+                                }
+                            }
+
+                            onPressed: {
+                                startIndex = delegateRoot.DelegateModel.itemsIndex
+                                held = true
+                                listViewSongs.interactive = false
+                                listViewSongs.dropIndicatorVisible = true
+                            }
+
+                            onPositionChanged: {
+                                if (!held) return
+
+                                // Update drop indicator
+                                var posInList = songRow.mapToItem(listViewSongs, 0, 0)
+                                listViewSongs.dropIndicatorY = posInList.y
+
+                                // ── Auto-scroll ──────────────────────────────────────────────────
+                                var threshold = 120
+                                var viewportY = mapToItem(listViewSongs, mouse.x, mouse.y).y
+
+                                if (viewportY < threshold) {
+                                    // Scale speed: faster the closer to the edge
+                                    scrollSpeed = -((threshold - viewportY) / threshold) * 15
+                                } else if (viewportY > listViewSongs.height - threshold) {
+                                    scrollSpeed = ((viewportY - (listViewSongs.height - threshold)) / threshold) * 15
+                                } else {
+                                    scrollSpeed = 0
+                                }
+                            }
+
+                            onReleased: {
+                                if (held) {
+                                    held = false
+                                    scrollSpeed = 0
+                                    listViewSongs.interactive = true
+                                    listViewSongs.dropIndicatorVisible = false
+
+                                    var endIndex = delegateRoot.DelegateModel.itemsIndex
+                                    if (startIndex !== endIndex)
+                                        backend.reorderPlaylist(startIndex, endIndex)
+                                    startIndex = -1
+                                }
+                            }
+
+                            onCanceled: {
+                                held = false
+                                scrollSpeed = 0
+                                listViewSongs.interactive = true
+                                listViewSongs.dropIndicatorVisible = false
+                                startIndex = -1
+                            }
+                        }
+
                         property bool isPlaying: model.isPlaying
                         property bool isPaused:  model.isPaused
                         property bool isActive:  model.isActive
@@ -267,68 +346,7 @@ ApplicationWindow {
                                 }
                             }
                         }
-                        // ── drag handle ──────────────────────────────────────────────────
-                        MouseArea {
-                            id: dragArea
-                            anchors.fill: parent
-                            enabled: backend.dragReorderAllowed && !backend.filterText
-
-                            drag.target:         held ? songRow : undefined
-                            drag.axis:           Drag.YAxis
-                            drag.filterChildren: true
-                            drag.threshold:      10     // pixels before drag activates; lets taps through
-
-                            property bool held: false
-                            property int  startIndex: -1
-
-                            onPressed: {
-                                startIndex = delegateRoot.DelegateModel.itemsIndex
-                                held = true
-                                listViewSongs.interactive = false   // ← disable ListView flicking while dragging
-                                listViewSongs.dropIndicatorVisible = true
-                            }
-
-                            onPositionChanged: {
-                                if (!held) return
-
-                                var posInList = songRow.mapToItem(listViewSongs, 0, 0)
-                                listViewSongs.dropIndicatorY = posInList.y
-
-                                // ── Auto-scroll ──────────────────────────────────────────────────
-                                var viewportY = mapToItem(listViewSongs, mouse.x, mouse.y).y
-                                var threshold = 80
-                                if (viewportY < threshold)
-                                    listViewSongs.velocity = 15
-                                else if (viewportY > listViewSongs.height - threshold)
-                                    listViewSongs.velocity = -15
-                                else
-                                    listViewSongs.velocity = 0
-                            }
-
-                            onReleased: {
-                                if (held) {
-                                    held = false
-                                    listViewSongs.interactive = true   // ← re-enable flicking
-                                    listViewSongs.dropIndicatorVisible = false
-                                    listViewSongs.velocity = 0
-
-                                    var endIndex = delegateRoot.DelegateModel.itemsIndex
-                                    if (startIndex !== endIndex)
-                                        backend.reorderPlaylist(startIndex, endIndex)
-
-                                    startIndex = -1
-                                }
-                            }
-
-                            onCanceled: {
-                                // Safety net if the drag gets stolen
-                                held = false
-                                listViewSongs.interactive = true
-                                listViewSongs.dropIndicatorVisible = false
-                                listViewSongs.velocity = 0
-                                startIndex = -1
-                            }
-                        }
+                        
 
                         HoverHandler { id: hoverHandler }
 
