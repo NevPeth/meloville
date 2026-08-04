@@ -113,437 +113,228 @@ ApplicationWindow {
             id: mainPageRoot
             color: "#121212"
             DelegateModel {
-        id: visualModel
-        model: backend.songModel
-        delegate: songDelegate
-    }
-    Component {
-    id: songDelegate
-
-    // The outer item is the DropArea — it receives drags from other delegates
-    DropArea {
-        id: delegateRoot
-
-        property int visualIndex: DelegateModel.itemsIndex
-
-        width:  ListView.view ? ListView.view.width : 0
-        height: 62
-
-        // ── Live visual reorder: fires as the dragged item enters this delegate ──
-        onEntered: function(drag) {
-            visualModel.items.move(
-                drag.source.DelegateModel.itemsIndex,   // where the dragged item currently sits
-                delegateRoot.DelegateModel.itemsIndex)  // where this delegate sits
-        }
-
-        // ── The draggable content ──
-        Rectangle {
-            id: songRow
-            width:  parent.width
-            height: 62
-            color:  "transparent"
-
-            // Lift the row visually while dragging
-            Drag.active:     dragArea.held
-            Drag.source:     delegateRoot   // expose DelegateModel.itemsIndex to DropArea.onEntered
-            Drag.hotSpot.x:  width  / 2
-            Drag.hotSpot.y:  height / 2
-
-            states: State {
-                when: dragArea.held
-                ParentChange {
-                    target: songRow
-                    parent: listViewSongs   // reparent so it floats above everything
-                }
-                AnchorChanges {
-                    target: songRow
-                    anchors { horizontalCenter: undefined; verticalCenter: undefined }
-                }
+                id: visualModel
+                model: backend.songModel
+                delegate: songDelegate
             }
+            Component {
+                id: songDelegate
 
-            // Background
-            Rectangle {
-                anchors.fill: parent
-                color: isPlaying          ? "#2a2a2a"
-                     : isActive           ? "#2f2f2f"
-                     : hoverHandler.hovered ? "#202020"
-                     : "#181818"
-            }
+                // The outer item is the DropArea — it receives drags from other delegates
+                DropArea {
+                    id: delegateRoot
 
-            property bool isPlaying: model.isPlaying
-            property bool isPaused:  model.isPaused
-            property bool isActive:  model.isActive
+                    property int visualIndex: DelegateModel.itemsIndex
 
-            // ── play/pause area ──────────────────────────────────────────────
-            Item {
-                id: playArea
-                x: 0; y: 0; width: 50; height: parent.height
+                    width:  ListView.view ? ListView.view.width : 0
+                    height: 62
 
-                Text {
-                    anchors.centerIn: parent
-                    visible: !songRow.isPlaying && !hoverHandler.hovered
-                    text:    (delegateRoot.DelegateModel.itemsIndex + 1).toString()
-                    color: "#b3b3b3"; font.pixelSize: 13
-                }
-                Image {
-                    anchors.centerIn: parent
-                    visible: songRow.isPlaying || hoverHandler.hovered
-                    width: 22; height: 22
-                    source: (songRow.isPlaying && !songRow.isPaused)
-                            ? "qrc:/icons/menuPauseIcon.svg"
-                            : "qrc:/icons/menuPlayIcon.svg"
-                }
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: {
-                        if (songRow.isPlaying)
-                            backend.playAndPause()
-                        else
-                            backend.playSongAtVisibleIndex(delegateRoot.DelegateModel.itemsIndex)
+                    // ── Live visual reorder: fires as the dragged item enters this delegate ──
+                    onEntered: function(drag) {
+                        visualModel.items.move(
+                            drag.source.DelegateModel.itemsIndex,   // where the dragged item currently sits
+                            delegateRoot.DelegateModel.itemsIndex)  // where this delegate sits
+                    }
+
+                    // ── The draggable content ──
+                    Rectangle {
+                        id: songRow
+                        width:  parent.width
+                        height: 62
+                        color:  "transparent"
+
+                        // Lift the row visually while dragging
+                        Drag.active:     dragArea.held
+                        Drag.source:     delegateRoot   // expose DelegateModel.itemsIndex to DropArea.onEntered
+                        Drag.hotSpot.x:  width  / 2
+                        Drag.hotSpot.y:  height / 2
+
+                        states: State {
+                            when: dragArea.held
+                            ParentChange {
+                                target: songRow
+                                parent: listViewSongs   // reparent so it floats above everything
+                            }
+                            AnchorChanges {
+                                target: songRow
+                                anchors { horizontalCenter: undefined; verticalCenter: undefined }
+                            }
+                        }
+
+                        // Background
+                        Rectangle {
+                            anchors.fill: parent
+                            color: isPlaying          ? "#2a2a2a"
+                                : isActive           ? "#2f2f2f"
+                                : hoverHandler.hovered ? "#202020"
+                                : "#181818"
+                        }
+
+                        property bool isPlaying: model.isPlaying
+                        property bool isPaused:  model.isPaused
+                        property bool isActive:  model.isActive
+
+                        // ── play/pause area ──────────────────────────────────────────────
+                        Item {
+                            id: playArea
+                            x: 0; y: 0; width: 50; height: parent.height
+
+                            Text {
+                                anchors.centerIn: parent
+                                visible: !songRow.isPlaying && !hoverHandler.hovered
+                                text:    (delegateRoot.DelegateModel.itemsIndex + 1).toString()
+                                color: "#b3b3b3"; font.pixelSize: 13
+                            }
+                            Image {
+                                anchors.centerIn: parent
+                                visible: songRow.isPlaying || hoverHandler.hovered
+                                width: 22; height: 22
+                                source: (songRow.isPlaying && !songRow.isPaused)
+                                        ? "qrc:/icons/menuPauseIcon.svg"
+                                        : "qrc:/icons/menuPlayIcon.svg"
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: {
+                                    if (songRow.isPlaying)
+                                        backend.playAndPause()
+                                    else
+                                        backend.playSongAtVisibleIndex(delegateRoot.DelegateModel.itemsIndex)
+                                }
+                            }
+                        }
+
+                        // ── album cover ──────────────────────────────────────────────────
+                        Image {
+                            id: coverImage
+                            x: 50
+                            y: (parent.height - height) / 2
+                            width: 50; height: 50
+                            fillMode: Image.PreserveAspectCrop
+                            source: model.coverPath !== ""
+                                    ? "file://" + model.coverPath
+                                    : "qrc:/images/default_cover.png"
+                        }
+
+                        // ── title + artist ───────────────────────────────────────────────
+                        Column {
+                            x: coverImage.x + coverImage.width + 10
+                            width: parent.width - x - 120
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 4
+
+                            Text {
+                                width: parent.width
+                                text: model.title
+                                color: "white"; font.pixelSize: 13; font.bold: true
+                                elide: Text.ElideRight
+                            }
+                            Text {
+                                width: parent.width
+                                text: model.artist
+                                color: "#b3b3b3"; font.pixelSize: 12
+                                elide: Text.ElideRight
+                            }
+                        }
+
+                        // ── duration ─────────────────────────────────────────────────────
+                        Text {
+                            x: parent.width - 105
+                            width: 60
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: model.duration
+                            color: "#b3b3b3"; font.pixelSize: 12
+                            horizontalAlignment: Text.AlignHCenter
+                        }
+
+                        // ── dots / context menu ──────────────────────────────────────────
+                        Item {
+                            id: menuArea
+                            x: parent.width - 45
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 30; height: 30
+
+                            Image {
+                                anchors.centerIn: parent
+                                width: 18; height: 4
+                                source: "image://svgicons/dots"
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: {
+                                    var gp = menuArea.mapToGlobal(0, 0)
+                                    backend.openSongContextMenu(delegateRoot.DelegateModel.itemsIndex, gp.x, gp.y)
+                                }
+                            }
+                        }
+                        // ── drag handle ──────────────────────────────────────────────────
+                        MouseArea {
+                            id: dragArea
+                            anchors.fill: parent
+                            enabled: backend.dragReorderAllowed && !backend.filterText
+
+                            drag.target:         held ? songRow : undefined
+                            drag.axis:           Drag.YAxis
+                            drag.filterChildren: true
+                            drag.threshold:      10     // pixels before drag activates; lets taps through
+
+                            property bool held: false
+                            property int  startIndex: -1
+
+                            onPressed: {
+                                startIndex = delegateRoot.DelegateModel.itemsIndex
+                                held = true
+                                listViewSongs.interactive = false   // ← disable ListView flicking while dragging
+                                listViewSongs.dropIndicatorVisible = true
+                            }
+
+                            onPositionChanged: {
+                                if (!held) return
+
+                                var posInList = songRow.mapToItem(listViewSongs, 0, 0)
+                                listViewSongs.dropIndicatorY = posInList.y
+
+                                // ── Auto-scroll ──────────────────────────────────────────────────
+                                var viewportY = mapToItem(listViewSongs, mouse.x, mouse.y).y
+                                var threshold = 80
+                                if (viewportY < threshold)
+                                    listViewSongs.velocity = 15
+                                else if (viewportY > listViewSongs.height - threshold)
+                                    listViewSongs.velocity = -15
+                                else
+                                    listViewSongs.velocity = 0
+                            }
+
+                            onReleased: {
+                                if (held) {
+                                    held = false
+                                    listViewSongs.interactive = true   // ← re-enable flicking
+                                    listViewSongs.dropIndicatorVisible = false
+                                    listViewSongs.velocity = 0
+
+                                    var endIndex = delegateRoot.DelegateModel.itemsIndex
+                                    if (startIndex !== endIndex)
+                                        backend.reorderPlaylist(startIndex, endIndex)
+
+                                    startIndex = -1
+                                }
+                            }
+
+                            onCanceled: {
+                                // Safety net if the drag gets stolen
+                                held = false
+                                listViewSongs.interactive = true
+                                listViewSongs.dropIndicatorVisible = false
+                                listViewSongs.velocity = 0
+                                startIndex = -1
+                            }
+                        }
+
+                        HoverHandler { id: hoverHandler }
+
+                        }
                     }
                 }
-            }
-
-            // ── album cover ──────────────────────────────────────────────────
-            Image {
-                id: coverImage
-                x: 50
-                y: (parent.height - height) / 2
-                width: 50; height: 50
-                fillMode: Image.PreserveAspectCrop
-                source: model.coverPath !== ""
-                        ? "file://" + model.coverPath
-                        : "qrc:/images/default_cover.png"
-            }
-
-            // ── title + artist ───────────────────────────────────────────────
-            Column {
-                x: coverImage.x + coverImage.width + 10
-                width: parent.width - x - 120
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 4
-
-                Text {
-                    width: parent.width
-                    text: model.title
-                    color: "white"; font.pixelSize: 13; font.bold: true
-                    elide: Text.ElideRight
-                }
-                Text {
-                    width: parent.width
-                    text: model.artist
-                    color: "#b3b3b3"; font.pixelSize: 12
-                    elide: Text.ElideRight
-                }
-            }
-
-            // ── duration ─────────────────────────────────────────────────────
-            Text {
-                x: parent.width - 105
-                width: 60
-                anchors.verticalCenter: parent.verticalCenter
-                text: model.duration
-                color: "#b3b3b3"; font.pixelSize: 12
-                horizontalAlignment: Text.AlignHCenter
-            }
-
-            // ── dots / context menu ──────────────────────────────────────────
-            Item {
-                id: menuArea
-                x: parent.width - 45
-                anchors.verticalCenter: parent.verticalCenter
-                width: 30; height: 30
-
-                Image {
-                    anchors.centerIn: parent
-                    width: 18; height: 4
-                    source: "image://svgicons/dots"
-                }
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: {
-                        var gp = menuArea.mapToGlobal(0, 0)
-                        backend.openSongContextMenu(delegateRoot.DelegateModel.itemsIndex, gp.x, gp.y)
-                    }
-                }
-            }
-
-            // ── drag handle ──────────────────────────────────────────────────
-            MouseArea {
-    id: dragArea
-    anchors.fill: parent
-    enabled: backend.dragReorderAllowed && !backend.filterText
-
-    drag.target:         held ? songRow : undefined
-    drag.axis:           Drag.YAxis
-    drag.filterChildren: true
-    drag.threshold:      10     // pixels before drag activates; lets taps through
-
-    property bool held: false
-    property int  startIndex: -1
-
-    onPressed: {
-        startIndex = delegateRoot.DelegateModel.itemsIndex
-        held = true
-        listViewSongs.interactive = false   // ← disable ListView flicking while dragging
-        listViewSongs.dropIndicatorVisible = true
-    }
-
-    onPositionChanged: {
-        if (!held) return
-
-        var posInList = songRow.mapToItem(listViewSongs, 0, 0)
-        listViewSongs.dropIndicatorY = posInList.y
-
-        // ── Auto-scroll ──────────────────────────────────────────────────
-        var viewportY = mapToItem(listViewSongs, mouse.x, mouse.y).y
-        var threshold = 80
-        if (viewportY < threshold)
-            listViewSongs.velocity = 15
-        else if (viewportY > listViewSongs.height - threshold)
-            listViewSongs.velocity = -15
-        else
-            listViewSongs.velocity = 0
-    }
-
-    onReleased: {
-        if (held) {
-            held = false
-            listViewSongs.interactive = true   // ← re-enable flicking
-            listViewSongs.dropIndicatorVisible = false
-            listViewSongs.velocity = 0
-
-            var endIndex = delegateRoot.DelegateModel.itemsIndex
-            if (startIndex !== endIndex)
-                backend.reorderPlaylist(startIndex, endIndex)
-
-            startIndex = -1
-        }
-    }
-
-    onCanceled: {
-        // Safety net if the drag gets stolen
-        held = false
-        listViewSongs.interactive = true
-        listViewSongs.dropIndicatorVisible = false
-        listViewSongs.velocity = 0
-        startIndex = -1
-    }
-}
-
-            HoverHandler { id: hoverHandler }
-        }
-    }
-}
-
-//     Component {
-//     id: songDelegate
-
-//     DropArea {
-//         id: delegateRoot
-
-//         property int visualIndex: DelegateModel.itemsIndex
-
-//         width: ListView.view ? ListView.view.width : 0
-//         height: 62
-
-//         // ---- Drag mechanics ----
-//         Drag.active: dragArea.held
-//         Drag.source: delegateRoot
-//         Drag.hotSpot.x: width / 2
-//         Drag.hotSpot.y: height / 2
-
-//         // Visual feedback while dragging
-//         opacity: dragArea.held ? 0.7 : 1.0
-//         z: dragArea.held ? 10 : 0
-
-//         // The drag handle
-//         MouseArea {
-//             id: dragArea
-//             anchors.fill: parent
-//             enabled: backend.dragReorderAllowed && !backend.filterText
-//             drag.target: parent          // moves the delegate root
-//             drag.axis: Drag.YAxis
-//             drag.filterChildren: true
-
-//             property bool held: false
-//             property int startIndex: -1
-//             property int targetIndex: -1
-
-//             onPressed: {
-//                 startIndex = delegateRoot.visualIndex
-//                 targetIndex = startIndex
-//                 held = true
-//                 // Show drop indicator at the starting position
-//                 listViewSongs.dropIndicatorY = delegateRoot.y
-//                 listViewSongs.dropIndicatorVisible = true
-//             }
-
-//             onPositionChanged: {
-//                 if (!held) return
-
-//                 // Map mouse position to the ListView's contentItem
-//                 var posInContent = mapToItem(listViewSongs.contentItem,
-//                                              mouse.x, mouse.y)
-//                 var rowHeight = delegateRoot.height
-//                 var idx = Math.floor(posInContent.y / rowHeight)
-//                 idx = Math.max(0, Math.min(idx, listViewSongs.count - 1))
-
-//                 if (idx !== targetIndex) {
-//                     targetIndex = idx
-//                     // Update drop indicator position
-//                     listViewSongs.dropIndicatorY = idx * rowHeight
-//                 }
-
-//                 // ---- Auto‑scroll ----
-//                 var viewportY = mapToItem(listViewSongs, mouse.x, mouse.y).y
-//                 var threshold = 150
-//                 if (viewportY < threshold) {
-//                     // Scroll up (contentY decreases)
-//                     listViewSongs.velocity = 15
-//                 } else if (viewportY > listViewSongs.height - threshold) {
-//                     // Scroll down (contentY increases)
-//                     listViewSongs.velocity = -15
-//                 } else {
-//                     // Stop scrolling when not near edges
-//                     listViewSongs.velocity = 0
-//                 }
-//             }
-
-//             onReleased: {
-//                 if (held) {
-//                     held = false
-//                     // Hide drop indicator
-//                     listViewSongs.dropIndicatorVisible = false
-//                     listViewSongs.velocity = 0
-
-//                     // Apply the reorder only if position changed
-//                     if (startIndex !== targetIndex) {
-//                         backend.reorderPlaylist(startIndex, targetIndex)
-//                     }
-//                 }
-//             }
-//         }
-
-//         // ---- The visible row (your existing UI) ----
-//         Rectangle {
-//             id: songRow
-//             width: parent.width
-//             height: 62
-//             color: "transparent"
-
-//             // Background (unchanged)
-//             Rectangle {
-//                 anchors.fill: parent
-//                 color: isPlaying ? "#2a2a2a"
-//                      : isActive  ? "#2f2f2f"
-//                      : hoverHandler.hovered ? "#202020"
-//                      : "#181818"
-//             }
-
-//             property bool isPlaying: model.isPlaying
-//             property bool isPaused:  model.isPaused
-//             property bool isActive:  model.isActive
-
-//             // ---- play/pause area ----
-//             Item {
-//                 id: playArea
-//                 x: 0; y: 0; width: 50; height: parent.height
-
-//                 Text {
-//                     anchors.centerIn: parent
-//                     visible: !songRow.isPlaying && !hoverHandler.hovered
-//                     text: (delegateRoot.visualIndex + 1).toString()
-//                     color: "#b3b3b3"; font.pixelSize: 13
-//                 }
-//                 Image {
-//                     anchors.centerIn: parent
-//                     visible: songRow.isPlaying || hoverHandler.hovered
-//                     width: 22; height: 22
-//                     source: (songRow.isPlaying && !songRow.isPaused)
-//                             ? "qrc:/icons/menuPauseIcon.svg"
-//                             : "qrc:/icons/menuPlayIcon.svg"
-//                 }
-//                 MouseArea {
-//                     anchors.fill: parent
-//                     onClicked: {
-//                         if (songRow.isPlaying)
-//                             backend.playAndPause()
-//                         else
-//                             backend.playSongAtVisibleIndex(delegateRoot.visualIndex)
-//                     }
-//                 }
-//             }
-
-//             // ---- album cover ----
-//             Image {
-//                 id: coverImage
-//                 x: 50
-//                 y: (parent.height - height) / 2
-//                 width: 50; height: 50
-//                 fillMode: Image.PreserveAspectCrop
-//                 source: model.coverPath !== ""
-//                         ? "file://" + model.coverPath
-//                         : "qrc:/images/default_cover.png"
-//             }
-
-//             // ---- title + artist ----
-//             Column {
-//                 x: coverImage.x + coverImage.width + 10
-//                 width: parent.width - x - 120
-//                 anchors.verticalCenter: parent.verticalCenter
-//                 spacing: 4
-
-//                 Text {
-//                     width: parent.width
-//                     text: model.title
-//                     color: "white"; font.pixelSize: 13; font.bold: true
-//                     elide: Text.ElideRight
-//                 }
-//                 Text {
-//                     width: parent.width
-//                     text: model.artist
-//                     color: "#b3b3b3"; font.pixelSize: 12
-//                     elide: Text.ElideRight
-//                 }
-//             }
-
-//             // ---- duration ----
-//             Text {
-//                 x: parent.width - 105
-//                 width: 60
-//                 anchors.verticalCenter: parent.verticalCenter
-//                 text: model.duration
-//                 color: "#b3b3b3"; font.pixelSize: 12
-//                 horizontalAlignment: Text.AlignHCenter
-//             }
-
-//             // ---- dots / context menu ----
-//             Item {
-//                 id: menuArea
-//                 x: parent.width - 45
-//                 anchors.verticalCenter: parent.verticalCenter
-//                 width: 30; height: 30
-
-//                 Image {
-//                     anchors.centerIn: parent
-//                     width: 18; height: 4
-//                     source: "image://svgicons/dots"
-//                 }
-//                 MouseArea {
-//                     anchors.fill: parent
-//                     onClicked: {
-//                         var gp = menuArea.mapToGlobal(0, 0)
-//                         backend.openSongContextMenu(delegateRoot.visualIndex, gp.x, gp.y)
-//                     }
-//                 }
-//             }
-
-//             HoverHandler { id: hoverHandler }
-//         }
-//     }
-// }
-
             ColumnLayout {
                 anchors.fill: parent
                 spacing: 0
@@ -929,30 +720,6 @@ ApplicationWindow {
                                 NumberAnimation { properties: "x,y"; duration: 170; easing.type: Easing.OutCubic }
                             }
 
-                            // move: Transition {
-                            //     NumberAnimation {
-                            //         properties: "x,y"
-                            //         duration: 170
-                            //         easing.type: Easing.OutCubic
-                            //     }
-                            // }
-
-                            // moveDisplaced: Transition {
-                            //     NumberAnimation {
-                            //         properties: "x,y"
-                            //         duration: 170
-                            //         easing.type: Easing.OutCubic
-                            //     }
-                            // }
-
-                            // displaced: Transition {
-                            //     NumberAnimation {
-                            //         properties: "x,y"
-                            //         duration: 170
-                            //         easing.type: Easing.OutCubic
-                            //     }
-                            // }
-
                             // ── Playlist hero header ─────────────────────────────────────────
                             header: backend.isInPlaylistView ? playlistHeroComponent : null
 
@@ -1030,323 +797,6 @@ ApplicationWindow {
                             TapHandler {
                                 onTapped: searchField.focus = false
                             }
-
-                            // Rectangle {
-                            //     id: dropIndicator
-                            //     visible: false
-                            //     x: 0
-                            //     y: 0
-                            //     parent: listViewSongs.contentItem
-                            //     width: listViewSongs.width
-                            //     height: 2
-                            //     color: "white"
-                            //     opacity: 0.85
-                            //     z: 1
-                            //     Behavior on y {
-                            //         NumberAnimation {
-                            //             duration: 120
-                            //             easing.type: Easing.OutCubic
-                            //         }
-                            //     }
-                            //     Behavior on opacity {
-                            //         NumberAnimation {
-                            //             duration: 80
-                            //         }
-                            //     }
-                            // }
-
-                            // delegate: Rectangle {
-                            //     id: songRow
-                            //     width: listViewSongs.width
-                            //     height: 62         // matches SongDelegate::sizeHint
-                            //     color: "transparent"
-                            //     // opacity: reorderDrag.active ? 0.8 : 1
-                            //     // z: reorderDrag.active ? 2 : 0
-
-                            //     // transform: Translate {
-                            //     //     id: dragTranslate
-
-                            //     //     y: {
-                            //     //         if (reorderDrag.active)
-                            //     //             return reorderDrag.translation.y
-
-                            //     //         if (listViewSongs.draggedIndex < 0)
-                            //     //             return 0
-
-                            //     //         var rowHeight = songRow.height
-
-                            //     //         // dragging downward
-                            //     //         if (listViewSongs.dropIndex > listViewSongs.draggedIndex) {
-                            //     //             if (index > listViewSongs.draggedIndex && index <= listViewSongs.dropIndex)
-                            //     //                 return -rowHeight
-                            //     //         }
-
-                            //     //         // dragging upward
-                            //     //         if (listViewSongs.dropIndex < listViewSongs.draggedIndex) {
-                            //     //             if (index >= listViewSongs.dropIndex && index < listViewSongs.draggedIndex)
-                            //     //                 return rowHeight
-                            //     //         }
-
-                            //     //         return 0
-                            //     //     }
-
-                            //     //     Behavior on y {
-                            //     //         NumberAnimation {
-                            //     //             duration: 170
-                            //     //             easing.type: Easing.OutCubic
-                            //     //         }
-                            //     //     }
-                            //     // }
-
-                            //     // ── state from model roles ──────────────────────────────────────
-                            //     property bool isPlaying: model.isPlaying   // IsPlayingRole
-                            //     property bool isPaused:  model.isPaused    // IsPausedRole
-                            //     property bool isActive:  model.isActive    // IsActiveRole
-
-                            //     // ── background ─────────────────────────────────────────────────
-                            //     Rectangle {
-                            //         anchors.fill: parent
-                            //         color: songRow.isPlaying ? "#2a2a2a"
-                            //             : songRow.isActive  ? "#2f2f2f"
-                            //             : hoverHandler.hovered ? "#202020"
-                            //             : "#181818"
-                            //     }
-
-                            //     // ── play/pause button area (left 50 px) ─────────────────────────
-                            //     Item {
-                            //         id: playArea
-                            //         x: 0; y: 0
-                            //         width: 50; height: parent.height
-
-                            //         // Track number shown when not hovered and not playing
-                            //         Text {
-                            //             // property int visualIndex: {
-                            //             //     if (listViewSongs.draggedIndex < 0)
-                            //             //         return index
-
-                            //             //     // dragged item
-                            //             //     if (index === listViewSongs.draggedIndex)
-                            //             //         return listViewSongs.dropIndex
-
-                            //             //     // dragging downward
-                            //             //     if (listViewSongs.dropIndex > listViewSongs.draggedIndex) {
-                            //             //         if (index > listViewSongs.draggedIndex &&
-                            //             //             index <= listViewSongs.dropIndex)
-                            //             //             return index - 1
-                            //             //     }
-
-                            //             //     // dragging upward
-                            //             //     if (listViewSongs.dropIndex < listViewSongs.draggedIndex) {
-                            //             //         if (index >= listViewSongs.dropIndex &&
-                            //             //             index < listViewSongs.draggedIndex)
-                            //             //             return index + 1
-                            //             //     }
-
-                            //             //     return index
-                            //             // }
-                            //             anchors.centerIn: parent
-                            //             visible: !songRow.isPlaying && !hoverHandler.hovered
-                            //             text: (dragArea.DelegateModel.itemsIndex + 1).toString()//(visualIndex+1).toString()
-                            //             color: "#b3b3b3"
-                            //             font.pixelSize: 13
-                            //         }
-
-                            //         // Play / pause icon shown on hover or while playing
-                            //         Image {
-                            //             anchors.centerIn: parent
-                            //             visible: songRow.isPlaying || hoverHandler.hovered
-                            //             width: 22; height: 22
-                            //             source: (songRow.isPlaying && !songRow.isPaused)
-                            //                     ? "qrc:/icons/menuPauseIcon.svg"
-                            //                     : "qrc:/icons/menuPlayIcon.svg"
-                            //         }
-
-                            //         MouseArea {
-                            //             anchors.fill: parent
-                            //             onClicked: {
-                            //                 if (songRow.isPlaying)
-                            //                     backend.playAndPause()          // toggles play/pause
-                            //                 else
-                            //                     backend.playSongAtVisibleIndex(index)
-                            //             }
-                            //         }
-                            //     }
-
-                            //     // ── album cover (left: 50, same margin logic as C++) ────────────
-                            //     Image {
-                            //         id: coverImage
-                            //         x: 50
-                            //         y: (parent.height - height) / 2      // margin = height/10 → centred
-                            //         width: 50; height: 50
-                            //         fillMode: Image.PreserveAspectCrop
-                            //         source: model.coverPath !== "" ? "file://" + model.coverPath
-                            //                                 : "qrc:/images/default_cover.png"
-                            //     }
-
-                            //     // ── title + artist ──────────────────────────────────────────────
-                            //     Column {
-                            //         x: coverImage.x + coverImage.width + 10
-                            //         width: parent.width - x - 120
-                            //         anchors.verticalCenter: parent.verticalCenter
-                            //         spacing: 4
-
-                            //         Text {
-                            //             width: parent.width
-                            //             text: model.title
-                            //             color: "white"
-                            //             font.pixelSize: 13
-                            //             font.bold: true
-                            //             elide: Text.ElideRight
-                            //         }
-                            //         Text {
-                            //             width: parent.width
-                            //             text: model.artist
-                            //             color: "#b3b3b3"
-                            //             font.pixelSize: 12
-                            //             elide: Text.ElideRight
-                            //         }
-                            //     }
-
-                            //     // ── duration ────────────────────────────────────────────────────
-                            //     Text {
-                            //         x: parent.width - 105
-                            //         width: 60
-                            //         anchors.verticalCenter: parent.verticalCenter
-                            //         text: model.duration
-                            //         color: "#b3b3b3"
-                            //         font.pixelSize: 12
-                            //         horizontalAlignment: Text.AlignHCenter
-                            //     }
-
-                            //     // ── dots / context-menu button ───────────────────────────────────
-                            //     Item {
-                            //         id: menuArea
-                            //         x: parent.width - 45
-                            //         anchors.verticalCenter: parent.verticalCenter
-                            //         width: 30; height: 30
-
-                            //         Image {
-                            //             anchors.centerIn: parent
-                            //             width: 18; height: 4
-                            //             source: "image://svgicons/dots"
-                            //         }
-
-                            //         MouseArea {
-                            //             anchors.fill: parent
-                            //             onClicked: {
-                            //                 var globalPos = menuArea.mapToGlobal(0, 0)
-                            //                 backend.openSongContextMenu(index, globalPos.x, globalPos.y)
-                            //             }
-                            //         }
-                            //     }
-                            //     // DragHandler {
-                            //     //     id: reorderDrag
-                            //     //     enabled: backend.dragReorderAllowed && !backend.filterText
-                            //     //     grabPermissions: DragHandler.TakeOverForbidden
-                            //     //     target: null
-
-                            //     //     xAxis.enabled: false   // ① prevent horizontal drag
-
-                            //     //     property int startIndex: -1
-                            //     //     property int targetIndex: -1
-
-                            //     //     function updateDropTarget() {
-                            //     //         if (!reorderDrag.active)
-                            //     //             return
-
-                            //     //         var p = reorderDrag.mapToItem(
-                            //     //                     listViewSongs.contentItem,
-                            //     //                     reorderDrag.centroid.position.x,
-                            //     //                     reorderDrag.centroid.position.y)
-
-                            //     //         var rowHeight = songRow.height
-
-                            //     //         var idx = Math.floor(p.y / rowHeight)
-                            //     //         idx = Math.max(0, Math.min(idx, listViewSongs.count - 1))
-
-                            //     //         if (idx !== reorderDrag.targetIndex) {
-                            //     //             reorderDrag.targetIndex = idx
-                            //     //             listViewSongs.dropIndex = idx
-                            //     //             dropIndicator.y = idx * rowHeight
-                            //     //         }
-                            //     //     }
-
-                            //     //     onActiveChanged: {
-                            //     //         if (active) {
-                            //     //             startIndex = index
-                            //     //             targetIndex = index
-
-                            //     //             listViewSongs.draggedIndex = index
-                            //     //             listViewSongs.dropIndex = index
-
-                            //     //             dropIndicator.visible = true
-                            //     //             dropIndicator.y = songRow.y
-                            //     //         } else {
-                            //     //             dropIndicator.visible = false
-                            //     //             if (targetIndex >= 0 && targetIndex != startIndex)
-                            //     //                 backend.reorderPlaylist(startIndex, targetIndex)
-
-                            //     //             listViewSongs.draggedIndex = -1
-                            //     //             listViewSongs.dropIndex = -1
-
-                            //     //             startIndex = -1
-                            //     //             targetIndex = -1
-                            //     //         }
-                            //     //     }
-
-                            //     //     onCentroidChanged: {
-                            //     //         if (!active)
-                            //     //             return
-
-                            //     //         // Map centroid to the contentItem to compute target index
-                            //     //         var p = mapToItem(listViewSongs.contentItem,
-                            //     //                         centroid.position.x,
-                            //     //                         centroid.position.y)
-                            //     //         var rowHeight = songRow.height
-                            //     //         var idx = Math.floor(p.y / rowHeight)
-                            //     //         idx = Math.max(0, Math.min(idx, listViewSongs.count-1))
-
-                            //     //         if (idx !== targetIndex) {
-                            //     //             targetIndex = idx
-
-                            //     //             listViewSongs.dropIndex = idx
-
-                            //     //             // Update indicator at visual position of the target row
-                            //     //             dropIndicator.y = idx * rowHeight
-                            //     //         }
-
-                            //     //         // Get visual Y relative to the ListView viewport
-                            //     //         var posInListView = mapToItem(listViewSongs,
-                            //     //                                     centroid.position.x,
-                            //     //                                     centroid.position.y)
-
-                            //     //         // ④ smooth auto‑scroll using velocity (instead of direct contentY)
-                            //     //         var threshold = 80
-                            //     //         if (posInListView.y < threshold+30) {
-                            //     //             // Scroll up – positive velocity (contentY decreases)
-                            //     //             if (listViewSongs.velocity < 5)   // avoid fighting against momentum
-                            //     //                 listViewSongs.velocity = 10
-                            //     //         } else if (posInListView.y > listViewSongs.height - threshold) {
-                            //     //             // Scroll down – negative velocity (contentY increases)
-                            //     //             if (listViewSongs.velocity > -5)
-                            //     //                 listViewSongs.velocity = -10
-                            //     //         }
-                            //     //         // If not near edges, we leave velocity alone – it will naturally decelerate
-                            //     //     }
-                            //     // }
-                            //     // ── hover detection for the whole row ───────────────────────────
-                            //     HoverHandler {
-                            //         id: hoverHandler
-                            //     }
-                            // }
-
-                            // Connections {
-                            //     target: backend
-                            //     function onJumpToSongIndex(visibleIndex) {
-                            //         listViewSongs.positionViewAtIndex(visibleIndex, ListView.Center)
-                            //         listViewSongs.currentIndex = visibleIndex
-                            //     }
-                            // }
                         }
                     }
                 }
@@ -1795,8 +1245,6 @@ ApplicationWindow {
                     }
                 }
             }
-            
-            
         }
     }
     
