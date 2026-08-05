@@ -131,9 +131,9 @@ ApplicationWindow {
 
                     // ── Live visual reorder: fires as the dragged item enters this delegate ──
                     onEntered: function(drag) {
-                        visualModel.items.move(
-                            drag.source.DelegateModel.itemsIndex,   // where the dragged item currently sits
-                            delegateRoot.DelegateModel.itemsIndex)  // where this delegate sits
+                        var from = drag.source.DelegateModel.itemsIndex
+                        var to   = delegateRoot.DelegateModel.itemsIndex
+                        visualModel.items.move(from, to)
                     }
 
                     // ── The draggable content ──
