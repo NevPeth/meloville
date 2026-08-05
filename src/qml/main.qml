@@ -18,6 +18,24 @@ ApplicationWindow {
         id: stackView
         anchors.fill: parent
         initialItem: backend.libraryPresent ? mainPageComponent : loadPageComponent
+
+        popEnter: Transition {
+            NumberAnimation {
+                property: "opacity"
+                from: 0
+                to: 1
+                duration: 200
+            }
+        }
+
+        popExit: Transition {
+            NumberAnimation {
+                property: "opacity"
+                from: 1
+                to: 0
+                duration: 200
+            }
+        }
     }
 
     NewPlaylistDialog {
@@ -1217,7 +1235,7 @@ ApplicationWindow {
                                             fillMode: Image.PreserveAspectFit
                                         }
 
-                                        onClicked: stackView.push(bigPicturePageComponent)
+                                        onClicked: stackView.push(bigPicturePageComponent, StackView.Immediate)
                                     }
 
                                     Button {

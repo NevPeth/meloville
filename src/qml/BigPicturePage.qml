@@ -5,6 +5,8 @@ import Qt5Compat.GraphicalEffects
 
 Item {
     id: root
+    property bool closing: false
+    visible: !root.closing
 
     signal exitBigPicture()
 
@@ -38,7 +40,7 @@ Item {
         radius: 64
         samples: 63
         deviation: 24
-        visible: true        // must be visible to be captured by ShaderEffectSource
+        visible: true
         cached: true
     }
     GaussianBlur {
@@ -147,7 +149,10 @@ Item {
                             : "image://svgicons/closeIconBigNormal"
                     fillMode: Image.PreserveAspectFit
                 }
-                onClicked: root.exitBigPicture()
+                onClicked: {
+                    root.closing = true; 
+                    root.exitBigPicture()
+                }
             }
 
             Item { Layout.fillWidth: true }
