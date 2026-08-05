@@ -61,6 +61,7 @@ Popup {
             onHoveredChanged: {
                 if (hovered) {
                     closeTimer.stop()
+                    subMenu.positionSubMenu()
                     subMenu.open()
                 } else {
                     closeTimer.start()
@@ -147,6 +148,27 @@ Popup {
         height: Math.min(400, Math.max(200, subContent.implicitHeight + 20))
         padding: 0
 
+        function positionSubMenu() {
+            var parentItem = popup.parent
+            var newX = popup.x - width
+            var newY = popup.y - 35
+            // If it would go off the left edge, open to the right instead.
+            if (newX < 0)
+                newX = popup.x + popup.width
+            // Clamp horizontally.
+            if (newX + width > parentItem.width)
+                newX = parentItem.width - width
+            // Clamp vertically.
+            if (newY < 74)
+                newY = 74
+
+            if (newY + height > parentItem.height - 95)
+                newY = parentItem.height - height - 95
+
+            x = newX
+            y = newY
+        }
+
         property bool containsMouse: false
 
         background: Rectangle {
@@ -168,7 +190,6 @@ Popup {
 
                 background: Rectangle {
                     color: "#2a2a2a"
-                    radius: 4
                 }
 
                 Image {

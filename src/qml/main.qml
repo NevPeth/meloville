@@ -58,22 +58,11 @@ ApplicationWindow {
 
             var local = appWindow.contentItem.mapFromGlobal(x, y)
 
-            var estimatedHeight = 300
             var popupWidth = contextMenu.width
             var gap = 8
 
             var posX = local.x - popupWidth
             var posY = local.y + gap
-
-            // Flip above the click point if it would go off the bottom of the window
-            if (posY + estimatedHeight > appWindow.contentItem.height) {
-                posY = local.y - gap - estimatedHeight
-            }
-
-            // Clamp horizontally within the window
-            if (posX < 0) posX = 0
-            if (posX + popupWidth > appWindow.contentItem.width)
-                posX = appWindow.contentItem.width - popupWidth
 
             contextMenu.x = posX
             contextMenu.y = posY
