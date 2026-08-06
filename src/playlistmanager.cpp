@@ -325,13 +325,11 @@ void PlaylistManager::deletePlaylist(
     if (!playlists.contains(playlistName))
         return;
 
-    emit playlistDeleted(playlistName);
-
     QString cover = playlistImages.value(playlistName);
 
     if (!cover.isEmpty())
     {
-        QFile::remove(playlistPath+cover);
+        QFile::remove(playlistPath + cover);
     }
 
     playlists.remove(playlistName);
@@ -340,6 +338,7 @@ void PlaylistManager::deletePlaylist(
     playlistOrder.removeAll(playlistName);
 
     savePlaylists();
+    emit playlistDeleted(playlistName);
 }
 
 int PlaylistManager::calculateTitleSize(const QString& text)

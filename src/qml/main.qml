@@ -413,7 +413,7 @@ ApplicationWindow {
                                     fillMode: Image.PreserveAspectFit
                                 }
 
-                                    onClicked: playlistDialog.openCreate()
+                                onClicked: playlistDialog.openCreate()
                             }
 
                             Button {
@@ -720,20 +720,18 @@ ApplicationWindow {
                                 }
                             }
 
-                            // onContentYChanged: {
-                            //     if (reorderDrag.active)
-                            //         reorderDrag.updateDropTarget()
-                            // }
-
                             Connections {
                                 target: backend
                                 function onIsInPlaylistViewChanged() {
-                                    listViewSongs.contentY = 0
+                                    if (backend.isInPlaylistView) {
+                                        listViewSongs.contentY = -270
+                                    } else {
+                                        listViewSongs.contentY = 0
+                                    }
                                 }
                             }
 
                             model: visualModel
-                            //model: backend.songModel
 
                             move: Transition {
                                 NumberAnimation { properties: "x,y"; duration: 170; easing.type: Easing.OutCubic }
@@ -778,6 +776,12 @@ ApplicationWindow {
                                                 radius: 8
                                             }
                                         }
+
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: playlistDialog.openEdit(currentPlaylistName, currentPlaylistCover)
+                                        }
                                     }
 
                                     Column {
@@ -803,6 +807,12 @@ ApplicationWindow {
                                             font.bold: true
                                             wrapMode: Text.Wrap
                                             maximumLineCount: 2
+
+                                            MouseArea {
+                                                anchors.fill: parent
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: playlistDialog.openEdit(currentPlaylistName, currentPlaylistCover)
+                                            }
                                         }
                                     }
 
@@ -825,7 +835,7 @@ ApplicationWindow {
                         }
                     }
                 }
-                // -------- NOW PLAYING BAR (frameNowPlaying) --------
+                // -------- Music Metadata Bar --------
                 Rectangle {
                     id: frameNowPlaying
                     Layout.fillWidth: true
@@ -908,7 +918,6 @@ ApplicationWindow {
                                 anchors.fill: parent
                                 spacing: 0
 
-                                // Playback buttons row
                                 RowLayout {
                                     id: layoutPlaybackButtons
                                     Layout.alignment: Qt.AlignHCenter
@@ -970,7 +979,6 @@ ApplicationWindow {
                                         onClicked: backend.playAndPause()
                                     }
 
-                                    // btnSkip
                                     Button {
                                         id: btnSkip
                                         Layout.preferredWidth: 48
@@ -987,7 +995,6 @@ ApplicationWindow {
                                         onClicked: backend.playNextSong()
                                     }
 
-                                    // btnRepeat
                                     Button {
                                         id: btnRepeat
                                         Layout.preferredWidth: 40
@@ -1010,7 +1017,6 @@ ApplicationWindow {
                                     Layout.alignment: Qt.AlignHCenter
                                     spacing: 3
 
-                                    // labelCurrentTime
                                     Text {
                                         id: labelCurrentTime
                                         text: formatTime(backend.playerPosition)
@@ -1027,7 +1033,7 @@ ApplicationWindow {
                                         }
                                     }
 
-                                    // sliderPosition
+                                    // bar for music played
                                     Slider {
                                         id: sliderPosition
                                         Layout.minimumWidth: 320
@@ -1035,14 +1041,13 @@ ApplicationWindow {
                                         Layout.preferredHeight: 20
                                         from: 0
                                         to: Math.max(1, backend.playerDuration)
-                                        // Only update from backend when the user isn't dragging
+                                        // Only update when user isn't dragging otherwise feedback loop
                                         value: sliderPosition.pressed ? sliderPosition.value : backend.playerPosition
 
                                         hoverEnabled: true
 
-                                        // Seek when the user releases the handle
                                         onPressedChanged: {
-                                            if (!pressed)
+                                            if (!pressed) //On release go to part in song
                                                 backend.seekTo(sliderPosition.value)
                                         }
 
@@ -1082,7 +1087,6 @@ ApplicationWindow {
                                         }
                                     }
 
-                                    // labelTotalTime
                                     Text {
                                         id: labelTotalTime
                                         text: formatTime(backend.playerDuration)

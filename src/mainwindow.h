@@ -65,6 +65,8 @@ public:
     Q_INVOKABLE void loadPlaylistView(const QString& playlistName);
     Q_INVOKABLE void returnToLibrary();
     Q_INVOKABLE void openSongContextMenu(int visibleIndex, int x, int y);
+    Q_INVOKABLE void editPlaylist(const QString& oldName, const QString& newName, const QString& imagePath);
+    Q_INVOKABLE void deletePlaylist(const QString& playlistName);
     Q_INVOKABLE void addToPlaylist(int visibleIndex, const QString& playlistName);
     Q_INVOKABLE void removeFromCurrentPlaylist(int visibleIndex);
     Q_INVOKABLE void editCurrentSong(int visibleIndex);

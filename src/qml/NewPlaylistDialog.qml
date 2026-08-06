@@ -21,6 +21,16 @@ Item {
     property string selectedImagePath: ""  // local file path from file dialog
     property string playlistName: ""
 
+    function normalizeImageSource(path) {
+        if (!path)
+            return ""
+        if (path.startsWith("file://"))
+            return path
+        if (path.startsWith("/"))
+            return "file://" + path
+        return path
+    }
+
     // Overlay (dim background)
     Rectangle {
         anchors.fill: parent
@@ -96,15 +106,13 @@ Item {
                         anchors.fill: parent
                         fillMode: Image.PreserveAspectCrop
                         source: {
-                            // If editing and we have a stored image path (relative or absolute)
-                            if (mode === "edit" && editImagePath !== "") {
-                                return editImagePath
-                            }
-                            // If user selected new image
                             if (selectedImagePath !== "") {
                                 return selectedImagePath
                             }
-                            return "" // empty shows no image
+                            if (mode === "edit" && editImagePath !== "") {
+                                return normalizeImageSource(editImagePath)
+                            }
+                            return ""
                         }
                         visible: source !== ""
                     }
@@ -179,6 +187,7 @@ Item {
                         font.bold: true
                     }
                     onClicked: {
+                        backend.deletePlaylist(editName)
                         root.deleted()
                         closeDialog()
                     }
@@ -237,7 +246,7 @@ Item {
         title: "Choose Playlist Image"
         nameFilters: ["Images (*.png *.jpg *.jpeg *.bmp)"]
         onAccepted: {
-            selectedImagePath = selectedFile
+            selectedImagePath = selectedFile.toString()
         }
     }
 
