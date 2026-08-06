@@ -12,6 +12,25 @@ ApplicationWindow {
     title: "Meloville"
     color: "#121212"
     flags: Qt.FramelessWindowHint
+
+    Shortcut {
+        sequence: "Space"
+        context: Qt.ApplicationShortcut
+        onActivated: backend.playAndPause()
+    }
+
+
+Shortcut {
+    sequence: "Media Next"
+    context: Qt.ApplicationShortcut
+    onActivated: backend.playNextSong()
+}
+
+Shortcut {
+    sequence: "Media Previous"
+    context: Qt.ApplicationShortcut
+    onActivated: backend.playPreviousSong()
+}
     
     // Stack view to manage pages
     StackView {

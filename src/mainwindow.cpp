@@ -12,6 +12,7 @@
 #include <QRandomGenerator>
 #include <QTimer>
 #include <algorithm>
+#include "mprisadapter.h"
 
 MainWindow::MainWindow(QObject *parent)
     : QObject(parent)
@@ -50,6 +51,11 @@ MainWindow::MainWindow(QObject *parent)
 
     connect(playbackController, &PlaybackController::volumeChanged,
         this, &MainWindow::volumeChanged);
+
+    MprisAdapter *mpris = new MprisAdapter(this);
+    connect(mpris->player(), &MprisPlayerAdaptor::nextRequested, this, &MainWindow::playNextSong);
+    connect(mpris->player(), &MprisPlayerAdaptor::previousRequested, this, &MainWindow::playPreviousSong);
+    connect(mpris->player(), &MprisPlayerAdaptor::playPauseRequested, this, &MainWindow::playAndPause);
     
     QDir().mkpath(appDataPath + "/cache");
     
@@ -631,7 +637,6 @@ void MainWindow::openSongContextMenu(int visibleIndex, int x, int y)
     if (visibleIndex < 0 || visibleIndex >= visibleSongs.size())
         return;
     
-    // Update playlist names (in case they changed)
     updatePlaylistNames();
     
     // Ask QML to open the popup with the visible index and position
@@ -648,23 +653,97 @@ void MainWindow::addToPlaylist(int visibleIndex, const QString& playlistName)
     
     playlistManager->addSongToPlaylist(playlistName, libraryIndex, song);
     
-    // Update other state
     if (playlistName == currentlyPlayingPlaylist)
         currentPlaybackSongs.push_back(libraryIndex);
     if (shuffleMode)
         unplayedIndices.append(libraryIndex);
-    
-    // Optionally emit signals to update UI
 }
 
-void MainWindow::editCurrentSong(int visibleIndex)
+void MainWindow::saveSongEdits(int libraryIndex, const QString& title, const QString& artist,
+                              const QString& album, int trackNumber, const QString& imagePath)
 {
-    if (visibleIndex < 0 || visibleIndex >= visibleSongs.size()) return;
-    
-    int libraryIndex = visibleSongs[visibleIndex];
-    SongData& song = library[libraryIndex];
-    
-    // TODO Paste rest of code from my old stuff
+    if (libraryIndex < 0 || libraryIndex >= library.size())
+        return;
+
+    SongData currSong = library[libraryIndex];
+    playlistManager->editSongFromAllPlaylists(libraryIndex, title, artist);
+
+    if (currSong.title != title) {
+        int oldIndex = currentLibraryIndex;
+        SongData newSong;
+        newSong.filePath = currSong.filePath;
+        newSong.title = title;
+        newSong.artist = artist;
+        newSong.album = album;
+        newSong.trackNumber = trackNumber;
+        newSong.coverPath = imagePath;
+        newSong.duration = currSong.duration;
+
+        library.removeAt(libraryIndex);
+
+        auto pos = std::lower_bound(library.begin(), library.end(), newSong, songTitleLess);
+        int newIndex = std::distance(library.begin(), pos);
+        library.insert(pos, newSong);
+
+        playlistManager->loadPlaylists(library, false);
+
+        auto remap = [oldIndex, newIndex](int idx) -> int {
+            if (idx == oldIndex) return newIndex;
+            int shifted = (idx > oldIndex) ? idx - 1 : idx;
+            if (shifted >= newIndex) shifted += 1;
+            return shifted;
+        };
+
+        for (int &i : playHistory)
+            i = remap(i);
+        for (int i = 0; i < nextUp.size(); ++i)
+            nextUp[i] = remap(nextUp[i]);
+        for (int &i : currentPlaybackSongs)
+            i = remap(i);
+        for (int &i : unplayedIndices)
+            i = remap(i);
+
+        if (oldIndex == libraryIndex) {
+            songModel->setPlayingIndex(newIndex);
+            currentLibraryIndex = newIndex;
+            emit currentLibraryIndexChanged();
+            emit currentSongChanged();
+        }
+    } else {
+        SongData &song = library[libraryIndex];
+        song.title = title;
+        song.artist = artist;
+        song.album = album;
+        song.trackNumber = trackNumber;
+        song.coverPath = imagePath;
+
+        if (libraryIndex == currentLibraryIndex) {
+            emit currentSongChanged();
+        }
+    }
+
+    currentViewSongs.clear();
+    for (int i = 0; i < library.size(); i++) {
+        currentViewSongs.push_back(i);
+    }
+
+    if (isInPlaylistView) {
+        loadPlaylistView(viewingPlaylist);
+    } else {
+        currentViewSongs.clear();
+        for (int i = 0; i < library.size(); i++) {
+            currentViewSongs.push_back(i);
+        }
+        visibleSongs = currentViewSongs;
+        currentPlaybackSongs = currentViewSongs;
+        songModel->setSongs(&library, &visibleSongs);
+    }
+
+    if (currentLibraryIndex >= 0) {
+        currentPlaybackIndex = currentPlaybackSongs.indexOf(currentLibraryIndex);
+    }
+
+    saveLibrary();
 }
 
 void MainWindow::removeFromCurrentPlaylist(int visibleIndex)

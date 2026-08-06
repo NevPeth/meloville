@@ -14,6 +14,7 @@ find_package(Qt6 REQUIRED COMPONENTS
     Widgets
     Multimedia
     Svg
+    DBus
 )
 
 find_package(PkgConfig REQUIRED)
@@ -41,6 +42,8 @@ qt_add_executable(Meloville
     playbackcontroller.cpp
     playlistmodel.h
     playlistmodel.cpp
+    mprisadapter.h
+    mprisadapter.cpp
 
     svgLogic/svgcreator.h
     svgLogic/svgcreator.cpp
@@ -57,6 +60,7 @@ target_link_libraries(Meloville PRIVATE
     Qt6::Widgets
     Qt6::Multimedia
     Qt6::Svg
+    Qt6::DBus
     ${TAGLIB_LIBRARIES}
     pulse
 )

@@ -69,7 +69,7 @@ public:
     Q_INVOKABLE void deletePlaylist(const QString& playlistName);
     Q_INVOKABLE void addToPlaylist(int visibleIndex, const QString& playlistName);
     Q_INVOKABLE void removeFromCurrentPlaylist(int visibleIndex);
-    Q_INVOKABLE void editCurrentSong(int visibleIndex);
+    Q_INVOKABLE void saveSongEdits(int libraryIndex, const QString& title, const QString& artist, const QString& album, int trackNumber, const QString& imagePath);
     Q_INVOKABLE void jumpToCurrentSong();
 
     Q_INVOKABLE void reorderPlaylist(int from, int to);
