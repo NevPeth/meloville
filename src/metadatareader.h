@@ -28,6 +28,15 @@ public:
     
     static QString cacheUserImage(const QString& imagePath, const QString& cacheDir, const QString& fileName);
 
+    static QString saveTagsToFile(
+        const QString& filePath,
+        const QString& title,
+        const QString& artist,
+        const QString& album,
+        int trackNumber,
+        const QString& cachedImagePath
+    );
+
 private:
     static QPixmap extractMp3Cover(const QString& path);
     static QPixmap extractFlacCover(const QString& path);

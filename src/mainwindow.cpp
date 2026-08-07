@@ -182,7 +182,6 @@ void MainWindow::saveLibrary()
         obj["title"] = song.title;
         obj["artist"] = song.artist;
         obj["album"] = song.album;
-        obj["genre"] = song.genre;
         obj["coverPath"] = song.coverPath;
         obj["duration"] = song.duration;
         obj["trackNumber"] = song.trackNumber;
@@ -226,7 +225,6 @@ void MainWindow::loadLibrary()
         s.title = obj["title"].toString();
         s.artist = obj["artist"].toString();
         s.album = obj["album"].toString();
-        s.genre = obj["genre"].toString();
         s.coverPath = obj["coverPath"].toString();
         s.duration = obj["duration"].toInt();
         s.trackNumber = obj["trackNumber"].toInt();
@@ -660,24 +658,44 @@ void MainWindow::addToPlaylist(int visibleIndex, const QString& playlistName)
 }
 
 void MainWindow::saveSongEdits(int libraryIndex, const QString& title, const QString& artist,
-                              const QString& album, int trackNumber, const QString& imagePath)
+                               const QString& album, int trackNumber, const QString& imagePath)
 {
     if (libraryIndex < 0 || libraryIndex >= library.size())
         return;
 
     SongData currSong = library[libraryIndex];
+    const QString songFilePath = currSong.filePath;
+
+    // ── 1. Cache the new cover image if one was selected ─────────────────────
+    QString selectedImagePath = currSong.coverPath;
+    if (!imagePath.isEmpty())
+    {
+        QFileInfo fileInfo(songFilePath);
+        QString baseName = fileInfo.baseName();
+        baseName.replace("?", "_"); // match the sanitization in removeCachedCoverArt/cacheCoverArt
+
+        // Make unique key so that it's forced to recache the images
+        QString uniqueKey = fileInfo.baseName() + "_" + QUuid::createUuid().toString(QUuid::WithoutBraces);
+        MetadataReader::removeCachedCoverArt(appDataPath + "/cache", fileInfo.baseName());
+        selectedImagePath = MetadataReader::cacheUserImage(imagePath, appDataPath + "/cache", uniqueKey);
+    }
+
+    MetadataReader::saveTagsToFile(songFilePath, title, artist, album, trackNumber,
+                                imagePath.isEmpty() ? "" : selectedImagePath);
+
+    // ── 3. Update in-memory library + model ───────────────────────────────────
     playlistManager->editSongFromAllPlaylists(libraryIndex, title, artist);
 
     if (currSong.title != title) {
         int oldIndex = currentLibraryIndex;
         SongData newSong;
-        newSong.filePath = currSong.filePath;
-        newSong.title = title;
-        newSong.artist = artist;
-        newSong.album = album;
+        newSong.filePath    = currSong.filePath;
+        newSong.title       = title;
+        newSong.artist      = artist;
+        newSong.album       = album;
         newSong.trackNumber = trackNumber;
-        newSong.coverPath = imagePath;
-        newSong.duration = currSong.duration;
+        newSong.coverPath   = selectedImagePath;
+        newSong.duration    = currSong.duration;
 
         library.removeAt(libraryIndex);
 
@@ -694,14 +712,10 @@ void MainWindow::saveSongEdits(int libraryIndex, const QString& title, const QSt
             return shifted;
         };
 
-        for (int &i : playHistory)
-            i = remap(i);
-        for (int i = 0; i < nextUp.size(); ++i)
-            nextUp[i] = remap(nextUp[i]);
-        for (int &i : currentPlaybackSongs)
-            i = remap(i);
-        for (int &i : unplayedIndices)
-            i = remap(i);
+        for (int &i : playHistory)          i = remap(i);
+        for (int i = 0; i < nextUp.size(); ++i) nextUp[i] = remap(nextUp[i]);
+        for (int &i : currentPlaybackSongs) i = remap(i);
+        for (int &i : unplayedIndices)      i = remap(i);
 
         if (oldIndex == libraryIndex) {
             songModel->setPlayingIndex(newIndex);
@@ -711,21 +725,20 @@ void MainWindow::saveSongEdits(int libraryIndex, const QString& title, const QSt
         }
     } else {
         SongData &song = library[libraryIndex];
+        song.filePath = currSong.filePath;
         song.title = title;
         song.artist = artist;
         song.album = album;
         song.trackNumber = trackNumber;
-        song.coverPath = imagePath;
+        song.coverPath = selectedImagePath;
 
-        if (libraryIndex == currentLibraryIndex) {
+        if (libraryIndex == currentLibraryIndex)
             emit currentSongChanged();
-        }
     }
 
     currentViewSongs.clear();
-    for (int i = 0; i < library.size(); i++) {
+    for (int i = 0; i < library.size(); i++)
         currentViewSongs.push_back(i);
-    }
 
     if (isInPlaylistView) {
         loadPlaylistView(viewingPlaylist);
@@ -737,15 +750,16 @@ void MainWindow::saveSongEdits(int libraryIndex, const QString& title, const QSt
         visibleSongs = currentViewSongs;
         currentPlaybackSongs = currentViewSongs;
         songModel->setSongs(&library, &visibleSongs);
+        filterSongsAndAlbums(filterText);
     }
 
     if (currentLibraryIndex >= 0) {
         currentPlaybackIndex = currentPlaybackSongs.indexOf(currentLibraryIndex);
     }
 
+    emit songCoverUpdated(currentLibraryIndex, selectedImagePath);
     saveLibrary();
 }
-
 void MainWindow::removeFromCurrentPlaylist(int visibleIndex)
 {
     if (!isInPlaylistView) return;
@@ -861,4 +875,26 @@ void MainWindow::deletePlaylist(const QString& playlistName)
         updatePlaylistNames();
         emit viewingPlaylistChanged();
     }
+}
+
+void MainWindow::editCurrentSong(int visibleIndex)
+{
+    if (visibleIndex < 0 || visibleIndex >= visibleSongs.size())
+        return;
+
+    int libraryIndex = visibleSongs[visibleIndex];
+    if (libraryIndex < 0 || libraryIndex >= library.size())
+        return;
+
+    const SongData& song = library[libraryIndex];
+
+    emit editSongRequested(
+        libraryIndex,
+        song.filePath,
+        song.coverPath,
+        song.title,
+        song.artist,
+        song.album,
+        song.trackNumber
+    );
 }

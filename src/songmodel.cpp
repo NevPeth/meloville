@@ -42,8 +42,6 @@ QVariant SongModel::data(const QModelIndex &index, int role) const
         return song.coverPath;
     case TrackNumberRole:
         return song.trackNumber;
-    case GenreRole:
-        return song.genre;
     case IsPlayingRole:
         return (songIndex == playingLibraryIndex);
     case IsPausedRole:
@@ -65,7 +63,6 @@ QHash<int, QByteArray> SongModel::roleNames() const
     roles[FilePathRole] = "filePath";
     roles[CoverPathRole] = "coverPath";
     roles[TrackNumberRole] = "trackNumber";
-    roles[GenreRole] = "genre";
     roles[IsPlayingRole] = "isPlaying";
     roles[IsPausedRole]  = "isPaused";
     roles[IsActiveRole]  = "isActive";

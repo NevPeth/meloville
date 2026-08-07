@@ -6,6 +6,7 @@
         <file>qml/NewPlaylistDialog.qml</file>
         <file>qml/SongContextMenu.qml</file>
         <file>qml/BigPicturePage.qml</file>
+        <file>qml/EditSongDialog.qml</file>
     </qresource>
     <qresource prefix="/">
         <file>icons/addPlaylistsIcon.svg</file>

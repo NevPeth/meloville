@@ -75,7 +75,6 @@ Popup {
             color: "#333333"
         }
 
-        // ----- "Edit playlist" -----
         ItemDelegate {
             Layout.fillWidth: true
             leftPadding: 24
@@ -83,7 +82,7 @@ Popup {
             topPadding: 8
             bottomPadding: 8
             font.pixelSize: 14
-            text: "Edit playlist"
+            text: "Edit song info"
 
             contentItem: Text {
                 text: parent.text
@@ -145,7 +144,8 @@ Popup {
         y: popup.y - 35
 
         width: 240
-        height: Math.min(400, Math.max(200, subContent.implicitHeight + 20))
+        implicitHeight: subContent.implicitHeight
+        height: implicitHeight
         padding: 0
 
         function positionSubMenu() {
@@ -177,7 +177,7 @@ Popup {
 
         ColumnLayout {
             id: subContent
-            anchors.fill: parent
+            width: parent.width   // fill horizontally only
             spacing: 0
 
             TextField {
@@ -213,7 +213,12 @@ Popup {
             ListView {
                 id: listView
                 Layout.fillWidth: true
-                Layout.fillHeight: true
+
+                readonly property int delegateHeight: 33
+                readonly property int maxListHeight: 270 - (searchField.height + 4 /*margins*/ * 2)
+
+                implicitHeight: Math.min(count===0 ? delegateHeight+5 : count * delegateHeight, maxListHeight)
+
                 clip: true
 
                 property var filteredModel: {

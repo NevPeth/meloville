@@ -15,6 +15,10 @@
 #include <taglib/mp4file.h>
 #include <taglib/oggflacfile.h>
 #include <taglib/flacpicture.h>
+#include <taglib/id3v2framefactory.h>
+#include <taglib/attachedpictureframe.h>
+#include <taglib/flacpicture.h>
+#include <taglib/mp4coverart.h>
 
 SongData MetadataReader::readSong(const QString& filePath)
 {
@@ -40,11 +44,6 @@ SongData MetadataReader::readSong(const QString& filePath)
             song.album =
                 QString::fromStdWString(
                     file.tag()->album().toWString()
-                );
-
-            song.genre =
-                QString::fromStdWString(
-                    file.tag()->genre().toWString()
                 );
 
             song.trackNumber = static_cast<int>(file.tag()->track());
@@ -277,8 +276,128 @@ QString MetadataReader::cacheUserImage(
     if (image.isNull())
         return QString();
 
-    QString coverPath = cacheDir + "/" + fileName + ".png";
-    image.save(coverPath, "JPG", 90);   // note: still worth fixing the JPG/.png mismatch below
+    QString coverPath = cacheDir + "/" + fileName + ".jpg";
+    image.save(coverPath, "JPG", 90);
 
     return coverPath;
+}
+
+QString MetadataReader::saveTagsToFile(
+    const QString& filePath,
+    const QString& title,
+    const QString& artist,
+    const QString& album,
+    int trackNumber,
+    const QString& cachedImagePath)
+{
+    if (filePath.isEmpty())
+        return {};
+
+    // Read the image bytes once up front
+    QByteArray imageData;
+    QString suffix;
+    if (!cachedImagePath.isEmpty())
+    {
+        QFile imageFile(cachedImagePath);
+        if (imageFile.open(QIODevice::ReadOnly))
+        {
+            imageData = imageFile.readAll();
+            imageFile.close();
+            suffix = QFileInfo(cachedImagePath).suffix().toLower();
+        }
+    }
+
+    const QString ext = QFileInfo(filePath).suffix().toLower();
+
+    // ── MP3 ──────────────────────────────────────────────────────────────────
+    if (ext == "mp3")
+    {
+        TagLib::MPEG::File f(filePath.toUtf8().constData());
+        if (!f.isValid()) return {};
+
+        auto* tag = f.ID3v2Tag(true); // create if missing
+        tag->setTitle (TagLib::String(title.toUtf8().constData(),  TagLib::String::UTF8));
+        tag->setArtist(TagLib::String(artist.toUtf8().constData(), TagLib::String::UTF8));
+        tag->setAlbum (TagLib::String(album.toUtf8().constData(),  TagLib::String::UTF8));
+        tag->setTrack (trackNumber);
+
+        if (!imageData.isEmpty())
+        {
+            // Remove existing cover frames
+            tag->removeFrames("APIC");
+
+            auto* frame = new TagLib::ID3v2::AttachedPictureFrame();
+            frame->setType(TagLib::ID3v2::AttachedPictureFrame::FrontCover);
+            frame->setMimeType(suffix == "png" ? "image/png" : "image/jpeg");
+            frame->setPicture(TagLib::ByteVector(imageData.constData(), imageData.size()));
+            tag->addFrame(frame);
+        }
+
+        f.save();
+        return cachedImagePath;
+    }
+
+    // ── FLAC ─────────────────────────────────────────────────────────────────
+    if (ext == "flac")
+    {
+        TagLib::FLAC::File f(filePath.toUtf8().constData());
+        if (!f.isValid()) return {};
+
+        // Write basic tags via the Xiph comment
+        auto* xiphTag = f.xiphComment(true);
+        xiphTag->setTitle (TagLib::String(title.toUtf8().constData(),  TagLib::String::UTF8));
+        xiphTag->setArtist(TagLib::String(artist.toUtf8().constData(), TagLib::String::UTF8));
+        xiphTag->setAlbum (TagLib::String(album.toUtf8().constData(),  TagLib::String::UTF8));
+        xiphTag->setTrack (trackNumber);
+
+        if (!imageData.isEmpty())
+        {
+            // Remove all existing pictures
+            f.removePictures();
+
+            auto* picture = new TagLib::FLAC::Picture();
+            picture->setType(TagLib::FLAC::Picture::FrontCover);
+            picture->setMimeType(suffix == "png" ? "image/png" : "image/jpeg");
+            picture->setData(TagLib::ByteVector(imageData.constData(), imageData.size()));
+            f.addPicture(picture); // FLAC::File takes ownership
+        }
+
+        f.save();
+        return cachedImagePath;
+    }
+
+    // ── M4A / MP4 / AAC ──────────────────────────────────────────────────────
+    if (ext == "m4a" || ext == "mp4" || ext == "aac")
+    {
+        TagLib::MP4::File f(filePath.toUtf8().constData());
+        if (!f.isValid()) return {};
+
+        auto* tag = f.tag();
+        tag->setTitle (TagLib::String(title.toUtf8().constData(),  TagLib::String::UTF8));
+        tag->setArtist(TagLib::String(artist.toUtf8().constData(), TagLib::String::UTF8));
+        tag->setAlbum (TagLib::String(album.toUtf8().constData(),  TagLib::String::UTF8));
+        tag->setTrack (trackNumber);
+
+        if (!imageData.isEmpty())
+        {
+            TagLib::MP4::CoverArt::Format format =
+                (suffix == "png") ? TagLib::MP4::CoverArt::PNG
+                                  : TagLib::MP4::CoverArt::JPEG;
+
+            TagLib::MP4::CoverArt coverArt(
+                format,
+                TagLib::ByteVector(imageData.constData(), imageData.size())
+            );
+
+            TagLib::MP4::CoverArtList coverList;
+            coverList.append(coverArt);
+
+            tag->setItem("covr", TagLib::MP4::Item(coverList));
+        }
+
+        f.save();
+        return cachedImagePath;
+    }
+
+    return {};
 }

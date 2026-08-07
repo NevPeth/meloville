@@ -71,8 +71,8 @@ public:
     Q_INVOKABLE void removeFromCurrentPlaylist(int visibleIndex);
     Q_INVOKABLE void saveSongEdits(int libraryIndex, const QString& title, const QString& artist, const QString& album, int trackNumber, const QString& imagePath);
     Q_INVOKABLE void jumpToCurrentSong();
-
     Q_INVOKABLE void reorderPlaylist(int from, int to);
+    Q_INVOKABLE void editCurrentSong(int visibleIndex);
 
     double getProgress() const { return progress; }
     PlaylistModel* getPlaylistModel() const { return playlistModel; }
@@ -148,6 +148,9 @@ signals:
     void openContextMenuRequested(int visibleIndex, int x, int y);
     void jumpToSongIndex(int visibleIndex);
     void dragReorderAllowedChanged();
+    void editSongRequested(int libraryIndex,const QString& filePath,const QString& coverPath,
+                        const QString& title,const QString& artist,const QString& album, int trackNumber);
+    void songCoverUpdated(int libraryIndex, const QString& newCoverPath);
 
 private:
     static bool songTitleLess(const SongData &a, const SongData &b);

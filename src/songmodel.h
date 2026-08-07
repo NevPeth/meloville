@@ -18,7 +18,6 @@ public:
         FilePathRole,
         CoverPathRole,
         TrackNumberRole,
-        GenreRole,
         IsPlayingRole,
         IsActiveRole,
         IsPausedRole

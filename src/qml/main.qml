@@ -19,18 +19,17 @@ ApplicationWindow {
         onActivated: backend.playAndPause()
     }
 
+    Shortcut {
+        sequence: "Media Next"
+        context: Qt.ApplicationShortcut
+        onActivated: backend.playNextSong()
+    }
 
-Shortcut {
-    sequence: "Media Next"
-    context: Qt.ApplicationShortcut
-    onActivated: backend.playNextSong()
-}
-
-Shortcut {
-    sequence: "Media Previous"
-    context: Qt.ApplicationShortcut
-    onActivated: backend.playPreviousSong()
-}
+    Shortcut {
+        sequence: "Media Previous"
+        context: Qt.ApplicationShortcut
+        onActivated: backend.playPreviousSong()
+    }
     
     // Stack view to manage pages
     StackView {
@@ -71,6 +70,19 @@ Shortcut {
         }
         onDeleted: {
             // The backend will handle deletion; we might want to close playlist view if editing
+        }
+    }
+
+    EditSongDialog {
+        id: editSongDialog
+        anchors.fill: parent
+        visible: false
+
+        onAccepted: {
+            // The backend will handle saving changes; we might want to refresh the song list.
+        }
+        onRejected: {
+            // just close
         }
     }
 
@@ -134,7 +146,6 @@ Shortcut {
     property string currentPlaylistCover: ""
     Component {
         id: mainPageComponent
-        
         Rectangle {
             id: mainPageRoot
             color: "#121212"
@@ -316,9 +327,10 @@ Shortcut {
                             y: (parent.height - height) / 2
                             width: 50; height: 50
                             fillMode: Image.PreserveAspectCrop
-                            source: model.coverPath !== ""
-                                    ? "file://" + model.coverPath
-                                    : "qrc:/images/default_cover.png"
+                            source: {
+                                if (model.coverPath === "") return "qrc:/images/default_cover.png"
+                                return "file://" + model.coverPath + "?" + mainPageRoot.coverCacheBuster
+                            }
                         }
 
                         // ── title + artist ───────────────────────────────────────────────
@@ -372,13 +384,11 @@ Shortcut {
                                 }
                             }
                         }
-                        
 
                         HoverHandler { id: hoverHandler }
-
-                        }
                     }
                 }
+            }
             ColumnLayout {
                 anchors.fill: parent
                 spacing: 0
@@ -1293,6 +1303,27 @@ Shortcut {
                     }
                 }
             }
+
+            Connections {
+                target: backend
+                function onEditSongRequested(libraryIndex, filePath, coverPath,
+                                            title, artist, album, trackNumber) {
+                    editSongDialog.openEdit(
+                        libraryIndex, filePath, coverPath,
+                        title, artist, album, trackNumber
+                    )
+                    editSongDialog.visible = true
+                }
+            }
+
+            Connections {
+    target: backend
+    function onJumpToSongIndex(visibleIndex) {
+        // +1 accounts for the playlist hero header item
+        var offset = backend.isInPlaylistView ? 1 : 0
+        listViewSongs.positionViewAtIndex(visibleIndex + offset, ListView.Center)
+    }
+}
         }
     }
     
