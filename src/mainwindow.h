@@ -7,6 +7,8 @@
 #include "playbackcontroller.h"
 #include "playlistmanager.h"
 #include "playlistmodel.h"
+#include "albuminfo.h"
+#include "albumlistmodel.h"
 #include <pulse/pulseaudio.h>
 #include <QMainWindow>
 #include <QQuickView>
@@ -44,6 +46,13 @@ class MainWindow : public QObject
     Q_PROPERTY(bool isInPlaylistView READ getIsInPlaylistView NOTIFY isInPlaylistViewChanged)
     Q_PROPERTY(bool dragReorderAllowed READ getDragReorderAllowed NOTIFY dragReorderAllowedChanged)
 
+    Q_PROPERTY(bool isInAlbumsGridView READ getIsInAlbumsGridView NOTIFY albumViewStateChanged)
+    Q_PROPERTY(bool isInAlbumView READ getIsInAlbumView NOTIFY albumViewStateChanged)
+    Q_PROPERTY(QString viewingAlbumName READ getViewingAlbum NOTIFY albumViewStateChanged)
+    Q_PROPERTY(QString viewingAlbumArtist READ getViewingAlbumArtist NOTIFY albumViewStateChanged)
+    Q_PROPERTY(QString viewingAlbumCover READ getViewingAlbumCover NOTIFY albumViewStateChanged)
+    Q_PROPERTY(QObject* albumModel READ getAlbumModel CONSTANT)
+
 public:
     explicit MainWindow(QObject *parent = nullptr);
     ~MainWindow();
@@ -73,6 +82,10 @@ public:
     Q_INVOKABLE void jumpToCurrentSong();
     Q_INVOKABLE void reorderPlaylist(int from, int to);
     Q_INVOKABLE void editCurrentSong(int visibleIndex);
+
+    Q_INVOKABLE void goToAlbums();
+    Q_INVOKABLE void loadAlbumView(QString albumName, QString artist, QString coverPath);
+    Q_INVOKABLE void returnFromAlbumToGrid();
 
     double getProgress() const { return progress; }
     PlaylistModel* getPlaylistModel() const { return playlistModel; }
@@ -114,6 +127,12 @@ public:
     bool getDragReorderAllowed() const {
         return isInPlaylistView && filterText.isEmpty();
     }
+    bool getIsInAlbumsGridView() const { return isInAlbumsGridView; }
+    bool getIsInAlbumView() const { return isInAlbumView; }
+    QString getViewingAlbum() const { return viewingAlbum; }
+    QString getViewingAlbumArtist() const { return viewingAlbumArtist; }
+    QString getViewingAlbumCover() const { return viewingAlbumCoverPath; }
+    QObject* getAlbumModel() const { return albumModel; }
 
 public slots:
     void onScanProgress(int current, int total);
@@ -125,6 +144,8 @@ private slots:
     void rebuildShufflePool();
 
     void updatePlaylistNames();
+    QVector<AlbumInfo> buildAlbumList() const;
+    void leaveAlbumView();
 
 signals:
     void playlistChanged();
@@ -151,6 +172,7 @@ signals:
     void editSongRequested(int libraryIndex,const QString& filePath,const QString& coverPath,
                         const QString& title,const QString& artist,const QString& album, int trackNumber);
     void songCoverUpdated(int libraryIndex, const QString& newCoverPath);
+    void albumViewStateChanged();
 
 private:
     static bool songTitleLess(const SongData &a, const SongData &b);
@@ -188,6 +210,17 @@ private:
     QVector<QString> playlistNames;
 
     QString filterText;
+
+    QString currentlyPlayingAlbum;
+    QString currentlyPlayingAlbumArtist;
+    QString currentlyPlayingAlbumCoverPath;
+    QString viewingAlbum;
+    QString viewingAlbumArtist;
+    QString viewingAlbumCoverPath;
+    bool isInAlbumsGridView = false;
+    bool isInAlbumView = false;
+    AlbumListModel *albumModel = nullptr;
+    QVector<AlbumInfo> allAlbums;
 };
 
 #endif // MAINWINDOW_H

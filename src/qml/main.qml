@@ -62,14 +62,10 @@ ApplicationWindow {
         visible: false   // initially hidden
 
         onAccepted: {
-            // Optionally refresh playlist list or other UI
-            // The backend will emit playlistsChanged, so we can update the ListView.
         }
         onRejected: {
-            // just close
         }
         onDeleted: {
-            // The backend will handle deletion; we might want to close playlist view if editing
         }
     }
 
@@ -560,7 +556,7 @@ ApplicationWindow {
 
                                 Text {
                                     id: currentLibraryLabel
-                                    text: "Library"
+                                    text: (backend.isInAlbumView || backend.isInAlbumsGridView) ? "Albums" : "Library"
                                     font.pixelSize: 22
                                     font.bold: true
                                     color: "white"
@@ -592,7 +588,7 @@ ApplicationWindow {
                                             anchors.fill: parent
                                             anchors.leftMargin: 0
                                             verticalAlignment: Text.AlignVCenter
-                                            text: "Search songs..."
+                                            text: backend.isInAlbumsGridView ? "Search albums..." : "Search songs..."
                                             color: "#888888"
                                             font.pixelSize: 13
                                             visible: searchField.text.length === 0 && !searchField.activeFocus
@@ -675,9 +671,7 @@ ApplicationWindow {
                             clip: true
                             ScrollBar.vertical:   ScrollBar { policy: ScrollBar.AsNeeded }
                             ScrollBar.horizontal: ScrollBar { policy: ScrollBar.AsNeeded }
-
-                            // property int draggedIndex: -1
-                            // property int dropIndex: -1
+                            visible: !backend.isInAlbumsGridView
 
                             // ----- Pixel‑accurate scrolling on Wayland -----
                             pixelAligned: true
@@ -772,16 +766,27 @@ ApplicationWindow {
                                 NumberAnimation { properties: "x,y"; duration: 170; easing.type: Easing.OutCubic }
                             }
 
-                            // ── Playlist hero header ─────────────────────────────────────────
-                            header: backend.isInPlaylistView ? playlistHeroComponent : null
+                            header: (backend.isInPlaylistView || backend.isInAlbumView) ? heroComponent : null
 
                             Component {
-                                id: playlistHeroComponent
+                                id: heroComponent
 
                                 Item {
-                                    id: playlistHero
+                                    id: collectionHero
                                     width:  ListView.width
                                     height: 270
+
+                                    // Resolve cover/title/subtitle from whichever context is active
+                                    readonly property bool inPlaylist: backend.isInPlaylistView
+                                    readonly property string heroCoverSource: {
+                                        if (inPlaylist)
+                                            return currentPlaylistCover ? "file://" + currentPlaylistCover : "qrc:/images/default_cover.png"
+                                        var p = backend.viewingAlbumCover
+                                        return p ? "file://" + p : "qrc:/images/default_cover.png"
+                                    }
+                                    readonly property string heroLabel:     inPlaylist ? "Playlist" : "Album"
+                                    readonly property string heroTitle:     inPlaylist ? currentPlaylistName : backend.viewingAlbumName
+                                    readonly property string heroSubtitle:  inPlaylist ? "" : backend.viewingAlbumArtist
 
                                     Rectangle {
                                         anchors.fill: parent
@@ -794,10 +799,7 @@ ApplicationWindow {
                                         anchors.verticalCenter: parent.verticalCenter
                                         width: 200; height: 200
                                         fillMode: Image.PreserveAspectCrop
-                                        source: currentPlaylistCover
-                                                ? "file://" + currentPlaylistCover
-                                                : "qrc:/images/default_cover.png"
-                                        opacity: 1.0// - playlistHero.fadeFraction
+                                        source: collectionHero.heroCoverSource
                                         layer.enabled: true
                                         layer.effect: OpacityMask {
                                             maskSource: Rectangle {
@@ -809,7 +811,11 @@ ApplicationWindow {
                                         MouseArea {
                                             anchors.fill: parent
                                             cursorShape: Qt.PointingHandCursor
-                                            onClicked: playlistDialog.openEdit(currentPlaylistName, currentPlaylistCover)
+                                            // Only playlists are editable by clicking the cover
+                                            onClicked: {
+                                                if (collectionHero.inPlaylist)
+                                                    playlistDialog.openEdit(currentPlaylistName, currentPlaylistCover)
+                                            }
                                         }
                                     }
 
@@ -820,17 +826,16 @@ ApplicationWindow {
                                         anchors.rightMargin:    20
                                         anchors.verticalCenter: parent.verticalCenter
                                         spacing: 6
-                                        opacity: 1.0
 
                                         Text {
-                                            text: "Playlist"
+                                            text: collectionHero.heroLabel
                                             color: "#888888"
                                             font.pixelSize: 12
                                             font.letterSpacing: 1.5
                                         }
                                         Text {
                                             width: parent.width
-                                            text: currentPlaylistName
+                                            text: collectionHero.heroTitle
                                             color: "white"
                                             font.pixelSize: 28
                                             font.bold: true
@@ -840,8 +845,21 @@ ApplicationWindow {
                                             MouseArea {
                                                 anchors.fill: parent
                                                 cursorShape: Qt.PointingHandCursor
-                                                onClicked: playlistDialog.openEdit(currentPlaylistName, currentPlaylistCover)
+                                                onClicked: {
+                                                    if (collectionHero.inPlaylist)
+                                                        playlistDialog.openEdit(currentPlaylistName, currentPlaylistCover)
+                                                }
                                             }
+                                        }
+                                        // Artist subtitle — only shown for albums
+                                        Text {
+                                            width: parent.width
+                                            text: collectionHero.heroSubtitle
+                                            color: "#b3b3b3"
+                                            font.pixelSize: 15
+                                            font.weight: Font.DemiBold
+                                            visible: collectionHero.heroSubtitle !== ""
+                                            elide: Text.ElideRight
                                         }
                                     }
 
@@ -849,7 +867,6 @@ ApplicationWindow {
                                         anchors.bottom: parent.bottom
                                         width: parent.width
                                         height: 48
-                                        opacity: 1.0
                                         gradient: Gradient {
                                             GradientStop { position: 0.0; color: "transparent" }
                                             GradientStop { position: 1.0; color: "#181818" }
@@ -860,6 +877,121 @@ ApplicationWindow {
 
                             TapHandler {
                                 onTapped: searchField.focus = false
+                            }
+                        }
+                        // ── Album grid — shown when backend.isInAlbumsGridView ────────────────
+                        GridView {
+                            id: albumGrid
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            Layout.minimumHeight: 150
+                            clip: true
+                            visible: backend.isInAlbumsGridView
+
+                            ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+
+                            model: backend.albumModel
+
+                            // Mirror AlbumGridView::recalculateGrid() maths:
+                            // fit as many columns as possible at >= 184 px each,
+                            // then stretch them evenly so there's no dead gap.
+                            readonly property int minTileWidth: 184
+                            readonly property int pad:          12   // kCellPadding
+                            readonly property int textBlock:    44   // kTextBlockHeight
+                            readonly property int columns:      Math.max(1, Math.floor(width / minTileWidth))
+                            readonly property int tileW:        Math.floor(width / columns)
+                            readonly property int coverSz:      Math.min(240, Math.max(110, tileW - pad * 2))
+                            readonly property int tileH:        coverSz + pad + textBlock + 8
+
+                            cellWidth:  tileW
+                            cellHeight: tileH
+
+                            delegate: Item {
+                                width:  albumGrid.cellWidth
+                                height: albumGrid.cellHeight
+
+                                HoverHandler { id: tileHov }
+
+                                Rectangle {
+                                    anchors { fill: parent; margins: 2 }
+                                    radius: 10
+                                    color:  tileHov.hovered ? "#1e1e1e" : "transparent"
+                                }
+
+                                // ── Cover art ─────────────────────────────────────────
+                                Item {
+                                    id: coverItem
+                                    x:      (parent.width - albumGrid.coverSz) / 2
+                                    y:      albumGrid.pad
+                                    width:  albumGrid.coverSz
+                                    height: albumGrid.coverSz
+
+                                    Rectangle {
+                                        id: roundMask
+                                        anchors.fill: parent
+                                        radius: 8
+                                        visible: false
+                                    }
+
+                                    // Actual cover
+                                    Image {
+                                        id: coverImg
+                                        anchors.fill: parent
+                                        fillMode: Image.PreserveAspectCrop
+                                        source: model.coverPath ? "file://" + model.coverPath : ""
+                                        visible: status === Image.Ready
+                                        layer.enabled: true
+                                        layer.effect: OpacityMask { maskSource: roundMask }
+                                    }
+
+                                    // Placeholder when no art
+                                    Rectangle {
+                                        anchors.fill: parent
+                                        radius: 8
+                                        color: "#2a2a2a"
+                                        visible: coverImg.status !== Image.Ready
+
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "♫"
+                                            font.pixelSize: 32
+                                            color: "#666666"
+                                        }
+                                    }
+                                }
+
+                                // ── Title ─────────────────────────────────────────────
+                                Text {
+                                    id: tileTitle
+                                    x:     albumGrid.pad / 2
+                                    y:     coverItem.y + coverItem.height + 8
+                                    width: parent.width - albumGrid.pad
+                                    text:  model.title
+                                    color: "white"
+                                    font.pixelSize: 13
+                                    font.weight: Font.DemiBold
+                                    elide: Text.ElideRight
+                                    horizontalAlignment: Text.AlignHCenter
+                                }
+
+                                // ── Artist ────────────────────────────────────────────
+                                Text {
+                                    x:     albumGrid.pad / 2
+                                    y:     tileTitle.y + 18
+                                    width: parent.width - albumGrid.pad
+                                    text:  model.artist
+                                    color: "#b3b3b3"
+                                    font.pixelSize: 12
+                                    elide: Text.ElideRight
+                                    horizontalAlignment: Text.AlignHCenter
+                                }
+
+                                // ── Tap to enter album ────────────────────────────────
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: backend.loadAlbumView(model.title, model.artist, model.coverPath)
+                                }
                             }
                         }
                     }
@@ -1222,7 +1354,7 @@ ApplicationWindow {
 
                                 RowLayout {
                                     id: layoutBottomButtons
-                                    spacing: 0
+                                    spacing: 3
                                     Layout.rightMargin: 20
                                     Layout.alignment: Qt.AlignVCenter
 
@@ -1253,6 +1385,7 @@ ApplicationWindow {
                                                 : "image://svgicons/goToAlbumsIconNormal"
                                             fillMode: Image.PreserveAspectFit
                                         }
+                                        onClicked: backend.goToAlbums()
                                     }
 
                                     Button {
@@ -1306,6 +1439,16 @@ ApplicationWindow {
 
             Connections {
                 target: backend
+                function onAlbumViewStateChanged() {
+                    // Force the hero header to re-evaluate its bindings when switching
+                    // between playlist and album view — without this, the cover/title
+                    // can show stale data from whichever context was active before.
+                    listViewSongs.forceLayout()
+                }
+            }
+
+            Connections {
+                target: backend
                 function onEditSongRequested(libraryIndex, filePath, coverPath,
                                             title, artist, album, trackNumber) {
                     editSongDialog.openEdit(
@@ -1317,13 +1460,13 @@ ApplicationWindow {
             }
 
             Connections {
-    target: backend
-    function onJumpToSongIndex(visibleIndex) {
-        // +1 accounts for the playlist hero header item
-        var offset = backend.isInPlaylistView ? 1 : 0
-        listViewSongs.positionViewAtIndex(visibleIndex + offset, ListView.Center)
-    }
-}
+                target: backend
+                function onJumpToSongIndex(visibleIndex) {
+                    // +1 accounts for the playlist hero header item
+                    var offset = (backend.isInPlaylistView || backend.isInAlbumView) ? 1 : 0
+                    listViewSongs.positionViewAtIndex(visibleIndex + offset, ListView.Center)
+                }
+            }
         }
     }
     

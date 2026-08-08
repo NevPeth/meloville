@@ -28,22 +28,27 @@ qt_add_executable(Meloville
     mainwindow.h
     mainwindow.cpp
     songdata.h
-    metadatareader.h
-    metadatareader.cpp
     songmodel.h
     songmodel.cpp
     playlistmanager.h
     playlistmanager.cpp
-    libraryscanner.h
-    libraryscanner.cpp
-    pulseaudioservice.h
-    pulseaudioservice.cpp
-    playbackcontroller.h
-    playbackcontroller.cpp
     playlistmodel.h
     playlistmodel.cpp
-    mprisadapter.h
-    mprisadapter.cpp
+    albumlistmodel.h
+    albumlistmodel.cpp
+    albuminfo.h
+
+    audio/mprisadapter.h
+    audio/mprisadapter.cpp
+    audio/pulseaudioservice.h
+    audio/pulseaudioservice.cpp
+    audio/playbackcontroller.h
+    audio/playbackcontroller.cpp
+
+    scanningLogic/libraryscanner.h
+    scanningLogic/libraryscanner.cpp
+    scanningLogic/metadatareader.h
+    scanningLogic/metadatareader.cpp
 
     svgLogic/svgcreator.h
     svgLogic/svgcreator.cpp
@@ -67,5 +72,7 @@ target_link_libraries(Meloville PRIVATE
 
 target_include_directories(Meloville PRIVATE 
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/audio
+    ${CMAKE_CURRENT_SOURCE_DIR}/scanningLogic
     ${CMAKE_CURRENT_SOURCE_DIR}/svgLogic
 )

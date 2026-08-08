@@ -7,6 +7,7 @@
         <file>qml/SongContextMenu.qml</file>
         <file>qml/BigPicturePage.qml</file>
         <file>qml/EditSongDialog.qml</file>
+        <file>qml/AlbumGridView.qml</file>
     </qresource>
     <qresource prefix="/">
         <file>icons/addPlaylistsIcon.svg</file>
