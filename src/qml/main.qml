@@ -625,7 +625,7 @@ ApplicationWindow {
                                 spacing: 12
 
                                 Text {
-                                    text: backend.isInPlaylistView ? backend.currentPlaylistName : backend.viewingAlbumName
+                                    text: backend.isInPlaylistView ? currentPlaylistName : backend.viewingAlbumName
                                     color: "white"
                                     font.pixelSize: 16
                                     font.bold: true
@@ -777,11 +777,6 @@ ApplicationWindow {
                                     readonly property string heroTitle:     inPlaylist ? currentPlaylistName : backend.viewingAlbumName
                                     readonly property string heroSubtitle:  inPlaylist ? "" : backend.viewingAlbumArtist
 
-                                    Rectangle {
-                                        anchors.fill: parent
-                                        color: "#111111"
-                                    }
-
                                     Image {
                                         id: heroCover
                                         x: 30
@@ -849,16 +844,6 @@ ApplicationWindow {
                                             font.weight: Font.DemiBold
                                             visible: collectionHero.heroSubtitle !== ""
                                             elide: Text.ElideRight
-                                        }
-                                    }
-
-                                    Rectangle {
-                                        anchors.bottom: parent.bottom
-                                        width: parent.width
-                                        height: 48
-                                        gradient: Gradient {
-                                            GradientStop { position: 0.0; color: "transparent" }
-                                            GradientStop { position: 1.0; color: "#181818" }
                                         }
                                     }
                                 }

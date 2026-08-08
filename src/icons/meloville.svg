@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+  <path
+    fill="#1e1e1e"
+    d="M35 140
+       L150 45
+       L265 140
+       V255
+       Q265 265 255 265
+       H45
+       Q35 265 35 255
+       V140
+       Q35 136 38 133
+       L143 46
+       Q150 40 157 46
+       L262 133
+       Q265 136 265 140
+       Z"/>
+
+  <path
+    fill="#1e1e1e"
+    d="M90 100
+       V75
+       Q90 70 85 70
+       H60
+       Q55 70 55 75
+       V130
+       Q55 135 60 135
+       Q62 135 65 133
+       L90 110
+       Z"/>
+
+  <g transform="translate(55 88)">
+    <ellipse
+      cx="64.1" cy="120"
+      rx="16" ry="12"
+      transform="rotate(-18 58 132)"
+      fill="white"/>
+
+    <ellipse
+      cx="118" cy="104"
+      rx="16" ry="12"
+      transform="rotate(-18 116 104)"
+      fill="white"/>
+
+    <path
+      d="
+        M70 114
+        L70 55
+        L128 40
+        L128 100
+      "
+      fill="none"
+      stroke="white"
+      stroke-width="12"
+      stroke-linecap="round"
+      stroke-linejoin="round"/>
+  </g>
+</svg>
