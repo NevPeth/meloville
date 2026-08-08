@@ -545,7 +545,7 @@ ApplicationWindow {
                             Layout.preferredHeight: 50
                             Layout.minimumHeight: 50
                             Layout.maximumHeight: 50
-                            visible: !backend.isInPlaylistView
+                            visible: !backend.isInPlaylistView && !backend.isInAlbumView
                             color: "transparent"
 
                             RowLayout {
@@ -603,7 +603,7 @@ ApplicationWindow {
                             id: stickyPlaylistBar
 
                             // Only relevant when in playlist view
-                            visible: backend.isInPlaylistView
+                            visible: (backend.isInPlaylistView || backend.isInAlbumView)
 
                             parent: mainPageRoot
                             x: frameSidebar.width
@@ -625,7 +625,7 @@ ApplicationWindow {
                                 spacing: 12
 
                                 Text {
-                                    text: currentPlaylistName
+                                    text: backend.isInPlaylistView ? backend.currentPlaylistName : backend.viewingAlbumName
                                     color: "white"
                                     font.pixelSize: 16
                                     font.bold: true
@@ -653,7 +653,7 @@ ApplicationWindow {
                                         Text {
                                             anchors.fill: parent
                                             verticalAlignment: Text.AlignVCenter
-                                            text: "Search playlist..."
+                                            text: backend.isInPlaylistView ?"Search playlist..." : "Search albums..."
                                             color: "#666666"
                                             font.pixelSize: 13
                                             visible: stickySearchField.text.length === 0 && !stickySearchField.activeFocus
@@ -740,17 +740,6 @@ ApplicationWindow {
                                         listViewSongs.velocity *= 0.55    // stop quickly
                                     else
                                         listViewSongs.velocity *= 0.90    // glide
-                                }
-                            }
-
-                            Connections {
-                                target: backend
-                                function onIsInPlaylistViewChanged() {
-                                    if (backend.isInPlaylistView) {
-                                        listViewSongs.contentY = -270
-                                    } else {
-                                        listViewSongs.contentY = 0
-                                    }
                                 }
                             }
 
@@ -991,6 +980,54 @@ ApplicationWindow {
                                     anchors.fill: parent
                                     cursorShape: Qt.PointingHandCursor
                                     onClicked: backend.loadAlbumView(model.title, model.artist, model.coverPath)
+                                }
+                            }
+
+                            boundsBehavior: Flickable.StopAtBounds
+                            boundsMovement: Flickable.StopAtBounds
+
+                            property real velocity: 0
+                            property real threshold: 40
+
+                            // Disable built-in flicking so the WheelHandler is fully in control
+                            interactive: false
+
+                            WheelHandler {
+                                acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+
+                                onWheel: function(event) {
+                                    var delta = event.pixelDelta.y !== 0
+                                            ? event.pixelDelta.y
+                                            : event.angleDelta.y / 4
+
+                                    if (Math.abs(delta) < albumGrid.threshold) {
+                                        albumGrid.velocity += delta
+                                    } else {
+                                        var excess = Math.abs(delta) - albumGrid.threshold
+                                        albumGrid.velocity += delta + Math.sign(delta) * excess * 0.8
+                                    }
+
+                                    event.accepted = true
+                                }
+                            }
+
+                            Timer {
+                                interval: 8
+                                running: true
+                                repeat: true
+
+                                onTriggered: {
+                                    if (Math.abs(albumGrid.velocity) < 0.05) {
+                                        albumGrid.velocity = 0
+                                        return
+                                    }
+
+                                    albumGrid.contentY -= albumGrid.velocity
+
+                                    if (Math.abs(albumGrid.velocity) < albumGrid.threshold)
+                                        albumGrid.velocity *= 0.55
+                                    else
+                                        albumGrid.velocity *= 0.90
                                 }
                             }
                         }
@@ -1439,16 +1476,6 @@ ApplicationWindow {
 
             Connections {
                 target: backend
-                function onAlbumViewStateChanged() {
-                    // Force the hero header to re-evaluate its bindings when switching
-                    // between playlist and album view — without this, the cover/title
-                    // can show stale data from whichever context was active before.
-                    listViewSongs.forceLayout()
-                }
-            }
-
-            Connections {
-                target: backend
                 function onEditSongRequested(libraryIndex, filePath, coverPath,
                                             title, artist, album, trackNumber) {
                     editSongDialog.openEdit(
@@ -1465,6 +1492,13 @@ ApplicationWindow {
                     // +1 accounts for the playlist hero header item
                     var offset = (backend.isInPlaylistView || backend.isInAlbumView) ? 1 : 0
                     listViewSongs.positionViewAtIndex(visibleIndex + offset, ListView.Center)
+                }
+            }
+
+            Connections {
+                target: backend
+                function onReturnedToLibrary() {
+                    listViewSongs.contentY = 0
                 }
             }
         }

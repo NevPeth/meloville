@@ -30,13 +30,11 @@ qt_add_executable(Meloville
     songdata.h
     songmodel.h
     songmodel.cpp
-    playlistmanager.h
-    playlistmanager.cpp
-    playlistmodel.h
-    playlistmodel.cpp
-    albumlistmodel.h
-    albumlistmodel.cpp
-    albuminfo.h
+
+    scanningLogic/libraryscanner.h
+    scanningLogic/libraryscanner.cpp
+    scanningLogic/metadatareader.h
+    scanningLogic/metadatareader.cpp
 
     audio/mprisadapter.h
     audio/mprisadapter.cpp
@@ -45,10 +43,14 @@ qt_add_executable(Meloville
     audio/playbackcontroller.h
     audio/playbackcontroller.cpp
 
-    scanningLogic/libraryscanner.h
-    scanningLogic/libraryscanner.cpp
-    scanningLogic/metadatareader.h
-    scanningLogic/metadatareader.cpp
+    playlistLogic/playlistmanager.h
+    playlistLogic/playlistmanager.cpp
+    playlistLogic/playlistmodel.h
+    playlistLogic/playlistmodel.cpp
+
+    albumLogic/albumlistmodel.h
+    albumLogic/albumlistmodel.cpp
+    albumLogic/albuminfo.h
 
     svgLogic/svgcreator.h
     svgLogic/svgcreator.cpp
@@ -75,4 +77,6 @@ target_include_directories(Meloville PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/audio
     ${CMAKE_CURRENT_SOURCE_DIR}/scanningLogic
     ${CMAKE_CURRENT_SOURCE_DIR}/svgLogic
+    ${CMAKE_CURRENT_SOURCE_DIR}/playlistLogic
+    ${CMAKE_CURRENT_SOURCE_DIR}/albumLogic
 )

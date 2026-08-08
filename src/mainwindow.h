@@ -173,6 +173,7 @@ signals:
                         const QString& title,const QString& artist,const QString& album, int trackNumber);
     void songCoverUpdated(int libraryIndex, const QString& newCoverPath);
     void albumViewStateChanged();
+    void returnedToLibrary();
 
 private:
     static bool songTitleLess(const SongData &a, const SongData &b);

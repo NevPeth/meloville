@@ -629,8 +629,8 @@ void MainWindow::returnToLibrary(){
     filterText.clear();
     emit dragReorderAllowedChanged();
 
-    leaveAlbumView();
     isInAlbumsGridView = false;
+    leaveAlbumView();
     emit albumViewStateChanged();
 
     for (int i = 0; i < library.size(); i++){
@@ -644,6 +644,7 @@ void MainWindow::returnToLibrary(){
         &visibleSongs
     );
     rebuildShufflePool();
+    emit returnedToLibrary();
 }
 
 void MainWindow::openSongContextMenu(int visibleIndex, int x, int y)
