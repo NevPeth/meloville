@@ -18,8 +18,8 @@ Item {
     // ── 1. Low‑resolution source (loses fine detail) ──
     Item {
         id: blurSource
-        width:  200          // tiny → only broad colour areas remain after blur
-        height: 200
+        width:  root.width          // tiny → only broad colour areas remain after blur
+        height: root.height
         visible: false       // we don't need to see it directly
 
         Image {
@@ -87,30 +87,6 @@ Item {
             sourceItem: pass3
             // optional: set textureSize to (width, height) to avoid aliasing
             textureSize: Qt.size(width, height)
-        }
-    }
-
-    // ── 4. Pan animation (unchanged) ──
-    property real panProgress: 0.0
-    SequentialAnimation {
-        id: panAnim
-        running: root.visible
-        loops: Animation.Infinite
-        NumberAnimation {
-            target: root
-            property: "panProgress"
-            from: 0.0
-            to:   1.0
-            duration: 14000
-            easing.type: Easing.InOutSine
-        }
-        NumberAnimation {
-            target: root
-            property: "panProgress"
-            from: 1.0
-            to:   0.0
-            duration: 14000
-            easing.type: Easing.InOutSine
         }
     }
 
