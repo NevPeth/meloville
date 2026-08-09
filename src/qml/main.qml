@@ -693,7 +693,8 @@ ApplicationWindow {
                             property real heroBottomY: {
                                 var item = listViewSongs.headerItem
                                 if (!item) return 0
-                                return item.mapToItem(listViewSongs, 0, item.height).y
+                                // heroHeight minus how far we've scrolled — goes negative once scrolled past the hero
+                                return item.height - listViewSongs.contentY - 500
                             }
 
                             WheelHandler {
