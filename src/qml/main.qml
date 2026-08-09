@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
-import QtQml.Models //2.15
+import QtQml.Models
 
 ApplicationWindow {
     id: appWindow
@@ -136,10 +136,9 @@ ApplicationWindow {
             onExitBigPicture: stackView.pop()
         }
     }
-    property int playlistButtonSize: 65
-    property int libraryButtonSize: 65
     property string currentPlaylistName: ""
     property string currentPlaylistCover: ""
+    property string heroSharedSearchText: ""
     Component {
         id: mainPageComponent
         Rectangle {
@@ -420,21 +419,21 @@ ApplicationWindow {
                             Button {
                                 id: btnAddPlaylist
 
-                                Layout.preferredWidth: playlistButtonSize
-                                Layout.preferredHeight: playlistButtonSize
-                                Layout.maximumWidth: playlistButtonSize
-                                Layout.maximumHeight: playlistButtonSize
+                                Layout.preferredWidth: 65
+                                Layout.preferredHeight: 65
+                                Layout.maximumWidth: 65
+                                Layout.maximumHeight: 65
                                 Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
 
                                 background: Item {}
 
-                                icon.width: playlistButtonSize
-                                icon.height: playlistButtonSize
+                                icon.width: 65
+                                icon.height: 65
 
                                 contentItem: Image {
                                     source: "image://svgicons/addPlaylistsIcon"
-                                    width: playlistButtonSize
-                                    height: playlistButtonSize
+                                    width: 65
+                                    height: 65
                                     fillMode: Image.PreserveAspectFit
                                 }
 
@@ -444,22 +443,22 @@ ApplicationWindow {
                             Button {
                                 id: btnLibrary
 
-                                Layout.preferredWidth: libraryButtonSize
-                                Layout.preferredHeight: libraryButtonSize
-                                Layout.maximumWidth: libraryButtonSize
-                                Layout.maximumHeight: libraryButtonSize
+                                Layout.preferredWidth: 65
+                                Layout.preferredHeight: 65
+                                Layout.maximumWidth: 65
+                                Layout.maximumHeight: 65
                                 Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
                                 Layout.topMargin: -10
 
                                 background: Item {}
 
-                                icon.width: libraryButtonSize
-                                icon.height: libraryButtonSize
+                                icon.width: 65
+                                icon.height: 65
 
                                 contentItem: Image {
                                     source: "image://svgicons/libraryIcon"
-                                    width: libraryButtonSize
-                                    height: libraryButtonSize
+                                    width: 65
+                                    height: 65
                                     fillMode: Image.PreserveAspectFit
                                 }
 
@@ -582,8 +581,6 @@ ApplicationWindow {
                                         color: "white"
                                         font.pixelSize: 13
 
-                                        onTextChanged: backend.filterSongsAndAlbums(text)
-
                                         Text {
                                             anchors.fill: parent
                                             anchors.leftMargin: 0
@@ -647,8 +644,11 @@ ApplicationWindow {
                                         verticalAlignment: TextInput.AlignVCenter
                                         color: "white"
                                         font.pixelSize: 13
-
-                                        //onTextChanged: backend.filterSongsAndAlbums(text)
+                                        text: heroSharedSearchText
+                                        onTextEdited: {
+                                            heroSharedSearchText = text
+                                            backend.filterSongsAndAlbums(text)
+                                        }
 
                                         Text {
                                             anchors.fill: parent
@@ -844,6 +844,37 @@ ApplicationWindow {
                                             font.weight: Font.DemiBold
                                             visible: collectionHero.heroSubtitle !== ""
                                             elide: Text.ElideRight
+                                        }
+                                        Rectangle {
+                                            width: 500
+                                            height: 32
+                                            radius: 16
+                                            color: "#222222"
+
+                                            TextInput {
+                                                id: heroSearchField
+                                                anchors.fill: parent
+                                                anchors.leftMargin: 10
+                                                anchors.rightMargin: 10
+                                                verticalAlignment: TextInput.AlignVCenter
+                                                color: "white"
+                                                font.pixelSize: 13
+                                                text: heroSharedSearchText
+                                                onTextEdited: {
+                                                    heroSharedSearchText = text
+                                                    backend.filterSongsAndAlbums(text)
+                                                    forceActiveFocus()  // 'this' is the TextInput itself
+                                                }
+
+                                                Text {
+                                                    anchors.fill: parent
+                                                    verticalAlignment: Text.AlignVCenter
+                                                    text: backend.isInPlaylistView ?"Search playlist..." : "Search albums..."
+                                                    color: "#666666"
+                                                    font.pixelSize: 13
+                                                    visible: heroSearchField.text.length === 0 && !heroSearchField.activeFocus
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -1451,6 +1482,7 @@ ApplicationWindow {
                 target: backend
                 function onIsInPlaylistViewChanged() {
                     currentPlaylistName = backend.viewingPlaylist
+                    heroSharedSearchText = ""
                     if (backend.playlistManager) {
                         currentPlaylistCover = backend.playlistManager.fullImagePath(backend.viewingPlaylist)
                     } else {
@@ -1486,6 +1518,13 @@ ApplicationWindow {
                     listViewSongs.contentY = 0
                 }
             }
+
+            Connections {
+                target: backend
+                function onAlbumViewChanged() {
+                    listViewSongs.contentY = 0
+                }
+            }
         }
     }
     
@@ -1494,6 +1533,7 @@ ApplicationWindow {
         target: backend
         function onLibraryLoaded() {
             stackView.push(loadedSongsPageComponent)
+            heroSharedSearchText = ""
         }
     }
 }
