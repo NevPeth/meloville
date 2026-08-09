@@ -12,9 +12,6 @@ public:
     QMediaPlayer* player() const;
     void setPlayer(QMediaPlayer* mediaPlayer);
 
-    int getCurrentSongIndex() const;
-    void setCurrentSongIndex(int index);
-
     bool isPlaying() const;
 
     void setVolume(int volume);
@@ -22,15 +19,9 @@ public:
 
 signals:
     void currentSongChanged(int index);
-
-    void playbackStateChanged(
-        QMediaPlayer::PlaybackState state
-    );
-
+    void playbackStateChanged(QMediaPlayer::PlaybackState state);
     void songFinished();
-
     void volumeChanged(int volume);
-
     void positionChanged(qint64 position);
     void durationChanged(qint64 duration);
 
@@ -39,7 +30,7 @@ private:
     QAudioOutput* audioOutput;
     PulseAudioService* pulseAudioService; //Creates variables necessary for correct audio output
 
-    int currentSongIndex = -1;
+    //int currentSongIndex = -1;
 
     void loadSettings();
     void saveSettings();

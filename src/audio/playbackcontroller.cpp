@@ -59,21 +59,6 @@ QMediaPlayer* PlaybackController::player() const
     return mediaPlayer;
 }
 
-int PlaybackController::getCurrentSongIndex() const
-{
-    return currentSongIndex;
-}
-
-void PlaybackController::setCurrentSongIndex(int index)
-{
-    if (currentSongIndex == index)
-        return;
-
-    currentSongIndex = index;
-
-    emit currentSongChanged(index);
-}
-
 bool PlaybackController::isPlaying() const
 {
     return mediaPlayer && mediaPlayer->playbackState() == QMediaPlayer::PlayingState;
@@ -99,15 +84,8 @@ void PlaybackController::loadSettings()
 {
     QSettings settings("Meloville","Meloville");
 
-    int volume =
-        settings
-            .value("audio/volume", 30)
-            .toInt();
-
-    audioOutput->setVolume(
-        volume / 100.0
-    );
-
+    int volume = settings.value("audio/volume", 30).toInt();
+    audioOutput->setVolume(volume / 100.0);
     emit volumeChanged(volume);
 }
 

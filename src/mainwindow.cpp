@@ -4,6 +4,7 @@
 #include "libraryscanner.h"
 #include "albuminfo.h"
 #include "albumlistmodel.h"
+#include "mprisadapter.h"
 #include <QFileDialog>
 #include <QDir>
 #include <QJsonDocument>
@@ -13,8 +14,9 @@
 #include <QFileInfo>
 #include <QRandomGenerator>
 #include <QTimer>
+#include <QSettings>
 #include <algorithm>
-#include "mprisadapter.h"
+
 
 MainWindow::MainWindow(QObject *parent)
     : QObject(parent)
@@ -66,8 +68,8 @@ MainWindow::MainWindow(QObject *parent)
     playlistManager->setPath(appDataPath);
     playlistManager->loadPlaylists(library, true);
     updatePlaylistNames();
-
     playlistModel = new PlaylistModel(playlistManager, this);
+    loadSessionState();
 }
 
 MainWindow::~MainWindow()
@@ -1090,4 +1092,81 @@ void MainWindow::loadAlbumView(QString albumName, QString artist, QString coverP
 void MainWindow::returnFromAlbumToGrid(){
     leaveAlbumView();
     goToAlbums();
+}
+void MainWindow::saveWindowGeometry(int x, int y, int w, int h)
+{
+    QSettings settings("Meloville", "Meloville");
+    settings.setValue("window/geometry", QRect(x, y, w, h));
+}
+
+QRect MainWindow::loadWindowGeometry() const
+{
+    QSettings settings("Meloville", "Meloville");
+    return settings.value("window/geometry", QRect(100, 100, 1280, 720)).toRect();
+}
+
+void MainWindow::saveSessionState()
+{
+    QSettings settings("Meloville", "Meloville");
+
+    if (currentLibraryIndex < 0 || currentLibraryIndex >= library.size()) {
+        settings.remove("session");
+        return;
+    }
+
+    const SongData &song = library[currentLibraryIndex];
+
+    settings.setValue("session/filePath",   song.filePath);
+    settings.setValue("session/position",   playbackController->player()->position());
+    settings.setValue("session/title",      song.title);
+    settings.setValue("session/artist",     song.artist);
+    settings.setValue("session/coverPath",  song.coverPath);
+    settings.setValue("session/duration",   song.duration);
+    settings.setValue("session/wasPlaying", playbackController->isPlaying());
+}
+
+void MainWindow::saveSessionAndWindow(int x, int y, int w, int h)
+{
+    saveWindowGeometry(x, y, w, h);
+    saveSessionState();
+}
+
+void MainWindow::loadSessionState()
+{
+    QSettings settings("Meloville", "Meloville");
+
+    QString savedPath = settings.value("session/filePath", QString()).toString();
+    if (savedPath.isEmpty())
+        return;
+
+    // Find by file path — the only reliable identity across rescans
+    int libraryIndex = -1;
+    for (int i = 0; i < library.size(); ++i) {
+        if (library[i].filePath == savedPath) {
+            libraryIndex = i;
+            break;
+        }
+    }
+
+    if (libraryIndex < 0)
+        return;  // song was removed from library since last session
+
+    qint64 savedPos = settings.value("session/position", 0).toLongLong();
+
+    const SongData &song = library[libraryIndex];
+    playbackController->player()->setSource(QUrl::fromLocalFile(song.filePath));
+
+    currentLibraryIndex  = libraryIndex;
+    currentPlaybackIndex = currentPlaybackSongs.indexOf(libraryIndex);
+    songModel->setPlayingIndex(libraryIndex);
+    songModel->setPausedState(true);  // restore paused, not blasting audio on startup
+
+    emit currentLibraryIndexChanged();
+    emit currentSongChanged();  // now-playing bar reads title/artist/cover/duration from library[currentLibraryIndex]
+
+    // Seek after the media pipeline has had time to register the source
+    QTimer::singleShot(300, this, [this, savedPos]() {
+        playbackController->player()->setPosition(savedPos);
+        emit sessionRestored(savedPos);
+    });
 }

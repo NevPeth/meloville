@@ -82,10 +82,11 @@ public:
     Q_INVOKABLE void jumpToCurrentSong();
     Q_INVOKABLE void reorderPlaylist(int from, int to);
     Q_INVOKABLE void editCurrentSong(int visibleIndex);
-
     Q_INVOKABLE void goToAlbums();
     Q_INVOKABLE void loadAlbumView(QString albumName, QString artist, QString coverPath);
     Q_INVOKABLE void returnFromAlbumToGrid();
+    Q_INVOKABLE QRect loadWindowGeometry() const;
+    Q_INVOKABLE void  saveSessionAndWindow(int x, int y, int w, int h);
 
     double getProgress() const { return progress; }
     PlaylistModel* getPlaylistModel() const { return playlistModel; }
@@ -142,10 +143,12 @@ public slots:
 private slots:
     void playSong(int libraryIndex);
     void rebuildShufflePool();
-
     void updatePlaylistNames();
     QVector<AlbumInfo> buildAlbumList() const;
     void leaveAlbumView();
+    void saveWindowGeometry(int x, int y, int w, int h);
+    void saveSessionState();
+    void loadSessionState();
 
 signals:
     void playlistChanged();
@@ -174,6 +177,7 @@ signals:
     void songCoverUpdated(int libraryIndex, const QString& newCoverPath);
     void albumViewStateChanged();
     void returnedToLibrary();
+    void sessionRestored(qint64 position);
 
 private:
     static bool songTitleLess(const SongData &a, const SongData &b);

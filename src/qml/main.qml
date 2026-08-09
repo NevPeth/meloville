@@ -7,11 +7,24 @@ import QtQml.Models
 ApplicationWindow {
     id: appWindow
     visible: true
-    width: 1280
-    height: 720
     title: "Meloville"
     color: "#121212"
     flags: Qt.FramelessWindowHint
+
+    Component.onCompleted: {
+        var geo = backend.loadWindowGeometry()
+        appWindow.x      = geo.x
+        appWindow.y      = geo.y
+        appWindow.width  = geo.width
+        appWindow.height = geo.height
+    }
+
+    onClosing: function(close) {
+        backend.saveSessionAndWindow(
+            appWindow.x, appWindow.y,
+            appWindow.width, appWindow.height
+        )
+    }
 
     Shortcut {
         sequence: "Space"
