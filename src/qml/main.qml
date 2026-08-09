@@ -166,6 +166,8 @@ ApplicationWindow {
                         var from = drag.source.DelegateModel.itemsIndex
                         var to   = delegateRoot.DelegateModel.itemsIndex
                         visualModel.items.move(from, to)
+
+                        drag.source.parent.parent.currentIndex = to
                     }
 
                     // ── The draggable content ──
@@ -213,6 +215,7 @@ ApplicationWindow {
                             drag.threshold:      10
                             property bool held: false
                             property int  startIndex: -1
+                            property int  currentIndex: -1
 
                             // ── Auto-scroll state ────────────────────────────────────────────────
                             property real scrollSpeed: 0   // px per timer tick; negative = up
@@ -230,13 +233,6 @@ ApplicationWindow {
                                 }
                             }
 
-                            onPressed: {
-                                startIndex = delegateRoot.DelegateModel.itemsIndex
-                                held = true
-                                listViewSongs.interactive = false
-                                listViewSongs.dropIndicatorVisible = true
-                            }
-
                             onPositionChanged: {
                                 if (!held) return
 
@@ -246,16 +242,26 @@ ApplicationWindow {
 
                                 // ── Auto-scroll ──────────────────────────────────────────────────
                                 var threshold = 120
-                                var viewportY = mapToItem(listViewSongs, mouse.x, mouse.y).y
+
+                                // Map through the window instead — survives the ParentChange reparent
+                                var globalPos  = dragArea.mapToGlobal(mouse.x, mouse.y)
+                                var viewportY  = listViewSongs.mapFromGlobal(globalPos.x, globalPos.y).y
 
                                 if (viewportY < threshold) {
-                                    // Scale speed: faster the closer to the edge
                                     scrollSpeed = -((threshold - viewportY) / threshold) * 15
                                 } else if (viewportY > listViewSongs.height - threshold) {
                                     scrollSpeed = ((viewportY - (listViewSongs.height - threshold)) / threshold) * 15
                                 } else {
                                     scrollSpeed = 0
                                 }
+                            }
+
+                            onPressed: {
+                                startIndex   = delegateRoot.DelegateModel.itemsIndex
+                                currentIndex = startIndex
+                                held = true
+                                listViewSongs.interactive = false
+                                listViewSongs.dropIndicatorVisible = true
                             }
 
                             onReleased: {
@@ -265,10 +271,12 @@ ApplicationWindow {
                                     listViewSongs.interactive = true
                                     listViewSongs.dropIndicatorVisible = false
 
-                                    var endIndex = delegateRoot.DelegateModel.itemsIndex
-                                    if (startIndex !== endIndex)
-                                        backend.reorderPlaylist(startIndex, endIndex)
-                                    startIndex = -1
+                                    // Use startIndex → currentIndex, not itemsIndex on release
+                                    if (startIndex !== currentIndex)
+                                        backend.reorderPlaylist(startIndex, currentIndex)
+
+                                    startIndex   = -1
+                                    currentIndex = -1
                                 }
                             }
 
@@ -277,7 +285,8 @@ ApplicationWindow {
                                 scrollSpeed = 0
                                 listViewSongs.interactive = true
                                 listViewSongs.dropIndicatorVisible = false
-                                startIndex = -1
+                                startIndex   = -1
+                                currentIndex = -1
                             }
                         }
 
@@ -608,9 +617,8 @@ ApplicationWindow {
                             width: layoutRightContent.width
                             height: 50
 
-                            readonly property real heroHeight: 270
                             opacity: Math.min(1.0, Math.max(0.0,
-                                (listViewSongs.contentY + heroHeight) / 150
+                                -listViewSongs.heroBottomY / 150
                             ))
 
                             color: "#111111"
@@ -682,24 +690,10 @@ ApplicationWindow {
                             property real velocity: 0
                             property real threshold: 40
 
-                            property real dropIndicatorY: 0
-                            property bool dropIndicatorVisible: false
-
-                            // The indicator itself (place it inside the ListView, but not inside a delegate)
-                            Rectangle {
-                                id: dropIndicator
-                                visible: listViewSongs.dropIndicatorVisible
-                                x: 0
-                                y: listViewSongs.dropIndicatorY
-                                width: listViewSongs.width
-                                height: 2
-                                color: "white"
-                                opacity: 0.85
-                                z: 5
-
-                                Behavior on y {
-                                    NumberAnimation { duration: 120; easing.type: Easing.OutCubic }
-                                }
+                            property real heroBottomY: {
+                                var item = listViewSongs.headerItem
+                                if (!item) return 0
+                                return item.mapToItem(listViewSongs, 0, item.height).y
                             }
 
                             WheelHandler {
