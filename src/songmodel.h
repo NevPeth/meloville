@@ -36,9 +36,14 @@ public:
 
     Q_INVOKABLE void moveRow(int from, int to);
 
+private slots:
+    void rebuildReverseMap();
+    int visibleRowForLibraryIndex(int libraryIndex) const;
+
 private:
-    QVector<SongData> *library = nullptr;      // non-const
-    QVector<int> *visibleSongs = nullptr;      // non-const
+    QVector<SongData> *library = nullptr;
+    QVector<int> *visibleSongs = nullptr;
+    QHash<int, int> libIndexToRow;
     int  playingLibraryIndex = -1;
     bool paused = false;
 };

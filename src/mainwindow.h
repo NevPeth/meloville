@@ -106,10 +106,8 @@ public:
         if (currentLibraryIndex < 0 || currentLibraryIndex >= library.size()) return QString();
         return library[currentLibraryIndex].coverPath;
     }
-
     bool getRepeatMode() const { return repeatMode; }
     bool getShuffleMode() const { return shuffleMode; }
-
     int getCurrentSongDuration() const {
         if (currentLibraryIndex < 0 || currentLibraryIndex >= library.size()) return 0;
         return library[currentLibraryIndex].duration;
@@ -122,12 +120,9 @@ public:
     void setPlaying(bool p);
     QString getViewingPlaylist() const { return viewingPlaylist; }
     PlaylistManager* getPlaylistManager() const { return playlistManager; }
-
     QStringList getPlaylistNames() const { return playlistNames; }
     bool getIsInPlaylistView() const { return isInPlaylistView; }
-    bool getDragReorderAllowed() const {
-        return isInPlaylistView && filterText.isEmpty();
-    }
+    bool getDragReorderAllowed() const { return isInPlaylistView && filterText.isEmpty(); }
     bool getIsInAlbumsGridView() const { return isInAlbumsGridView; }
     bool getIsInAlbumView() const { return isInAlbumView; }
     QString getViewingAlbum() const { return viewingAlbum; }
@@ -141,6 +136,7 @@ public slots:
     void onScanError(const QString& message);
 
 private slots:
+    static bool songTitleLess(const SongData &a, const SongData &b);
     void playSong(int libraryIndex);
     void rebuildShufflePool();
     void updatePlaylistNames();
@@ -180,8 +176,6 @@ signals:
     void sessionRestored(qint64 position);
 
 private:
-    static bool songTitleLess(const SongData &a, const SongData &b);
-    
     QVector<SongData> library;
     QVector<int> currentViewSongs;
     QVector<int> visibleSongs;

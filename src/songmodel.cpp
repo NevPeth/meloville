@@ -75,6 +75,7 @@ void SongModel::setSongs(QVector<SongData> *newLibrary, QVector<int> *newVisible
     beginResetModel();
     library = newLibrary;
     visibleSongs = newVisibleSongs;
+    rebuildReverseMap();
     endResetModel();
 }
 
@@ -85,14 +86,11 @@ void SongModel::setPlayingIndex(int libraryIndex)
     paused = false;
 
     auto notify = [&](int libIdx) {
-        if (libIdx < 0 || !visibleSongs) return;
-        for (int row = 0; row < visibleSongs->size(); ++row) {
-            if (visibleSongs->at(row) == libIdx) {
-                QModelIndex mi = index(row);
-                emit dataChanged(mi, mi, {IsPlayingRole, IsPausedRole, IsActiveRole});
-                return;
-            }
-        }
+        if (libIdx < 0) return;
+        int row = libIndexToRow.value(libIdx, -1);
+        if (row < 0) return;
+        QModelIndex mi = index(row);
+        emit dataChanged(mi, mi, {IsPlayingRole, IsPausedRole, IsActiveRole});
     };
 
     notify(oldIndex);
@@ -102,18 +100,13 @@ void SongModel::setPlayingIndex(int libraryIndex)
 void SongModel::setPausedState(bool isPaused)
 {
     paused = isPaused;
-    if (playingLibraryIndex < 0 || !visibleSongs) return;
-
-    for (int row = 0; row < visibleSongs->size(); ++row) {
-        if (visibleSongs->at(row) == playingLibraryIndex) {
-            QModelIndex mi = index(row);
-            emit dataChanged(mi, mi, {IsPausedRole});
-            return;
-        }
-    }
+    if (playingLibraryIndex < 0) return;
+    int row = libIndexToRow.value(playingLibraryIndex, -1);
+    if (row < 0) return;
+    QModelIndex mi = index(row);
+    emit dataChanged(mi, mi, {IsPausedRole});
 }
 
-// ---- new moveRow ----
 void SongModel::moveRow(int from, int to)
 {
     if (!visibleSongs || from < 0 || from >= visibleSongs->size() ||
@@ -137,5 +130,24 @@ void SongModel::moveRow(int from, int to)
         (*visibleSongs)[to] = temp;
     }
 
+    // Partial remap: only the affected range changed
+    int lo = std::min(from, to), hi = std::max(from, to);
+    for (int row = lo; row <= hi; ++row)
+        libIndexToRow[(*visibleSongs)[row]] = row;
+
     endMoveRows();
+}
+
+void SongModel::rebuildReverseMap()
+{
+    libIndexToRow.clear();
+    if (!visibleSongs) return;
+    libIndexToRow.reserve(visibleSongs->size());
+    for (int row = 0; row < visibleSongs->size(); ++row)
+        libIndexToRow.insert((*visibleSongs)[row], row);
+}
+
+int SongModel::visibleRowForLibraryIndex(int libraryIndex) const
+{
+    return libIndexToRow.value(libraryIndex, -1);
 }
