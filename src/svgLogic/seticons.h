@@ -40,8 +40,8 @@ inline void registerIcons(SvgImageProvider& provider)
     provider.registerIcon("speakerIconNormal",":/icons/speakerLowVolume.svg",QColor("#b3b3b3"), QSize(48, 48));
     provider.registerIcon("speakerIconHovered",":/icons/speakerLowVolume.svg",Qt::white,QSize(48, 48));
 
-    provider.registerIcon("listenAlongIconNormal",":/icons/connectIcon.svg",QColor("#535353"), QSize(60, 60));
-    provider.registerIcon("listenAlongIconHovered",":/icons/connectIcon.svg",Qt::white,QSize(60, 60));
+    provider.registerIcon("settingsIconNormal",":/icons/settings.svg",QColor("#b3b3b3"), QSize(40, 40));
+    provider.registerIcon("settingsIconHovered",":/icons/settings.svg",Qt::white,QSize(40, 40));
 
     provider.registerIcon("bigPictureIconNormal",":/icons/bigPictureIcon.svg",QColor("#b3b3b3"), QSize(40, 40));
     provider.registerIcon("bigPictureIconHovered",":/icons/bigPictureIcon.svg",Qt::white,QSize(40, 40));

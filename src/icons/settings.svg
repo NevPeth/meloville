@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="2 1.5 20 20" fill="none" aria-label="Settings">
+    <path d="M9.65 2.5h4.7l.55 2.12a7.9 7.9 0 0 1 1.42.82l2.05-.72 2.35 4.07-1.5 1.57c.06.4.09.81.09 1.22s-.03.82-.09 1.22l1.5 1.57-2.35 4.07-2.05-.72a7.9 7.9 0 0 1-1.42.82l-.55 2.12h-4.7l-.55-2.12a7.9 7.9 0 0 1-1.42-.82l-2.05.72-2.35-4.07 1.5-1.57A8.3 8.3 0 0 1 4.69 12c0-.41.03-.82.09-1.22l-1.5-1.57 2.35-4.07 2.05.72a7.9 7.9 0 0 1 1.42-.82L9.65 2.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" /> 
+    <circle cx="12" cy="12" r="3.1" stroke="currentColor" stroke-width="1.8" /> 
+</svg>

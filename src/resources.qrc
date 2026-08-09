@@ -31,5 +31,6 @@
         <file>icons/jumpToIcon.svg</file>
         <file>icons/albumIcon.svg</file>
         <file>icons/bigPictureIcon.svg</file>
+        <file>icons/settings.svg</file>
     </qresource>
 </RCC>

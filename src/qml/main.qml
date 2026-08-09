@@ -1439,7 +1439,7 @@ ApplicationWindow {
                                         id: btnGoToBigPicture
                                         Layout.preferredWidth: 40
                                         Layout.preferredHeight: 40
-                                        Layout.rightMargin: -14
+                                        Layout.rightMargin: -5
                                         background: Item {}
                                         contentItem: Image {
                                             source: btnGoToBigPicture.hovered
@@ -1452,15 +1452,15 @@ ApplicationWindow {
                                     }
 
                                     Button {
-                                        id: btnListenAlong
-                                        Layout.preferredWidth: 60
-                                        Layout.preferredHeight: 60
-                                        Layout.rightMargin: -20
+                                        id: btnSettings
+                                        Layout.preferredWidth: 37
+                                        Layout.preferredHeight: 37
+                                        Layout.rightMargin: -10
                                         background: Item {}
                                         contentItem: Image {
-                                            source: btnListenAlong.hovered
-                                                ? "image://svgicons/listenAlongIconHovered"
-                                                : "image://svgicons/listenAlongIconNormal"
+                                            source: btnSettings.hovered
+                                                ? "image://svgicons/settingsIconHovered"
+                                                : "image://svgicons/settingsIconNormal"
                                             fillMode: Image.PreserveAspectFit
                                         }
                                     }
