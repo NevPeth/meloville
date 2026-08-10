@@ -2,8 +2,6 @@
 
 **A music player built for people who just want to listen to their music.**
 
----
-
 ## Screenshots
 
 ### Big Picture Mode
@@ -18,26 +16,21 @@
 
 <img src="screenshots/playlist.png" alt="Meloville Playlists" width="800">
 
----
 
 ### Albums
 
 <img src="screenshots/albums.png" alt="Meloville Playlists" width="800">
 
----
 
 ## Features
 
-* Bluetooth Headphone playback support
+* Bluetooth headphone playback support
 * In-built metadata editor for songs
 * Auto sorting of albums
 * Drag and drop songs to switch songs in playlists (Suprisingly a lot of other local music players don't have this)
 * A "Big Picture" mode to see song covers in fullscreen
 * Native Linux support
-* File size is ridiculously small (under 3 megabytes)
 * Svg based UI assets so it looks grear even on on high DPI monitors
-
----
 
 ## Features That I Am Currently Working On
 
@@ -45,9 +38,6 @@
 * Lyrics Support
 * Packages for arch and maybe a flatpak
 * Themes
-
----
-
 
 ## Getting Started
 
@@ -85,15 +75,11 @@ cmake ../src && cmake --build .
 ./Meloville
 ```
 
----
-
 ## Contributing
 
 Contributions are welcome!
 Just let me know what was changed in the commit.
 AI assissted contributions are allowed but if it is blatantly vibe-coded then it's getting rejected.
-
----
 
 ## Issues & Suggestions
 
@@ -101,8 +87,6 @@ For now there is no format.
 Any issues can be sent without worrying about me being condescending like some other projects.
 Just write your issue and I will help you to the best of my ability.
 I want this project to last a long, long time.
-
----
 
 ## License
 
@@ -112,5 +96,3 @@ Basically as long as your making an open source project, use it as you wish.
 ## Support the Project
 
 If you find Meloville useful, consider giving the project a star on GitHub.
-
----
