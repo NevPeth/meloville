@@ -1004,37 +1004,54 @@ void MainWindow::editCurrentSong(int visibleIndex)
     );
 }
 
+static QString artistKey(const QString &artist)
+{
+    QString low = artist.trimmed().toLower();
+    // Walk until we hit a non-letter that isn't part of the name itself
+    for (int i = 0; i < low.length(); ++i) {
+        if (!low[i].isLetter()) {
+            return low.left(i).trimmed();
+        }
+    }
+    return low; // whole string is the key e.g. "laufey", "mac collins"
+}
+
 QVector<AlbumInfo> MainWindow::buildAlbumList() const
 {
+    // key: (albumTitle.toLower(), artistKey) -> index into result
+    QHash<QPair<QString,QString>, int> indexMap;
     QVector<AlbumInfo> result;
-    QHash<QString, int> indexOfAlbum; // album title -> position in result
 
     for (const SongData &song : library) {
         if (song.album.isEmpty())
             continue;
 
-        auto it = indexOfAlbum.find(song.album);
-        if (it == indexOfAlbum.end()) {
+        QString albumKey  = song.album.trimmed().toLower();
+        QString artKey    = artistKey(song.artist);
+        auto    key       = qMakePair(albumKey, artKey);
+
+        auto it = indexMap.find(key);
+        if (it == indexMap.end()) {
             AlbumInfo info;
-            info.title = song.album;
-            info.artist = song.artist;     // first song's artist wins
+            info.title     = song.album;
+            info.artist    = song.artist;
             info.coverPath = song.coverPath;
             info.songCount = 1;
-            indexOfAlbum.insert(song.album, result.size());
+            indexMap.insert(key, result.size());
             result.append(info);
         } else {
             result[it.value()].songCount++;
+            // Prefer shorter display name e.g. "Laufey" over "Laufey and Sydney Orchestra"
+            if (song.artist.length() < result[it.value()].artist.length())
+                result[it.value()].artist = song.artist;
         }
     }
 
-    // An "album" with only one song is really just a single — don't show it
     result.erase(
         std::remove_if(result.begin(), result.end(),
             [](const AlbumInfo &info) { return info.songCount < 2; }),
-        result.end()
-    );
+        result.end());
 
-    // Alphabetical order, case-insensitive
     std::sort(result.begin(), result.end(),
         [](const AlbumInfo &a, const AlbumInfo &b) {
             return QString::compare(a.title, b.title, Qt::CaseInsensitive) < 0;
@@ -1062,7 +1079,6 @@ void MainWindow::leaveAlbumView()
 
 void MainWindow::loadAlbumView(QString albumName, QString artist, QString coverPath)
 {
-    // Exit playlist view if active
     if (isInPlaylistView) {
         isInPlaylistView = false;
         viewingPlaylist.clear();
@@ -1070,23 +1086,24 @@ void MainWindow::loadAlbumView(QString albumName, QString artist, QString coverP
         emit isInPlaylistViewChanged();
     }
 
-    // Exit albums grid view — we're now inside a specific album
-    isInAlbumsGridView = false;
-
-    viewingAlbum        = albumName;
-    viewingAlbumArtist  = artist;
+    isInAlbumsGridView    = false;
+    viewingAlbum          = albumName;
+    viewingAlbumArtist    = artist;
     viewingAlbumCoverPath = coverPath;
-    isInAlbumView       = true;
+    isInAlbumView         = true;
 
     filterText.clear();
     emit dragReorderAllowedChanged();
     emit albumViewStateChanged();
 
-    // Build the filtered, track-sorted song list for this album
     currentViewSongs.clear();
     for (int i = 0; i < library.size(); ++i) {
-        if (library[i].album == albumName)
+        const SongData &s = library[i];
+        if (s.album.compare(albumName, Qt::CaseInsensitive) == 0 &&
+            artistKey(s.artist) == artistKey(artist))
+        {
             currentViewSongs.push_back(i);
+        }
     }
     std::sort(currentViewSongs.begin(), currentViewSongs.end(),
         [this](int a, int b){ return library[a].trackNumber < library[b].trackNumber; });
