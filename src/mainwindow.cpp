@@ -599,6 +599,7 @@ void MainWindow::loadPlaylistView(const QString& playlistName)
 {
     isInPlaylistView = true;
     viewingPlaylist = playlistName;
+    leaveAlbumView();
     emit viewingPlaylistChanged();
     emit isInPlaylistViewChanged();
     filterText.clear();
@@ -1090,9 +1091,7 @@ void MainWindow::loadAlbumView(QString albumName, QString artist, QString coverP
     std::sort(currentViewSongs.begin(), currentViewSongs.end(),
         [this](int a, int b){ return library[a].trackNumber < library[b].trackNumber; });
 
-    visibleSongs        = currentViewSongs;
-    currentPlaybackSongs = currentViewSongs;
-    rebuildPlaybackMap();
+    visibleSongs = currentViewSongs;
     songModel->setSongs(&library, &visibleSongs);
     rebuildShufflePool();
 }

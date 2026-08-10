@@ -344,6 +344,7 @@ ApplicationWindow {
                             y: (parent.height - height) / 2
                             width: 50; height: 50
                             fillMode: Image.PreserveAspectCrop
+                            visible: !backend.isInAlbumView
                             source: {
                                 if (model.coverPath === "") return "qrc:/images/default_cover.png"
                                 return "file://" + model.coverPath + "?" + mainPageRoot.coverCacheBuster
@@ -352,7 +353,7 @@ ApplicationWindow {
 
                         // ── title + artist ───────────────────────────────────────────────
                         Column {
-                            x: coverImage.x + coverImage.width + 10
+                            x: !backend.isInAlbumView ? coverImage.x + coverImage.width + 10 : coverImage.x
                             width: parent.width - x - 120
                             anchors.verticalCenter: parent.verticalCenter
                             spacing: 4
