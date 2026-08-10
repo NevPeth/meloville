@@ -347,11 +347,6 @@ void MainWindow::playSong(int libraryIndex)
     playbackController->player()->play();
     setPlaying(true);
     currentPlaybackIndex = libraryIndexToPlaybackPos.value(libraryIndex, -1);
-    // currentPlaybackIndex =
-    //     currentPlaybackSongs.indexOf(
-    //         libraryIndex
-    //     );
-
     songModel->setPlayingIndex(libraryIndex); 
     currentLibraryIndex = libraryIndex;
     emit currentLibraryIndexChanged();
@@ -432,17 +427,14 @@ void MainWindow::playPreviousSong()
 
     if (!playHistory.isEmpty()){
         int previousLibraryIndex = playHistory.takeLast();
-
+        nextUp.push(currentLibraryIndex);
         playSong(previousLibraryIndex);
         return;
     }
 
     if (!shuffleMode){
-
-        nextUp.push(currentLibraryIndex);
-
         int previousPlaybackIndex = currentPlaybackIndex - 1;
-
+        nextUp.push(currentLibraryIndex);
         if (previousPlaybackIndex < 0)
             previousPlaybackIndex = currentPlaybackSongs.size()-1;
 
