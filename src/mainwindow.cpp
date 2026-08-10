@@ -599,11 +599,16 @@ void MainWindow::loadPlaylistView(const QString& playlistName)
 {
     isInPlaylistView = true;
     viewingPlaylist = playlistName;
-    leaveAlbumView();
     emit viewingPlaylistChanged();
     emit isInPlaylistViewChanged();
+
+    isInAlbumsGridView = false;
+    leaveAlbumView();
+    emit albumViewStateChanged();
+    
     filterText.clear();
     emit dragReorderAllowedChanged();
+    
 
     QString coverPath = appDataPath + 
         playlistManager->playlistImage(
