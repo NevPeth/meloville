@@ -139,6 +139,7 @@ private slots:
     static bool songTitleLess(const SongData &a, const SongData &b);
     void playSong(int libraryIndex);
     void rebuildShufflePool();
+    void rebuildPlaybackMap();
     void updatePlaylistNames();
     QVector<AlbumInfo> buildAlbumList() const;
     void leaveAlbumView();
@@ -220,6 +221,8 @@ private:
     bool isInAlbumView = false;
     AlbumListModel *albumModel = nullptr;
     QVector<AlbumInfo> allAlbums;
+
+    QHash<int,int> libraryIndexToPlaybackPos;
 };
 
 #endif // MAINWINDOW_H

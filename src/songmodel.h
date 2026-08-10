@@ -33,12 +33,12 @@ public:
     void setSongs(QVector<SongData> *library, QVector<int> *visibleSongs);
     void setPlayingIndex(int libraryIndex);
     void setPausedState(bool paused);
+    int visibleRowForLibraryIndex(int libraryIndex) const;
 
     Q_INVOKABLE void moveRow(int from, int to);
 
 private slots:
     void rebuildReverseMap();
-    int visibleRowForLibraryIndex(int libraryIndex) const;
 
 private:
     QVector<SongData> *library = nullptr;

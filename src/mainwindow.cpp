@@ -145,6 +145,7 @@ void MainWindow::onScanFinished(const QVector<SongData>& songs, const QString& f
     }
     visibleSongs = currentViewSongs;
     currentPlaybackSongs = currentViewSongs;
+    rebuildPlaybackMap();
 
     // Update model
     songModel->setSongs(&library, &visibleSongs);
@@ -290,6 +291,7 @@ void MainWindow::loadLibrary()
     
     visibleSongs = currentViewSongs;
     currentPlaybackSongs = currentViewSongs;
+    rebuildPlaybackMap();
     songModel->setSongs(&library, &visibleSongs);
 
     if (addedAny || removedAny) {
@@ -304,6 +306,7 @@ void MainWindow::playSongAtVisibleIndex(int visibleIndex)
 
     int libraryIndex = visibleSongs[visibleIndex];
     currentPlaybackSongs = currentViewSongs; // or whatever you need
+    rebuildPlaybackMap();
     currentVisibleIndex = visibleIndex;
     currentLibraryIndex = libraryIndex;
     emit currentLibraryIndexChanged();
@@ -343,15 +346,24 @@ void MainWindow::playSong(int libraryIndex)
     playbackController->player()->setSource(QUrl::fromLocalFile(song.filePath));
     playbackController->player()->play();
     setPlaying(true);
-    currentPlaybackIndex =
-        currentPlaybackSongs.indexOf(
-            libraryIndex
-        );
+    currentPlaybackIndex = libraryIndexToPlaybackPos.value(libraryIndex, -1);
+    // currentPlaybackIndex =
+    //     currentPlaybackSongs.indexOf(
+    //         libraryIndex
+    //     );
 
     songModel->setPlayingIndex(libraryIndex); 
     currentLibraryIndex = libraryIndex;
     emit currentLibraryIndexChanged();
     emit currentSongChanged();
+}
+
+void MainWindow::rebuildPlaybackMap()
+{
+    libraryIndexToPlaybackPos.clear();
+    libraryIndexToPlaybackPos.reserve(currentPlaybackSongs.size());
+    for (int i = 0; i < currentPlaybackSongs.size(); ++i)
+        libraryIndexToPlaybackPos.insert(currentPlaybackSongs[i], i);
 }
 
 void MainWindow::playNextSong()
@@ -769,6 +781,7 @@ void MainWindow::saveSongEdits(int libraryIndex, const QString& title, const QSt
                 [this](int a, int b){ return library[a].trackNumber < library[b].trackNumber; });
             visibleSongs = currentViewSongs;
             currentPlaybackSongs = currentViewSongs;
+            rebuildPlaybackMap();
             songModel->setSongs(&library, &visibleSongs);
         }
 
@@ -781,7 +794,7 @@ void MainWindow::saveSongEdits(int libraryIndex, const QString& title, const QSt
             std::sort(currentPlaybackSongs.begin(), currentPlaybackSongs.end(),
                 [this](int a, int b){ return library[a].trackNumber < library[b].trackNumber; });
             if (currentLibraryIndex >= 0)
-                currentPlaybackIndex = currentPlaybackSongs.indexOf(currentLibraryIndex);
+                currentPlaybackIndex = libraryIndexToPlaybackPos.value(currentLibraryIndex, -1);
             visibleSongs = currentViewSongs;
             songModel->setSongs(&library, &visibleSongs);
         }
@@ -846,12 +859,13 @@ void MainWindow::saveSongEdits(int libraryIndex, const QString& title, const QSt
         }
         visibleSongs = currentViewSongs;
         currentPlaybackSongs = currentViewSongs;
+        rebuildPlaybackMap();
         songModel->setSongs(&library, &visibleSongs);
         filterSongsAndAlbums(filterText);
     }
 
     if (currentLibraryIndex >= 0) {
-        currentPlaybackIndex = currentPlaybackSongs.indexOf(currentLibraryIndex);
+        currentPlaybackIndex = libraryIndexToPlaybackPos.value(currentLibraryIndex, -1);
     }
 
     emit songCoverUpdated(currentLibraryIndex, selectedImagePath);
@@ -870,6 +884,7 @@ void MainWindow::removeFromCurrentPlaylist(int visibleIndex)
         loadPlaylistView(viewingPlaylist);
         // Update all the lists
         currentPlaybackSongs = currentViewSongs;
+        rebuildPlaybackMap();
         visibleSongs = currentViewSongs;
         unplayedIndices.removeOne(libraryIndex);
         playHistory.removeAll(libraryIndex);
@@ -897,7 +912,7 @@ void MainWindow::jumpToCurrentSong()
         returnToLibrary();
 
     // Find the song in the active view.
-    int visibleIndex = visibleSongs.indexOf(currentLibraryIndex);
+    int visibleIndex = songModel->visibleRowForLibraryIndex(currentLibraryIndex);
     if (visibleIndex < 0)
         return;
 
@@ -1085,6 +1100,7 @@ void MainWindow::loadAlbumView(QString albumName, QString artist, QString coverP
 
     visibleSongs        = currentViewSongs;
     currentPlaybackSongs = currentViewSongs;
+    rebuildPlaybackMap();
     songModel->setSongs(&library, &visibleSongs);
     rebuildShufflePool();
 }
@@ -1157,7 +1173,7 @@ void MainWindow::loadSessionState()
     playbackController->player()->setSource(QUrl::fromLocalFile(song.filePath));
 
     currentLibraryIndex  = libraryIndex;
-    currentPlaybackIndex = currentPlaybackSongs.indexOf(libraryIndex);
+    currentPlaybackIndex = libraryIndexToPlaybackPos.value(libraryIndex, -1);
     songModel->setPlayingIndex(libraryIndex);
     songModel->setPausedState(true);  // restore paused, not blasting audio on startup
 
