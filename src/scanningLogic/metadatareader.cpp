@@ -19,6 +19,8 @@
 #include <taglib/attachedpictureframe.h>
 #include <taglib/flacpicture.h>
 #include <taglib/mp4coverart.h>
+#include <taglib/vorbisfile.h>
+#include <taglib/xiphcomment.h>
 
 SongData MetadataReader::readSong(const QString& filePath)
 {
@@ -132,11 +134,14 @@ QPixmap MetadataReader::extractCoverArt(
     if (extension == "mp3")
         return extractMp3Cover(filePath);
 
-    if (extension == "flac")
+    else if (extension == "flac")
         return extractFlacCover(filePath);
 
-    if (extension == "m4a" || extension == "mp4" || extension == "aac"){
+    else if (extension == "m4a" || extension == "mp4" || extension == "aac"){
         return extractM4ACover(filePath);
+    }
+    else if (extension == "ogg"){
+        return extractOggCover(filePath);
     }
 
     return fallbackCover();
@@ -241,6 +246,31 @@ QPixmap MetadataReader::extractM4ACover(const QString& filePath){
 
     QPixmap cover;
 
+    if (!cover.loadFromData(imageData))
+        return fallbackCover();
+
+    return cover;
+}
+
+QPixmap MetadataReader::extractOggCover(const QString& filePath)
+{
+    TagLib::Ogg::Vorbis::File file(filePath.toStdString().c_str());
+    if (!file.isValid())
+        return fallbackCover();
+
+    auto* tag = file.tag(); // XiphComment
+    if (!tag)
+        return fallbackCover();
+
+    // XiphComment::pictureList() decodes METADATA_BLOCK_PICTURE internally
+    const auto pictures = tag->pictureList();
+    if (pictures.isEmpty())
+        return fallbackCover();
+
+    const auto* pic = pictures.front();
+    QByteArray imageData(pic->data().data(), pic->data().size());
+
+    QPixmap cover;
     if (!cover.loadFromData(imageData))
         return fallbackCover();
 
