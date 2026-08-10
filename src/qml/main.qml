@@ -43,6 +43,16 @@ ApplicationWindow {
         context: Qt.ApplicationShortcut
         onActivated: backend.playPreviousSong()
     }
+
+    Shortcut {
+        sequence: "Escape"
+        context: Qt.ApplicationShortcut
+        onActivated: {
+            var item = stackView.currentItem
+            if (item && item.unfocusSearchFields)
+                item.unfocusSearchFields()
+        }
+    }
     
     // Stack view to manage pages
     StackView {
@@ -157,6 +167,11 @@ ApplicationWindow {
         Rectangle {
             id: mainPageRoot
             color: "#121212"
+            function unfocusSearchFields() {
+                searchField.focus = false
+                stickySearchField.focus = false
+                heroSearchField.focus = false
+            }
             DelegateModel {
                 id: visualModel
                 model: backend.songModel
@@ -410,10 +425,9 @@ ApplicationWindow {
             ColumnLayout {
                 anchors.fill: parent
                 spacing: 0
-                // margins are 0 by default in QML
 
                 TapHandler {
-                    onTapped: searchField.focus = false
+                    onTapped: unfocusSearchFields()
                 }
 
                 // -------- SIDEBAR + RIGHT CONTENT (horizontal) --------
@@ -542,7 +556,7 @@ ApplicationWindow {
                                 }
 
                                 TapHandler {
-                                    onTapped: searchField.focus = false
+                                    onTapped: unfocusSearchFields()
                                 }
 
                                 model: backend.playlistModel
@@ -612,6 +626,9 @@ ApplicationWindow {
                                         }
                                     }
                                 }
+                            }
+                            TapHandler {
+                                onTapped: unfocusSearchFields()
                             }
                         }
 
@@ -887,7 +904,7 @@ ApplicationWindow {
                             }
 
                             TapHandler {
-                                onTapped: searchField.focus = false
+                                onTapped: unfocusSearchFields()
                             }
                         }
                         // ── Album grid — shown when backend.isInAlbumsGridView ────────────────
