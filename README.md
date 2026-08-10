@@ -31,7 +31,7 @@
 * Drag and drop songs to switch songs in playlists (Suprisingly a lot of other local music players don't have this)
 * A "Big Picture" mode to see song covers in fullscreen
 * Native Linux support
-* Svg based UI assets so it looks grear even on on high DPI monitors
+* Svg based UI assets so it looks great even on on high DPI monitors
 
 ## Features That I Am Currently Working On
 
