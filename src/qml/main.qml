@@ -793,12 +793,14 @@ ApplicationWindow {
                                     readonly property string heroCoverSource: {
                                         if (inPlaylist)
                                             return currentPlaylistCover ? "file://" + currentPlaylistCover : "qrc:/images/default_cover.png"
-                                        var p = backend.viewingAlbumCover
-                                        return p ? "file://" + p : "qrc:/images/default_cover.png"
+                                        var cover = backend.viewingAlbumCover
+                                        return cover ? "file://" + cover : "qrc:/images/default_cover.png"
                                     }
                                     readonly property string heroLabel:     inPlaylist ? "Playlist" : "Album"
                                     readonly property string heroTitle:     inPlaylist ? currentPlaylistName : backend.viewingAlbumName
                                     readonly property string heroSubtitle:  inPlaylist ? "" : backend.viewingAlbumArtist
+                                    property bool coverHovered: false
+                                    property bool coverLocked: false
 
                                     Image {
                                         id: heroCover
@@ -815,16 +817,94 @@ ApplicationWindow {
                                             }
                                         }
 
-                                        MouseArea {
+                                        property bool coverLocked: false
+                                        property bool snapOff: false
+
+                                        Timer {
+                                            id: snapOffTimer
+                                            interval: 1
+                                            onTriggered: heroCover.snapOff = false
+                                        }
+
+                                        Connections {
+                                            target: playlistDialog
+                                            function onVisibleChanged() {
+                                                if (playlistDialog.visible) {
+                                                    heroCover.snapOff = true
+                                                    heroCover.coverLocked = false
+                                                    snapOffTimer.start()
+                                                }
+                                            }
+                                        }
+
+                                        Rectangle {
+                                            id: hoverOverlay
                                             anchors.fill: parent
-                                            cursorShape: Qt.PointingHandCursor
-                                            // Only playlists are editable by clicking the cover
+                                            color: "#000000"
+                                            opacity: (hoverArea.containsMouse || heroCover.coverLocked) && collectionHero.inPlaylist ? 0.7 : 0
+                                            radius: 8
+
+                                            Behavior on opacity {
+                                                enabled: !heroCover.snapOff
+                                                NumberAnimation { duration: 150; easing.type: Easing.InOutQuad }
+                                            }
+
+                                            Column {
+                                                anchors.centerIn: parent
+                                                spacing: 6
+                                                opacity: (hoverArea.containsMouse || heroCover.coverLocked) && collectionHero.inPlaylist ? 1 : 0
+
+                                                Behavior on opacity {
+                                                    enabled: !heroCover.snapOff
+                                                    NumberAnimation { duration: 150; easing.type: Easing.InOutQuad }
+                                                }
+
+                                                Image {
+                                                    anchors.horizontalCenter: parent.horizontalCenter
+                                                    width: 60; height: 60
+                                                    source: "image://svgicons/pencilIcon"
+                                                }
+                                            }
+                                        }
+
+                                        MouseArea {
+                                            id: hoverArea
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: collectionHero.inPlaylist ? Qt.PointingHandCursor : Qt.ArrowCursor
                                             onClicked: {
-                                                if (collectionHero.inPlaylist)
+                                                if (collectionHero.inPlaylist) {
+                                                    heroCover.coverLocked = true
                                                     playlistDialog.openEdit(currentPlaylistName, currentPlaylistCover)
+                                                }
                                             }
                                         }
                                     }
+                                    // Image {
+                                    //     id: heroCover
+                                    //     x: 30
+                                    //     anchors.verticalCenter: parent.verticalCenter
+                                    //     width: 200; height: 200
+                                    //     fillMode: Image.PreserveAspectCrop
+                                    //     source: collectionHero.heroCoverSource
+                                    //     layer.enabled: true
+                                    //     layer.effect: OpacityMask {
+                                    //         maskSource: Rectangle {
+                                    //             width: heroCover.width; height: heroCover.height
+                                    //             radius: 8
+                                    //         }
+                                    //     }
+
+                                    //     MouseArea {
+                                    //         anchors.fill: parent
+                                    //         cursorShape: Qt.PointingHandCursor
+                                    //         // Only playlists are editable by clicking the cover
+                                    //         onClicked: {
+                                    //             if (collectionHero.inPlaylist)
+                                    //                 playlistDialog.openEdit(currentPlaylistName, currentPlaylistCover)
+                                    //         }
+                                    //     }
+                                    // }
 
                                     Column {
                                         anchors.left:           heroCover.right

@@ -65,8 +65,8 @@ Item {
     // ── Dim overlay ───────────────────────────────────────────────────────────
     Rectangle {
         anchors.fill: parent
-        color:        "#000000"
-        opacity:      0.6
+        color: "#000000"
+        opacity: 0.7
 
         MouseArea {
             id: overlayMouseArea

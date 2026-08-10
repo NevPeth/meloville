@@ -35,7 +35,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         color: "#000000"
-        opacity: 0.6
+        opacity: 0.7
 
         // Click outside dialog closes it
         MouseArea {

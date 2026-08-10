@@ -24,6 +24,7 @@
 
 ## Features
 
+* Support for mp3, flac, and ogg files
 * Bluetooth headphone playback support
 * In-built metadata editor for songs
 * Auto sorting of albums
@@ -45,12 +46,8 @@
 
 You'll need:
 
-* A C++17-compatible compiler
 * **CMake 3.16+**
 * **Qt 6**
-* Qt Multimedia
-* Qt MultimediaWidgets
-* Qt SVG
 * **TagLib**
 * **PulseAudio**
 
