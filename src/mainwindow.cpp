@@ -1066,6 +1066,14 @@ QVector<AlbumInfo> MainWindow::buildAlbumList() const
 }
 
 void MainWindow::goToAlbums(){
+    currentViewSongs.clear();
+    viewingPlaylist = QString();
+    emit viewingPlaylistChanged();
+    isInPlaylistView = false;
+    emit isInPlaylistViewChanged();
+    filterText.clear();
+    emit dragReorderAllowedChanged();
+    
     leaveAlbumView();
     isInAlbumsGridView = true;
     allAlbums = buildAlbumList();

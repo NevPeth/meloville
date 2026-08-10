@@ -557,10 +557,6 @@ ApplicationWindow {
                         Layout.fillHeight: true
                         spacing: 0
 
-                        // playlistInfo — visible: false on startup, omitted
-
-                        // albumInfo — visible: false on startup, omitted
-
                         Rectangle {
                             id: libraryHeader
                             Layout.fillWidth: true
@@ -603,6 +599,7 @@ ApplicationWindow {
                                         verticalAlignment: TextInput.AlignVCenter
                                         color: "white"
                                         font.pixelSize: 13
+                                        onTextEdited: backend.filterSongsAndAlbums(text)
 
                                         Text {
                                             anchors.fill: parent
