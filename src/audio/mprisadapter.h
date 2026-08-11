@@ -2,28 +2,30 @@
 #include <QObject>
 #include <QDBusAbstractAdaptor>
 #include <QDBusConnection>
+#include <QDBusMessage>
+#include <QDBusObjectPath>
 
 class MprisRootAdaptor : public QDBusAbstractAdaptor
 {
     Q_OBJECT
     Q_CLASSINFO("D-Bus Interface", "org.mpris.MediaPlayer2")
-    Q_PROPERTY(bool CanQuit      READ canQuit)
-    Q_PROPERTY(bool CanRaise     READ canRaise)
-    Q_PROPERTY(bool HasTrackList READ hasTrackList)
-    Q_PROPERTY(QString Identity  READ identity)
-    Q_PROPERTY(QStringList SupportedUriSchemes READ supportedUriSchemes)
-    Q_PROPERTY(QStringList SupportedMimeTypes  READ supportedMimeTypes)
+    Q_PROPERTY(bool CanQuit      READ getCanQuit)
+    Q_PROPERTY(bool CanRaise     READ getCanRaise)
+    Q_PROPERTY(bool HasTrackList READ getHasTrackList)
+    Q_PROPERTY(QString Identity  READ getIdentity)
+    Q_PROPERTY(QStringList SupportedUriSchemes READ getSupportedUriSchemes)
+    Q_PROPERTY(QStringList SupportedMimeTypes  READ getSupportedMimeTypes)
 
 public:
     explicit MprisRootAdaptor(QObject *parent)
         : QDBusAbstractAdaptor(parent) {}
 
-    bool        canQuit()             const { return false; }
-    bool        canRaise()            const { return false; }
-    bool        hasTrackList()        const { return false; }
-    QString     identity()            const { return "Meloville"; }
-    QStringList supportedUriSchemes() const { return {}; }
-    QStringList supportedMimeTypes()  const { return {}; }
+    bool        getCanQuit()             const { return false; }
+    bool        getCanRaise()            const { return false; }
+    bool        getHasTrackList()        const { return false; }
+    QString     getIdentity()            const { return "Meloville"; }
+    QStringList getSupportedUriSchemes() const { return {}; }
+    QStringList getSupportedMimeTypes()  const { return {}; }
 
 public slots:
     void Quit()  {}
@@ -34,30 +36,67 @@ class MprisPlayerAdaptor : public QDBusAbstractAdaptor
 {
     Q_OBJECT
     Q_CLASSINFO("D-Bus Interface", "org.mpris.MediaPlayer2.Player")
-    Q_PROPERTY(bool CanPlay           READ canPlay)
-    Q_PROPERTY(bool CanPause          READ canPause)
-    Q_PROPERTY(bool CanGoNext         READ canGoNext)
-    Q_PROPERTY(bool CanGoPrevious     READ canGoPrevious)
-    Q_PROPERTY(bool CanSeek           READ canSeek)
-    Q_PROPERTY(bool CanControl        READ canControl)
-    Q_PROPERTY(QString PlaybackStatus READ playbackStatus)
+    Q_PROPERTY(bool        CanPlay        READ getCanPlay)
+    Q_PROPERTY(bool        CanPause       READ getCanPause)
+    Q_PROPERTY(bool        CanGoNext      READ getCanGoNext)
+    Q_PROPERTY(bool        CanGoPrevious  READ getCanGoPrevious)
+    Q_PROPERTY(bool        CanSeek        READ getCanSeek)
+    Q_PROPERTY(bool        CanControl     READ getCanControl)
+    Q_PROPERTY(QString     PlaybackStatus READ getPlaybackStatus)
+    Q_PROPERTY(QVariantMap Metadata       READ getMetadata)
 
 public:
     explicit MprisPlayerAdaptor(QObject *parent)
         : QDBusAbstractAdaptor(parent) {}
 
-    bool    canPlay()         const { return true; }
-    bool    canPause()        const { return true; }
-    bool    canGoNext()       const { return true; }
-    bool    canGoPrevious()   const { return true; }
-    bool    canSeek()         const { return false; }
-    bool    canControl()      const { return true; }
-    QString playbackStatus()  const { return m_status; }
+    bool        getCanPlay()        const { return true; }
+    bool        getCanPause()       const { return true; }
+    bool        getCanGoNext()      const { return true; }
+    bool        getCanGoPrevious()  const { return true; }
+    bool        getCanSeek()        const { return false; }
+    bool        getCanControl()     const { return true; }
+    QString     getPlaybackStatus() const { return playbackStatus; }
+    QVariantMap getMetadata()       const { return metadata; }
 
-    void setPlaybackStatus(const QString &s) { m_status = s; }
+    void setMetadata(const QVariantMap &map)
+    {
+        metadata = map;
+
+        QVariantMap changed;
+        changed["Metadata"] = QVariant::fromValue(metadata);
+
+        QDBusMessage signal = QDBusMessage::createSignal(
+            "/org/mpris/MediaPlayer2",
+            "org.freedesktop.DBus.Properties",
+            "PropertiesChanged"
+        );
+        signal << "org.mpris.MediaPlayer2.Player"
+               << changed
+               << QStringList{};
+
+        QDBusConnection::sessionBus().send(signal);
+    }
+
+    void setPlaybackStatus(const QString &status)
+    {
+        playbackStatus = status;
+
+        QVariantMap changed;
+        changed["PlaybackStatus"] = playbackStatus;
+
+        QDBusMessage signal = QDBusMessage::createSignal(
+            "/org/mpris/MediaPlayer2",
+            "org.freedesktop.DBus.Properties",
+            "PropertiesChanged"
+        );
+        signal << "org.mpris.MediaPlayer2.Player"
+            << changed
+            << QStringList{};
+
+        QDBusConnection::sessionBus().send(signal);
+    }
 
 public slots:
-    // GNOME calls these slots when you press headphone buttons
     void Next()      { emit nextRequested(); }
     void Previous()  { emit previousRequested(); }
     void PlayPause() { emit playPauseRequested(); }
@@ -71,7 +110,8 @@ signals:
     void playPauseRequested();
 
 private:
-    QString m_status = "Stopped";
+    QString     playbackStatus = "Stopped";
+    QVariantMap metadata;
 };
 
 class MprisAdapter : public QObject
@@ -79,9 +119,9 @@ class MprisAdapter : public QObject
     Q_OBJECT
 public:
     explicit MprisAdapter(QObject *parent = nullptr);
-    MprisPlayerAdaptor *player() const { return m_player; }
+    MprisPlayerAdaptor *getPlayer() const { return player; }
 
 private:
-    MprisRootAdaptor   *m_root   = nullptr;
-    MprisPlayerAdaptor *m_player = nullptr;
+    MprisRootAdaptor   *root   = nullptr;
+    MprisPlayerAdaptor *player = nullptr;
 };

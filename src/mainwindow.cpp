@@ -57,10 +57,35 @@ MainWindow::MainWindow(QObject *parent)
     connect(playbackController, &PlaybackController::volumeChanged,
         this, &MainWindow::volumeChanged);
 
+    //Sets up bluetooth headphone media controls and gives the system knowledge of currently playing song
     MprisAdapter *mpris = new MprisAdapter(this);
-    connect(mpris->player(), &MprisPlayerAdaptor::nextRequested, this, &MainWindow::playNextSong);
-    connect(mpris->player(), &MprisPlayerAdaptor::previousRequested, this, &MainWindow::playPreviousSong);
-    connect(mpris->player(), &MprisPlayerAdaptor::playPauseRequested, this, &MainWindow::playAndPause);
+    connect(mpris->getPlayer(), &MprisPlayerAdaptor::nextRequested, this, &MainWindow::playNextSong);
+    connect(mpris->getPlayer(), &MprisPlayerAdaptor::previousRequested, this, &MainWindow::playPreviousSong);
+    connect(mpris->getPlayer(), &MprisPlayerAdaptor::playPauseRequested, this, &MainWindow::playAndPause);
+
+    connect(this, &MainWindow::currentSongChanged, this, [this, mpris]() {
+        if (currentLibraryIndex < 0 || currentLibraryIndex >= library.size())
+            return;
+
+        const SongData &song = library[currentLibraryIndex];
+
+        QVariantMap md;
+        md["mpris:trackid"] = QVariant::fromValue(
+            QDBusObjectPath("/org/meloville/track/" + QString::number(currentLibraryIndex))
+        );
+        md["mpris:length"]  = static_cast<qint64>(song.duration) * 1000000LL;
+        md["xesam:title"]   = song.title;
+        md["xesam:artist"]  = QStringList{ song.artist };
+        md["xesam:album"]   = song.album;
+        if (!song.coverPath.isEmpty())
+            md["mpris:artUrl"] = QUrl::fromLocalFile(song.coverPath).toString();
+
+        mpris->getPlayer()->setMetadata(md);
+    });
+
+    connect(this, &MainWindow::playingChanged, this, [this, mpris](bool isPlaying) {
+        mpris->getPlayer()->setPlaybackStatus(isPlaying ? "Playing" : "Paused");
+    });
     
     QDir().mkpath(appDataPath + "/cache");
     
