@@ -880,31 +880,6 @@ ApplicationWindow {
                                             }
                                         }
                                     }
-                                    // Image {
-                                    //     id: heroCover
-                                    //     x: 30
-                                    //     anchors.verticalCenter: parent.verticalCenter
-                                    //     width: 200; height: 200
-                                    //     fillMode: Image.PreserveAspectCrop
-                                    //     source: collectionHero.heroCoverSource
-                                    //     layer.enabled: true
-                                    //     layer.effect: OpacityMask {
-                                    //         maskSource: Rectangle {
-                                    //             width: heroCover.width; height: heroCover.height
-                                    //             radius: 8
-                                    //         }
-                                    //     }
-
-                                    //     MouseArea {
-                                    //         anchors.fill: parent
-                                    //         cursorShape: Qt.PointingHandCursor
-                                    //         // Only playlists are editable by clicking the cover
-                                    //         onClicked: {
-                                    //             if (collectionHero.inPlaylist)
-                                    //                 playlistDialog.openEdit(currentPlaylistName, currentPlaylistCover)
-                                    //         }
-                                    //     }
-                                    // }
 
                                     Column {
                                         anchors.left:           heroCover.right

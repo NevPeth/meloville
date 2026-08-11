@@ -243,8 +243,23 @@ void MainWindow::loadLibrary()
     
     if (!currentMusicFolder.isEmpty()) {
         QDir dir(currentMusicFolder);
-        QStringList filters = {"*.mp3", "*.flac", "*.wav", "*.m4a", "*.aac", "*.ogg"};
-        QFileInfoList files = dir.entryInfoList(filters, QDir::Files);
+        static const QStringList filters = {"*.mp3", "*.flac", "*.wav", "*.m4a", "*.aac", "*.ogg"};
+
+        // This recursively goes through all subdirectories to scan for music files
+        std::function<QFileInfoList(const QString &)> collectFiles;
+        collectFiles = [&](const QString &dirPath) -> QFileInfoList {
+            QFileInfoList result;
+            QDir d(dirPath);
+            result += d.entryInfoList(filters, QDir::Files);
+            const QFileInfoList subdirs = d.entryInfoList(
+                QDir::Dirs | QDir::NoDotAndDotDot | QDir::NoSymLinks //No sym links avoids infinite loops in case of circular links
+            );
+            for (const QFileInfo &sub : subdirs)
+                result += collectFiles(sub.absoluteFilePath());
+            return result;
+        };
+
+        QFileInfoList files = collectFiles(currentMusicFolder);
 
         QSet<QString> existingPaths;
         for (const SongData &song : library) {
@@ -460,6 +475,8 @@ void MainWindow::playAndPause()
     }
 }
 
+int MainWindow::getVolume() const{ return playbackController->volume(); }
+void MainWindow::setVolume(int vol){ playbackController->setVolume(vol); }
 void MainWindow::seekTo(qint64 positionMs){ playbackController->player()->setPosition(positionMs); }
 
 void MainWindow::rebuildShufflePool()
@@ -495,18 +512,7 @@ void MainWindow::toggleRepeat(){
     emit repeatModeChanged();
 }
 
-int MainWindow::getVolume() const
-{
-    return playbackController->volume();
-}
-
-void MainWindow::setVolume(int vol)
-{
-    playbackController->setVolume(vol);
-}
-
-void MainWindow::setPlaying(bool p)
-{
+void MainWindow::setPlaying(bool p){
     if (playing != p) {
         playing = p;
         emit playingChanged(playing);
@@ -539,18 +545,14 @@ void MainWindow::filterSongsAndAlbums(const QString& text)
 
         if (search.isEmpty()){
             visibleSongs = currentViewSongs;
-        }
-        else{
+        } else{
             for (int libraryIndex : currentViewSongs){
                 const SongData& song = library[libraryIndex];
 
                 QString searchable = (song.title+" "+song.artist+" " +song.album).toLower();
 
-                if (searchable.contains(search)){
-                    visibleSongs.push_back(
-                        libraryIndex
-                    );
-                }
+                if (searchable.contains(search))
+                    visibleSongs.push_back(libraryIndex);
             }
         }
         songModel->setSongs(
@@ -572,20 +574,13 @@ void MainWindow::createPlaylistFromDialog(
 
     QString selectedImagePath = "";
     if (!sourceImagePath.isEmpty()){
-        selectedImagePath =
-            "/playlistCovers/" +
-            QUuid::createUuid().toString(QUuid::WithoutBraces) +
-            "." +
-            info.suffix();
+        selectedImagePath = "/playlistCovers/" + QUuid::createUuid().toString(QUuid::WithoutBraces) + "." + info.suffix();
     
         QString localSource = sourceImagePath;
         if (localSource.startsWith("file://"))
             localSource = QUrl(localSource).toLocalFile();
 
-        QFile::copy(
-            localSource,
-            appDataPath+selectedImagePath
-        );
+        QFile::copy(localSource, appDataPath + selectedImagePath);
     }
 
     playlistManager->createPlaylist(
@@ -1073,7 +1068,7 @@ void MainWindow::goToAlbums(){
     emit isInPlaylistViewChanged();
     filterText.clear();
     emit dragReorderAllowedChanged();
-    
+
     leaveAlbumView();
     isInAlbumsGridView = true;
     allAlbums = buildAlbumList();
