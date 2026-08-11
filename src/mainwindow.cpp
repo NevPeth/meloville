@@ -1168,13 +1168,52 @@ void MainWindow::saveSessionState()
 
     const SongData &song = library[currentLibraryIndex];
 
-    settings.setValue("session/filePath",   song.filePath);
-    settings.setValue("session/position",   playbackController->player()->position());
-    settings.setValue("session/title",      song.title);
-    settings.setValue("session/artist",     song.artist);
-    settings.setValue("session/coverPath",  song.coverPath);
-    settings.setValue("session/duration",   song.duration);
+    settings.setValue("session/position", playbackController->player()->position());
+    settings.setValue("session/title", song.title);
+    settings.setValue("session/artist", song.artist);
+    settings.setValue("session/coverPath", song.coverPath);
+    settings.setValue("session/duration", song.duration);
     settings.setValue("session/wasPlaying", playbackController->isPlaying());
+    settings.setValue("session/shuffleMode", shuffleMode);
+    settings.setValue("session/repeatMode", repeatMode);
+    settings.setValue("session/currentlyPlayingPlaylist", currentlyPlayingPlaylist);
+    settings.setValue("session/currentlyPlayingAlbum", currentlyPlayingAlbum);
+    settings.setValue("session/currentlyPlayingAlbumArtist", currentlyPlayingAlbumArtist);
+    settings.setValue("session/currentlyPlayingAlbumCoverPath", currentlyPlayingAlbumCoverPath);
+
+    QJsonArray playbackArr;
+    for (int idx : currentPlaybackSongs) {
+        if (idx >= 0 && idx < library.size()) {
+            QJsonObject o;
+            o["title"]  = library[idx].title;
+            o["artist"] = library[idx].artist;
+            playbackArr.append(o);
+        }
+    }
+    settings.setValue("session/currentPlaybackSongs", QJsonDocument(playbackArr).toJson(QJsonDocument::Compact));
+
+    QJsonArray historyArr;
+    for (int idx : playHistory) {
+        if (idx >= 0 && idx < library.size()) {
+            QJsonObject o;
+            o["title"]  = library[idx].title;
+            o["artist"] = library[idx].artist;
+            historyArr.append(o);
+        }
+    }
+    settings.setValue("session/playHistory", QJsonDocument(historyArr).toJson(QJsonDocument::Compact));
+
+    QJsonArray nextUpArr;
+    for (int i = 0; i < nextUp.size(); ++i) {
+        int idx = nextUp[i];
+        if (idx >= 0 && idx < library.size()) {
+            QJsonObject o;
+            o["title"]  = library[idx].title;
+            o["artist"] = library[idx].artist;
+            nextUpArr.append(o);
+        }
+    }
+    settings.setValue("session/nextUp", QJsonDocument(nextUpArr).toJson(QJsonDocument::Compact));
 }
 
 void MainWindow::saveSessionAndWindow(int x, int y, int w, int h)
@@ -1187,23 +1226,68 @@ void MainWindow::loadSessionState()
 {
     QSettings settings("Meloville", "Meloville");
 
-    QString savedPath = settings.value("session/filePath", QString()).toString();
-    if (savedPath.isEmpty())
+    QString savedTitle  = settings.value("session/title",  QString()).toString();
+    QString savedArtist = settings.value("session/artist", QString()).toString();
+    if (savedTitle.isEmpty())
         return;
 
-    // Find by file path — the only reliable identity across rescans
-    int libraryIndex = -1;
-    for (int i = 0; i < library.size(); ++i) {
-        if (library[i].filePath == savedPath) {
-            libraryIndex = i;
-            break;
+    // Binary search for now until I make it constant time, but I just rehashed the logic from my playlist to at least not be O(n*m) and instead O(log(n)*m)
+    auto resolveIndex = [&](const QString &title, const QString &artist) -> int {
+        int lo = 0, hi = library.size() - 1, found = -1;
+        while (lo <= hi) {
+            int mid = lo + (hi - lo) / 2;
+            int cmp = QString::compare(library[mid].title, title, Qt::CaseInsensitive);
+            if (cmp < 0) lo = mid + 1;
+            else if (cmp > 0) hi = mid - 1;
+            else {
+                for (int i = mid; i >= lo && QString::compare(library[i].title, title, Qt::CaseInsensitive) == 0; --i)
+                    if (library[i].artist.compare(artist, Qt::CaseInsensitive) == 0) { found = i; break; }
+                if (found < 0)
+                    for (int i = mid + 1; i <= hi && QString::compare(library[i].title, title, Qt::CaseInsensitive) == 0; ++i)
+                        if (library[i].artist.compare(artist, Qt::CaseInsensitive) == 0) { found = i; break; }
+                break;
+            }
         }
-    }
+        return found;
+    };
 
+    int libraryIndex = resolveIndex(savedTitle, savedArtist);
     if (libraryIndex < 0)
-        return;  // song was removed from library since last session
+        return;
 
-    qint64 savedPos = settings.value("session/position", 0).toLongLong();
+    shuffleMode = settings.value("session/shuffleMode", false).toBool();
+    repeatMode  = settings.value("session/repeatMode",  false).toBool();
+
+    currentlyPlayingPlaylist = settings.value("session/currentlyPlayingPlaylist", QString()).toString();
+    currentlyPlayingAlbum = settings.value("session/currentlyPlayingAlbum", QString()).toString();
+    currentlyPlayingAlbumArtist = settings.value("session/currentlyPlayingAlbumArtist", QString()).toString();
+    currentlyPlayingAlbumCoverPath = settings.value("session/currentlyPlayingAlbumCoverPath", QString()).toString();
+
+    auto restoreList = [&](const QString &key) -> QVector<int> {
+        QVector<int> result;
+        QJsonArray arr = QJsonDocument::fromJson(settings.value(key).toByteArray()).array();
+        for (const QJsonValue &v : arr) {
+            QJsonObject o = v.toObject();
+            int idx = resolveIndex(o["title"].toString(), o["artist"].toString());
+            if (idx >= 0)
+                result.append(idx);
+        }
+        return result;
+    };
+
+    currentPlaybackSongs = restoreList("session/currentPlaybackSongs");
+    if (currentPlaybackSongs.isEmpty())
+        for (int i = 0; i < library.size(); ++i)
+            currentPlaybackSongs.append(i);
+
+    rebuildPlaybackMap();
+
+    playHistory = restoreList("session/playHistory");
+
+    QVector<int> nextUpVec = restoreList("session/nextUp");
+    while (!nextUp.isEmpty()) nextUp.pop();
+    for (int idx : nextUpVec)
+        nextUp.push(idx);
 
     const SongData &song = library[libraryIndex];
     playbackController->player()->setSource(QUrl::fromLocalFile(song.filePath));
@@ -1211,12 +1295,12 @@ void MainWindow::loadSessionState()
     currentLibraryIndex  = libraryIndex;
     currentPlaybackIndex = libraryIndexToPlaybackPos.value(libraryIndex, -1);
     songModel->setPlayingIndex(libraryIndex);
-    songModel->setPausedState(true);  // restore paused, not blasting audio on startup
+    songModel->setPausedState(true);
 
     emit currentLibraryIndexChanged();
-    emit currentSongChanged();  // now-playing bar reads title/artist/cover/duration from library[currentLibraryIndex]
+    emit currentSongChanged();
 
-    // Seek after the media pipeline has had time to register the source
+    qint64 savedPos = settings.value("session/position", 0).toLongLong();
     QTimer::singleShot(300, this, [this, savedPos]() {
         playbackController->player()->setPosition(savedPos);
         emit sessionRestored(savedPos);
