@@ -1596,13 +1596,6 @@ ApplicationWindow {
                     listViewSongs.contentY = 0
                 }
             }
-
-            Connections {
-                target: backend
-                function onAlbumViewChanged() {
-                    listViewSongs.contentY = 0
-                }
-            }
         }
     }
     

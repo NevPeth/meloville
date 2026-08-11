@@ -3,6 +3,7 @@
 #include <QFileInfo>
 #include <QDir>
 #include <QRegularExpression>
+#include <QCryptographicHash>
 
 #include <taglib/fileref.h>
 #include <taglib/tag.h>
@@ -430,4 +431,10 @@ QString MetadataReader::saveTagsToFile(
     }
 
     return {};
+}
+
+QString MetadataReader::cacheKeyForPath(const QString &absPath) {
+    return QString(QCryptographicHash::hash(
+        absPath.toUtf8(), QCryptographicHash::Md5
+    ).toHex());
 }

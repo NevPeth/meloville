@@ -274,7 +274,7 @@ void MainWindow::loadLibrary()
             if (existingPaths.contains(absPath)) continue;
 
             SongData song = MetadataReader::readSong(absPath);
-            song.coverPath = MetadataReader::cacheCoverArt(song.filePath, appDataPath + "/cache", fileInfo.baseName());
+            song.coverPath = MetadataReader::cacheCoverArt(song.filePath, appDataPath + "/cache", MetadataReader::cacheKeyForPath(song.filePath));
             
             auto pos = std::lower_bound(library.begin(), library.end(), song, songTitleLess);
             library.insert(pos, song);
@@ -289,7 +289,7 @@ void MainWindow::loadLibrary()
                 keptSongs.append(song);
             } else {
                 QFileInfo fileInfo(song.filePath);
-                MetadataReader::removeCachedCoverArt(appDataPath + "/cache", fileInfo.baseName());
+                MetadataReader::removeCachedCoverArt(appDataPath + "/cache", MetadataReader::cacheKeyForPath(song.filePath));
                 removedAny = true;
             }
         }
@@ -694,16 +694,10 @@ void MainWindow::saveSongEdits(int libraryIndex, const QString& title, const QSt
     QString selectedImagePath = currSong.coverPath;
     if (!imagePath.isEmpty())
     {
-        QFileInfo fileInfo(songFilePath);
-        QString baseName = fileInfo.baseName();
-        baseName.replace("?", "_"); // match the sanitization in removeCachedCoverArt/cacheCoverArt
-
-        // Make unique key so that it's forced to recache the images
-        QString uniqueKey = fileInfo.baseName() + "_" + QUuid::createUuid().toString(QUuid::WithoutBraces);
-        MetadataReader::removeCachedCoverArt(appDataPath + "/cache", fileInfo.baseName());
+        QString uniqueKey = MetadataReader::cacheKeyForPath(songFilePath) + "_" + QUuid::createUuid().toString(QUuid::WithoutBraces);
+        MetadataReader::removeCachedCoverArt(appDataPath + "/cache", MetadataReader::cacheKeyForPath(songFilePath));
         selectedImagePath = MetadataReader::cacheUserImage(imagePath, appDataPath + "/cache", uniqueKey);
     }
-
     MetadataReader::saveTagsToFile(songFilePath, title, artist, album, trackNumber,
                                 imagePath.isEmpty() ? "" : selectedImagePath);
 
@@ -864,6 +858,7 @@ void MainWindow::saveSongEdits(int libraryIndex, const QString& title, const QSt
     emit songCoverUpdated(currentLibraryIndex, selectedImagePath);
     saveLibrary();
 }
+
 void MainWindow::removeFromCurrentPlaylist(int visibleIndex)
 {
     if (!isInPlaylistView) return;
