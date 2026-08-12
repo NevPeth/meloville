@@ -267,7 +267,6 @@ ApplicationWindow {
 
                                 // Update drop indicator
                                 var posInList = songRow.mapToItem(listViewSongs, 0, 0)
-                                listViewSongs.dropIndicatorY = posInList.y
 
                                 // ── Auto-scroll ──────────────────────────────────────────────────
                                 var threshold = 120
@@ -290,7 +289,6 @@ ApplicationWindow {
                                 currentIndex = startIndex
                                 held = true
                                 listViewSongs.interactive = false
-                                listViewSongs.dropIndicatorVisible = true
                             }
 
                             onReleased: {
@@ -298,7 +296,6 @@ ApplicationWindow {
                                     held = false
                                     scrollSpeed = 0
                                     listViewSongs.interactive = true
-                                    listViewSongs.dropIndicatorVisible = false
 
                                     // Use startIndex → currentIndex, not itemsIndex on release
                                     if (startIndex !== currentIndex)
@@ -313,7 +310,6 @@ ApplicationWindow {
                                 held = false
                                 scrollSpeed = 0
                                 listViewSongs.interactive = true
-                                listViewSongs.dropIndicatorVisible = false
                                 startIndex   = -1
                                 currentIndex = -1
                             }
@@ -542,6 +538,7 @@ ApplicationWindow {
                                     MouseArea {
                                         anchors.fill: parent
                                         onClicked: {
+                                            listViewSongs.contentY = 0
                                             backend.loadPlaylistView(model.name)
                                         }
                                     }
@@ -696,6 +693,7 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             Layout.minimumHeight: 150
+                            highlightFollowsCurrentItem: false
                             clip: true
                             ScrollBar.vertical:   ScrollBar { policy: ScrollBar.AsNeeded }
                             ScrollBar.horizontal: ScrollBar { policy: ScrollBar.AsNeeded }
