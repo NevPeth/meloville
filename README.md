@@ -24,7 +24,7 @@
 
 ## Features
 
-* Support for mp3, flac, and ogg files
+* Support for mp3, flac, m4a, and ogg files
 * Bluetooth headphone playback support
 * In-built metadata editor for songs
 * Auto sorting of albums

@@ -170,7 +170,8 @@ ApplicationWindow {
             function unfocusSearchFields() {
                 searchField.focus = false
                 stickySearchField.focus = false
-                heroSearchField.focus = false
+                if (listViewSongs.headerItem)
+                    listViewSongs.headerItem.forceActiveFocus()
             }
             DelegateModel {
                 id: visualModel
