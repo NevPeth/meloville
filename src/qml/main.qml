@@ -777,7 +777,7 @@ ApplicationWindow {
 
                                 Item {
                                     id: collectionHero
-                                    width:  ListView.width
+                                    width:  ListView.view.width
                                     height: 270
 
                                     // Resolve cover/title/subtitle from whichever context is active
@@ -915,35 +915,51 @@ ApplicationWindow {
                                             visible: collectionHero.heroSubtitle !== ""
                                             elide: Text.ElideRight
                                         }
-                                        Rectangle {
-                                            width: 500
-                                            height: 32
-                                            radius: 16
-                                            color: "#222222"
+                                    }
+                                    Rectangle {
+                                        id: heroSearchContainer
 
-                                            TextInput {
-                                                id: heroSearchField
+                                        width: 400
+                                        height: 32
+                                        radius: 16
+                                        color: "#222222"
+
+                                        // Bottom-right of the actual ListView header.
+                                        x: collectionHero.width - width - 20
+                                        y: collectionHero.height - height - 35
+
+                                        TextInput {
+                                            id: heroSearchField
+
+                                            anchors.fill: parent
+                                            anchors.leftMargin: 10
+                                            anchors.rightMargin: 10
+
+                                            verticalAlignment: TextInput.AlignVCenter
+                                            color: "white"
+                                            font.pixelSize: 13
+
+                                            text: heroSharedSearchText
+
+                                            onTextEdited: {
+                                                heroSharedSearchText = text
+                                                backend.filterSongsAndAlbums(text)
+                                                forceActiveFocus()
+                                            }
+
+                                            Text {
                                                 anchors.fill: parent
-                                                anchors.leftMargin: 10
-                                                anchors.rightMargin: 10
-                                                verticalAlignment: TextInput.AlignVCenter
-                                                color: "white"
-                                                font.pixelSize: 13
-                                                text: heroSharedSearchText
-                                                onTextEdited: {
-                                                    heroSharedSearchText = text
-                                                    backend.filterSongsAndAlbums(text)
-                                                    forceActiveFocus()  // 'this' is the TextInput itself
-                                                }
+                                                verticalAlignment: Text.AlignVCenter
 
-                                                Text {
-                                                    anchors.fill: parent
-                                                    verticalAlignment: Text.AlignVCenter
-                                                    text: backend.isInPlaylistView ?"Search playlist..." : "Search albums..."
-                                                    color: "#666666"
-                                                    font.pixelSize: 13
-                                                    visible: heroSearchField.text.length === 0 && !heroSearchField.activeFocus
-                                                }
+                                                text: backend.isInPlaylistView
+                                                    ? "Search playlist..."
+                                                    : "Search albums..."
+
+                                                color: "#666666"
+                                                font.pixelSize: 13
+
+                                                visible: heroSearchField.text.length === 0
+                                                        && !heroSearchField.activeFocus
                                             }
                                         }
                                     }

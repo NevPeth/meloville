@@ -109,13 +109,10 @@ Item {
                             if (selectedImagePath !== "") {
                                 return selectedImagePath
                             }
-                            else{
-                                return "qrc:/icons/default.svg"
-                            }
                             if (mode === "edit" && editImagePath !== "") {
                                 return normalizeImageSource(editImagePath)
                             }
-                            return ""
+                            return "qrc:/icons/default.svg"
                         }
                         visible: source !== ""
                     }
