@@ -26,7 +26,7 @@ Item {
             anchors.fill: parent
             source: backend.currentSongCoverPath !== ""
                     ? "file://" + backend.currentSongCoverPath
-                    : "qrc:/images/default_cover.png"
+                    : "qrc:/icons/default.svg"
             fillMode: Image.PreserveAspectCrop
             smooth: true      // smooth scaling keeps colour blending clean
         }
@@ -171,7 +171,8 @@ Item {
                 fillMode: Image.PreserveAspectCrop
                 source: backend.currentLibraryIndex >= 0 && backend.currentSongCoverPath !== ""
                         ? "file://" + backend.currentSongCoverPath
-                        : "qrc:/images/default_cover.png"
+                        : "qrc:/icons/default.svg"
+                        
                 visible: false  // OpacityMask renders it; this stays hidden
                 smooth: true
 

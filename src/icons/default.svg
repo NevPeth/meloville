@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" role="img" aria-label="Default music cover"> 
+  <defs> 
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"> 
+      <stop offset="0%" stop-color="#171717"/> 
+      <stop offset="100%" stop-color="#3A3A3A"/> 
+    </linearGradient>
+
+    <linearGradient id="glow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity=".18"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+
+    <filter id="blur">
+      <feGaussianBlur stdDeviation="30"/>
+    </filter>
+  </defs>
+  <rect width="800" height="800" fill="url(#bg)"/> 
+  <circle cx="180" cy="150" r="170" fill="#FFFFFF" opacity=".02" filter="url(#blur)"/> 
+  <circle cx="650" cy="650" r="220" fill="#FFFFFF" opacity=".035" filter="url(#blur)"/>
+
+  <path d="M0 590 C155 500 260 680 405 585 C540 495 640 555 800 455 L800 800 L0 800 Z" fill="url(#glow)" opacity=".7" />
+
+  <g transform="translate(152.5 185) scale(2.5)"> <ellipse cx="64.1" cy="120" rx="16" ry="12" transform="rotate(-18 58 132)" fill="white" />
+    <ellipse
+      cx="118" cy="104"
+      rx="16" ry="12"
+      transform="rotate(-18 116 104)"
+      fill="white"/>
+
+    <path
+      d="
+        M70 114
+        L70 55
+        L128 40
+        L128 100
+      "
+      fill="none"
+      stroke="white"
+      stroke-width="12"
+      stroke-linecap="round"
+      stroke-linejoin="round"/>
+  </g> 
+</svg>

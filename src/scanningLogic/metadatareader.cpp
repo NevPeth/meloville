@@ -289,7 +289,7 @@ QPixmap MetadataReader::loadPixmap(const QByteArray& imageData){
 
 QPixmap MetadataReader::fallbackCover(){
     static QPixmap fallback(
-        ":/images/default_cover.png"
+        "qrc:/icons/default.svg"
     );
 
     return fallback;

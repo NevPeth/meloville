@@ -361,7 +361,7 @@ ApplicationWindow {
                             fillMode: Image.PreserveAspectCrop
                             visible: !backend.isInAlbumView
                             source: {
-                                if (model.coverPath === "") return "qrc:/images/default_cover.png"
+                                if (model.coverPath === "") return "qrc:/icons/default.svg"
                                 return "file://" + model.coverPath + "?" + mainPageRoot.coverCacheBuster
                             }
                         }
@@ -509,32 +509,23 @@ ApplicationWindow {
                                 Layout.topMargin: 0
                                 Layout.minimumWidth: 60
                                 Layout.maximumWidth: 60
-                                Layout.leftMargin: 8
+                                Layout.leftMargin: 7
                                 clip: true
-                                spacing: 7
+                                spacing: 8
                                 ScrollBar.horizontal: ScrollBar { policy: ScrollBar.AlwaysOff }
                                 delegate: Rectangle {
-                                    width: 53
-                                    height: 53
+                                    width: 51
+                                    height: 51
                                     radius: 4
                                     color: "transparent"
-
-                                    // Highlight when this playlist is selected (optional)
-                                    property bool isSelected: backend.viewingPlaylist === model.name
-
-                                    Rectangle {
-                                        anchors.fill: parent
-                                        radius: parent.radius
-                                        color: isSelected ? "#2a2a2a" : "transparent"
-                                    }
 
                                     // Image with rounded corners
                                     Image {
                                         id: playlistImage
                                         anchors.fill: parent
-                                        anchors.margins: 2
+                                        anchors.margins: 0
                                         fillMode: Image.PreserveAspectCrop
-                                        source: model.imagePath ? model.imagePath : "qrc:/images/default_cover.png"
+                                        source: model.imagePath ? model.imagePath : "qrc:/icons/default.svg"
                                         visible: source !== ""
                                         layer.enabled: true
                                         layer.effect: OpacityMask {
@@ -792,9 +783,9 @@ ApplicationWindow {
                                     readonly property bool inPlaylist: backend.isInPlaylistView
                                     readonly property string heroCoverSource: {
                                         if (inPlaylist)
-                                            return currentPlaylistCover ? "file://" + currentPlaylistCover : "qrc:/images/default_cover.png"
+                                            return currentPlaylistCover ? "file://" + currentPlaylistCover : "qrc:/icons/default.svg"
                                         var cover = backend.viewingAlbumCover
-                                        return cover ? "file://" + cover : "qrc:/images/default_cover.png"
+                                        return cover ? "file://" + cover : "qrc:/icons/default.svg"
                                     }
                                     readonly property string heroLabel:     inPlaylist ? "Playlist" : "Album"
                                     readonly property string heroTitle:     inPlaylist ? currentPlaylistName : backend.viewingAlbumName
@@ -1174,7 +1165,7 @@ ApplicationWindow {
                                         fillMode: Image.PreserveAspectCrop
                                         source: backend.currentSongCoverPath !== ""
                                                 ? "file://" + backend.currentSongCoverPath
-                                                : "qrc:/images/default_cover.png"
+                                                : "qrc:/icons/default.svg"
                                         visible: backend.currentLibraryIndex >= 0
                                     }
                                 }

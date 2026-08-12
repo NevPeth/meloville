@@ -924,7 +924,6 @@ void MainWindow::jumpToCurrentSong()
     else
         returnToLibrary();
 
-    // Find the song in the active view.
     int visibleIndex = songModel->visibleRowForLibraryIndex(currentLibraryIndex);
     if (visibleIndex < 0)
         return;
