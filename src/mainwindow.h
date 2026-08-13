@@ -9,6 +9,7 @@
 #include "playlistmodel.h"
 #include "albuminfo.h"
 #include "albumlistmodel.h"
+#include "listenalongserver.h"
 #include <pulse/pulseaudio.h>
 #include <QMainWindow>
 #include <QQuickView>
@@ -87,6 +88,9 @@ public:
     Q_INVOKABLE void returnFromAlbumToGrid();
     Q_INVOKABLE QRect loadWindowGeometry() const;
     Q_INVOKABLE void  saveSessionAndWindow(int x, int y, int w, int h);
+    Q_INVOKABLE void startListenAlongServer(int port);
+    Q_INVOKABLE void stopListenAlongServer();
+    Q_INVOKABLE bool isListenAlongRunning() const;
 
     double getProgress() const { return progress; }
     PlaylistModel* getPlaylistModel() const { return playlistModel; }
@@ -175,12 +179,16 @@ signals:
     void albumViewStateChanged();
     void returnedToLibrary();
     void sessionRestored(qint64 position);
+    void listenAlongUrlsReady(QStringList urls);
+    void listenAlongStopped();
+    void listenAlongListenerCountChanged(int count);
 
 private:
     QVector<SongData> library;
     QVector<int> currentViewSongs;
     QVector<int> visibleSongs;
     QVector<int> currentPlaybackSongs;
+    QHash<int,int> libraryIndexToPlaybackPos;
     QString currentMusicFolder;
     QString appDataPath;
     bool isInPlaylistView = false;
@@ -222,7 +230,7 @@ private:
     AlbumListModel *albumModel = nullptr;
     QVector<AlbumInfo> allAlbums;
 
-    QHash<int,int> libraryIndexToPlaybackPos;
+    ListenAlongServer *listenAlongServer = nullptr;
 };
 
 #endif // MAINWINDOW_H

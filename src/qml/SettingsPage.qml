@@ -1,0 +1,827 @@
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+
+Item {
+    id: root
+
+    signal closed()
+
+    // ── Internal state ──────────────────────────────────────────────────────
+    property int activeSection: 0   // 0 = General, 1 = ListenAlong, 2 = Themes
+    property bool serverRunning: false
+    property string serverUrl: "" 
+    property bool urlCopied: false
+
+    Connections {
+        target: backend
+
+        function onListenAlongUrlsReady(urls) {
+            if (urls.length === 0) {
+                // Start failed
+                root.serverRunning = false
+                root.serverUrl = "Failed to start server."
+                return
+            }
+            root.serverRunning = true
+            // Prefer the first URL (public IP if available, else LAN)
+            root.serverUrl = urls[0]
+        }
+
+        function onListenAlongStopped() {
+            root.serverRunning = false
+            root.serverUrl = ""
+            root.urlCopied = false
+        }
+    }
+
+    // ── Overlay ─────────────────────────────────────────────────────────────
+    Rectangle {
+        anchors.fill: parent
+        color: "#000000"
+        opacity: 0.75
+
+        MouseArea {
+            id: overlayMouseArea
+            hoverEnabled: true
+            anchors.fill: parent
+            onClicked: function(mouse) {
+                var p = settingsPanel.mapFromItem(overlayMouseArea, mouse.x, mouse.y)
+                if (!settingsPanel.contains(p))
+                    root.closed()
+                mouse.accepted = true
+            }
+        }
+        WheelHandler {
+            acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+            onWheel: function(event) { event.accepted = true }
+        }
+    }
+
+    // ── Main panel ──────────────────────────────────────────────────────────
+    Rectangle {
+        id: settingsPanel
+        anchors.centerIn: parent
+        width: 860
+        height: 560
+        radius: 12
+        color: "#111111"
+        clip: true
+
+        RowLayout {
+            anchors.fill: parent
+            spacing: 0
+
+            // ── LEFT SIDEBAR ─────────────────────────────────────────────────
+            Rectangle {
+                Layout.preferredWidth: 220
+                Layout.fillHeight: true
+                color: "#0d0d0d"
+                radius: 12
+
+                // Right-side square corners
+                Rectangle {
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    width: 12
+                    color: parent.color
+                }
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.topMargin: 24
+                    anchors.bottomMargin: 16
+                    anchors.leftMargin: 12
+                    anchors.rightMargin: 12
+                    spacing: 2
+
+                    // SETTINGS header label
+                    Text {
+                        text: "SETTINGS"
+                        color: "#666666"
+                        font.pixelSize: 10
+                        font.letterSpacing: 1.8
+                        font.bold: true
+                        Layout.leftMargin: 8
+                        Layout.bottomMargin: 6
+                    }
+
+                    // Tab button component
+                    component TabButton: Rectangle {
+                        id: tab
+                        property string label: ""
+                        property int sectionIndex: 0
+                        property bool active: root.activeSection === sectionIndex
+
+                        Layout.fillWidth: true
+                        height: 34
+                        radius: 6
+                        color: active ? "#1e1e1e" : (hov.containsMouse ? "#181818" : "transparent")
+
+                        Behavior on color { ColorAnimation { duration: 80 } }
+
+                        // Active indicator bar
+                        Rectangle {
+                            width: 3
+                            height: 18
+                            radius: 2
+                            color: "#ffffff"
+                            anchors.left: parent.left
+                            anchors.leftMargin: 0
+                            anchors.verticalCenter: parent.verticalCenter
+                            visible: tab.active
+                        }
+
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.left: parent.left
+                            anchors.leftMargin: 14
+                            text: tab.label
+                            color: tab.active ? "white" : (hov.containsMouse ? "#cccccc" : "#888888")
+                            font.pixelSize: 13
+                            font.bold: tab.active
+
+                            Behavior on color { ColorAnimation { duration: 80 } }
+                        }
+
+                        HoverHandler { id: hov }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                root.activeSection = tab.sectionIndex
+                                contentFlick.scrollToSection(tab.sectionIndex)
+                            }
+                        }
+                    }
+                    TabButton { label: "General";      sectionIndex: 0 }
+                    TabButton { label: "Listen Along"; sectionIndex: 1 }
+                    TabButton { label: "Themes";       sectionIndex: 2 }
+
+                    Item { Layout.fillHeight: true }
+                }
+            }
+
+            // ── RIGHT CONTENT ────────────────────────────────────────────────
+            Flickable {
+                id: contentFlick
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                clip: true
+                contentHeight: contentCol.implicitHeight + 80
+                boundsBehavior: Flickable.StopAtBounds
+
+                ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+
+                // Track active section by scroll position
+                onContentYChanged: {
+                    var midScroll = contentY + height / 3
+                    if (themesSection.y !== undefined && midScroll >= themesSection.y) {
+                        root.activeSection = 2
+                    } else if (listenAlongSection.y !== undefined && midScroll >= listenAlongSection.y) {
+                        root.activeSection = 1
+                    } else {
+                        root.activeSection = 0
+                    }
+                }
+
+                function scrollToSection(idx) {
+                    if (idx === 0) {
+                        contentFlick.contentY = 0
+                    } else if (idx === 1) {
+                        contentFlick.contentY = Math.min(
+                            listenAlongSection.y,
+                            contentFlick.contentHeight - contentFlick.height
+                        )
+                    } else if (idx === 2) {
+                        contentFlick.contentY = Math.min(
+                            themesSection.y,
+                            contentFlick.contentHeight - contentFlick.height
+                        )
+                    }
+                }
+
+                ColumnLayout {
+                    id: contentCol
+                    width: contentFlick.width
+                    spacing: 0
+
+                    // ── Shared section header component ─────────────────────────────
+                    component SectionHeader: ColumnLayout {
+                        property string title: ""
+                        property string subtitle: ""
+                        Layout.fillWidth: true
+                        spacing: 4
+
+                        Text {
+                            text: parent.title
+                            color: "white"
+                            font.pixelSize: 20
+                            font.bold: true
+                        }
+                        Text {
+                            text: parent.subtitle
+                            color: "#888888"
+                            font.pixelSize: 12
+                            wrapMode: Text.WordWrap
+                            Layout.fillWidth: true
+                            visible: text !== ""
+                        }
+                        Rectangle {
+                            Layout.fillWidth: true
+                            height: 1
+                            color: "#222222"
+                            Layout.topMargin: 10
+                            Layout.bottomMargin: 4
+                        }
+                    }
+
+                    // ── Shared toggle row component ─────────────────────────────────
+                    component ToggleRow: RowLayout {
+                        property string label: ""
+                        property string description: ""
+                        property bool toggled: false
+                        signal toggledChanged2(bool val)
+
+                        Layout.fillWidth: true
+                        Layout.leftMargin: 2
+                        Layout.rightMargin: 2
+                        spacing: 12
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 2
+                            Text {
+                                text: parent.parent.label
+                                color: "white"
+                                font.pixelSize: 13
+                                font.bold: true
+                            }
+                            Text {
+                                text: parent.parent.description
+                                color: "#888888"
+                                font.pixelSize: 12
+                                wrapMode: Text.WordWrap
+                                Layout.fillWidth: true
+                                visible: text !== ""
+                            }
+                        }
+
+                        // Custom toggle switch
+                        Rectangle {
+                            id: toggleTrack
+                            width: 42
+                            height: 24
+                            radius: 12
+                            color: parent.toggled ? "#5a5a5a" : "#272727"
+                            Behavior on color { ColorAnimation { duration: 150 } }
+
+                            Rectangle {
+                                id: toggleThumb
+                                width: 18
+                                height: 18
+                                radius: 9
+                                color: "white"
+                                anchors.verticalCenter: parent.verticalCenter
+                                x: 3
+
+                                states: [
+                                    State {
+                                        name: "on"
+                                        when: toggleTrack.parent.toggled
+                                        PropertyChanges { target: toggleThumb; x: toggleTrack.width - toggleThumb.width - 3 }
+                                    },
+                                    State {
+                                        name: "off"
+                                        when: !toggleTrack.parent.toggled
+                                        PropertyChanges { target: toggleThumb; x: 3 }
+                                    }
+                                ]
+
+                                transitions: [
+                                    Transition {
+                                        NumberAnimation {
+                                            property: "x"
+                                            duration: 200
+                                            easing.type: Easing.OutCubic
+                                        }
+                                    }
+                                ]
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    parent.parent.toggled = !parent.parent.toggled
+                                    parent.parent.toggledChanged2(parent.parent.toggled)
+                                }
+                            }
+                        }
+                    }
+
+                    // ── Animated slider component ───────────────────────────────────
+                    component AnimatedSlider: ColumnLayout {
+                        property string label: ""
+                        property string unit: ""
+                        property real from: 0
+                        property real to: 100
+                        property real value: 50
+                        property real stepSize: 1
+                        property string displayValue: Math.round(sliderInner.value) + " " + unit
+                        property bool hoverEnabled: true
+
+                        id: animSliderRoot
+                        Layout.fillWidth: true
+                        spacing: 8
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Text {
+                                text: animSliderRoot.label
+                                color: "white"
+                                font.pixelSize: 13
+                                font.bold: true
+                            }
+                            Item { Layout.fillWidth: true }
+                            Text {
+                                text: animSliderRoot.displayValue
+                                color: "#888888"
+                                font.pixelSize: 12
+
+                                Behavior on text {
+                                    // Subtle fade on value change
+                                    SequentialAnimation {
+                                        NumberAnimation { target: sliderValueLabel; property: "opacity"; to: 0.4; duration: 60 }
+                                        NumberAnimation { target: sliderValueLabel; property: "opacity"; to: 1.0; duration: 120 }
+                                    }
+                                }
+
+                                id: sliderValueLabel
+                            }
+                        }
+
+                        Slider {
+                            id: sliderInner
+                            Layout.fillWidth: true
+                            from: animSliderRoot.from
+                            to: animSliderRoot.to
+                            value: animSliderRoot.value
+                            stepSize: animSliderRoot.stepSize
+
+                            handle: Rectangle {
+                                implicitWidth: 16
+                                implicitHeight: 16
+                                x: sliderInner.leftPadding +
+                                   sliderInner.visualPosition * (sliderInner.availableWidth - width)
+                                y: sliderInner.topPadding +
+                                   sliderInner.availableHeight / 2 - height / 2
+                                radius: 8
+                                color: "white"
+                                scale: (sliderInner.pressed && hoverEnabled) ? 1.25 : (sliderInner.hovered && hoverEnabled ? 1.1 : 1.0)
+
+                                Behavior on scale {
+                                    NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+                                }
+                                Behavior on x {
+                                    NumberAnimation { duration: 80; easing.type: Easing.OutQuad }
+                                }
+                            }
+
+                            background: Rectangle {
+                                x: sliderInner.leftPadding
+                                y: sliderInner.topPadding + sliderInner.availableHeight / 2 - height / 2
+                                width: sliderInner.availableWidth
+                                height: 4
+                                radius: 2
+                                color: "#333333"
+
+                                Rectangle {
+                                    width: sliderInner.visualPosition * parent.width
+                                    height: parent.height
+                                    radius: 2
+                                    color: "white"
+
+                                    Behavior on width {
+                                        NumberAnimation { duration: 80; easing.type: Easing.OutQuad }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // ════════════════════════════════════════════════════════
+                    //  SECTION 0 — GENERAL
+                    // ════════════════════════════════════════════════════════
+                    Item {
+                        id: generalSection
+                        Layout.fillWidth: true
+                        implicitHeight: generalCol.implicitHeight
+
+                        ColumnLayout {
+                            id: generalCol
+                            anchors.fill: parent
+                            anchors.margins: 32
+                            anchors.topMargin: 16
+                            spacing: 20
+
+                            Item { height: 10 }
+
+                            SectionHeader {
+                                title: "General"
+                                subtitle: "Playback behaviour, display, and app-wide preferences."
+                            }
+
+                            // ── DISPLAY ────────────────────────────────────────
+                            Text {
+                                text: "DISPLAY"
+                                color: "#555555"
+                                font.pixelSize: 10
+                                font.letterSpacing: 1.5
+                                font.bold: true
+                            }
+
+                            ToggleRow {
+                                label: "Compact song rows"
+                                description: "Reduce the height of each song row for a denser list."
+                                toggled: false
+                                enabled: false 
+                                opacity: 0.4
+                            }
+
+                            Rectangle { Layout.fillWidth: true; height: 1; color: "#1a1a1a" }
+
+                            // ── PLAYBACK ───────────────────────────────────────
+                            Text {
+                                text: "PLAYBACK"
+                                color: "#555555"
+                                font.pixelSize: 10
+                                font.letterSpacing: 1.5
+                                font.bold: true
+                            }
+
+                            ToggleRow {
+                                label: "Normalise volume"
+                                description: "Automatically level out volume differences between tracks."
+                                toggled: false
+                                enabled: false 
+                                opacity: 0.4
+                            }
+
+                            // Crossfade slider
+                            AnimatedSlider {
+                                label: "Crossfade"
+                                unit: "s"
+                                from: 0; to: 12; value: 3; stepSize: 1
+                                enabled: false 
+                                opacity: 0.4
+                                hoverEnabled: false
+                            }
+
+
+                            Rectangle { Layout.fillWidth: true; height: 1; color: "#1a1a1a" }
+
+                            ToggleRow {
+                                label: "Close to system tray"
+                                description: "Keep Meloville running in the background when the window is closed."
+                                toggled: false
+                                enabled: false 
+                                opacity: 0.4
+                            }
+                            Rectangle { Layout.fillWidth: true; height: 1; color: "#1a1a1a" }
+
+                            Item { height: 60 }
+                        }
+                    }
+
+
+                    // ════════════════════════════════════════════════════════
+                    //  SECTION 1 — LISTEN ALONG
+                    // ════════════════════════════════════════════════════════
+                    Item {
+                        id: listenAlongSection
+                        Layout.fillWidth: true
+                        implicitHeight: listenAlongCol.implicitHeight
+
+                        ColumnLayout {
+                            id: listenAlongCol
+                            anchors.fill: parent
+                            anchors.margins: 32
+                            spacing: 20
+
+                            SectionHeader {
+                                title: "Listen Along"
+                                subtitle: "Share your listening session and let others tune in to what you're playing."
+                            }
+
+                            // ── How it works ───────────────────────────────────────────────────
+                            Text {
+                                text: "THINGS TO NOTE"
+                                color: "#555555"
+                                font.pixelSize: 10
+                                font.letterSpacing: 1.5
+                                font.bold: true
+                            }
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 10
+
+                                Repeater {
+                                    model: [
+                                        "Starts a local server on your machine.",
+                                        "Only reachable by devices on the same Wi-Fi unless port-forwarded.",
+                                        "Anyone with your link can tune in if they are on the same network."
+                                    ]
+                                    delegate: Text {
+                                        Layout.fillWidth: true
+                                        text: modelData
+                                        color: index === 2 ? "#cc4444" : "#888888"
+                                        font.pixelSize: 12
+                                        wrapMode: Text.WordWrap
+                                        lineHeight: 1.3
+                                    }
+                                }
+                            }
+
+                            Rectangle { Layout.fillWidth: true; height: 1; color: "#1a1a1a" }
+
+                            // ── Port number ────────────────────────────────────────────────────
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 12
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 4
+
+                                    Text {
+                                        text: "Port number"
+                                        color: "white"
+                                        font.pixelSize: 13
+                                        font.bold: true
+                                    }
+
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: "Optional — leave blank and we'll pick an available port for you."
+                                        color: "#888888"
+                                        font.pixelSize: 12
+                                        wrapMode: Text.WordWrap
+                                    }
+                                }
+
+                                // Port input
+                                Rectangle {
+                                    width: 90
+                                    height: 34
+                                    radius: 6
+                                    color: portField.activeFocus ? "#1e1e1e" : "#161616"
+                                    border.color: portField.activeFocus ? "#555555" : "#2a2a2a"
+                                    border.width: 1
+
+                                    Behavior on border.color { ColorAnimation { duration: 100 } }
+
+                                    TextInput {
+                                        id: portField
+                                        anchors {
+                                            fill: parent
+                                            leftMargin: 10
+                                            rightMargin: 10
+                                        }
+                                        verticalAlignment: TextInput.AlignVCenter
+                                        color: "white"
+                                        font.pixelSize: 13
+                                        maximumLength: 5
+                                        validator: IntValidator { bottom: 1; top: 65535 }
+                                        inputMethodHints: Qt.ImhDigitsOnly
+                                        selectByMouse: true
+                                    }
+                                }
+                            }
+
+                            // ── Start button ───────────────────────────────────────────────────
+                            Rectangle {
+                                id: startBtn
+                                width: startBtnText.implicitWidth + 28
+                                height: 36
+                                radius: 6
+                                property bool hovered: false
+                                color: root.serverRunning
+                                    ? (hovered ? "#e06060" : "#cc4444")
+                                    : (hovered ? "#f0f0f0" : "white")
+
+                                Behavior on color { ColorAnimation { duration: 100 } }
+
+                                Text {
+                                    id: startBtnText
+                                    anchors.centerIn: parent
+                                    text: root.serverRunning ? "Stop Server" : "Start Server"
+                                    color: root.serverRunning ? "white" : "#111111"
+                                    font.pixelSize: 13
+                                    font.bold: true
+                                }
+
+                                HoverHandler { onHoveredChanged: startBtn.hovered = hovered }
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        if (!root.serverRunning) {
+                                            var portNum = parseInt(portField.text) || 0
+                                            backend.startListenAlongServer(portNum)
+                                        } else {
+                                            backend.stopListenAlongServer()
+                                            root.serverRunning = false
+                                            root.serverUrl = ""
+                                            root.urlCopied = false
+                                        }
+                                    }
+                                }
+                            }
+
+                            // ── URL display ────────────────────────────────────────────────────────
+                            ColumnLayout {
+                                visible: root.serverUrl !== ""
+                                Layout.fillWidth: true
+                                spacing: 8
+
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    height: 36
+                                    radius: 6
+                                    color: "#1a1a1a"
+                                    border.color: "#2a2a2a"
+                                    border.width: 1
+
+                                    TextEdit {
+                                        anchors.fill: parent
+                                        anchors.leftMargin: 10
+                                        anchors.rightMargin: 10
+                                        verticalAlignment: Text.AlignVCenter
+                                        text: root.serverUrl
+                                        color: "#cccccc"
+                                        font.pixelSize: 12
+                                    }
+                                }
+                            }
+
+                            Item { height: 200 }
+                        }
+                    }
+
+
+                    // ════════════════════════════════════════════════════════
+                    //  SECTION 2 — THEMES
+                    // ════════════════════════════════════════════════════════
+                    Item {
+                        id: themesSection
+                        Layout.fillWidth: true
+                        implicitHeight: themesCol.implicitHeight
+
+                        ColumnLayout {
+                            id: themesCol
+                            anchors.fill: parent
+                            anchors.margins: 32
+                            anchors.topMargin: 16
+                            spacing: 20
+
+                            SectionHeader {
+                                title: "Themes"
+                                subtitle: "Personalize the look of Meloville."
+                            }
+
+                            Text {
+                                text: "APP THEME"
+                                color: "#555555"
+                                font.pixelSize: 10
+                                font.letterSpacing: 1.5
+                                font.bold: true
+                            }
+
+                            GridLayout {
+                               Layout.fillWidth: true
+                               columns: 3
+                               columnSpacing: 12
+                               rowSpacing: 12
+
+
+                               property int selectedTheme: 0
+
+
+                               Repeater {
+                                   model: [
+                                       { name: "Midnight",  bg: "#121212", accent: "#ffffff", text: "#b3b3b3" },
+                                       { name: "Slate",     bg: "#1a1f2e", accent: "#7289da", text: "#99aab5" },
+                                       { name: "Forest",    bg: "#0f1a14", accent: "#1db954", text: "#8ab89a" },
+                                       { name: "Ember",     bg: "#1a0f0f", accent: "#e05c2e", text: "#c9896a" },
+                                       { name: "Lavender",  bg: "#16121e", accent: "#a78bfa", text: "#9f8fbc" },
+                                       { name: "Ocean",     bg: "#0f1620", accent: "#38bdf8", text: "#7baec8" },
+                                   ]
+                                   delegate: ColumnLayout {
+                                       Layout.preferredWidth: 0
+                                       Layout.fillWidth: true
+                                       spacing: 6
+
+
+                                       property bool active: parent.selectedTheme === index
+
+
+                                       // Preview card (no label inside)
+                                       Rectangle {
+                                           Layout.fillWidth: true
+                                           height: 76
+                                           radius: 10
+                                           color: modelData.bg
+                                           border.color: parent.active ? "white" : "#2a2a2a"
+                                           border.width: parent.active ? 2 : 1
+                                           opacity: parent.active || index === 0 ? 1.0 : 0.35
+
+
+                                           Behavior on border.color { ColorAnimation { duration: 120 } }
+                                           Behavior on border.width { NumberAnimation { duration: 120 } }
+
+
+                                           // Accent bar
+                                           Rectangle {
+                                               x: 12; y: 12
+                                               width: parent.width - 24; height: 6
+                                               radius: 3
+                                               color: modelData.accent
+                                               opacity: 0.85
+                                           }
+                                           // Title mock line
+                                           Rectangle {
+                                               x: 12; y: 24
+                                               width: (parent.width - 24) * 0.6; height: 4
+                                               radius: 2
+                                               color: modelData.text
+                                               opacity: 0.6
+                                           }
+                                           // Subtitle mock line
+                                           Rectangle {
+                                               x: 12; y: 33
+                                               width: (parent.width - 24) * 0.4; height: 4
+                                               radius: 2
+                                               color: modelData.text
+                                               opacity: 0.35
+                                           }
+                                           // Mini playback bar
+                                           Rectangle {
+                                               x: 12; y: parent.height - 18
+                                               width: parent.width - 24; height: 3
+                                               radius: 1.5
+                                               color: "#333333"
+                                               Rectangle {
+                                                   width: parent.width * 0.45
+                                                   height: parent.height
+                                                   radius: 1.5
+                                                   color: modelData.accent
+                                               }
+                                           }
+
+
+                                           // Hover tint
+                                           HoverHandler { id: themeHov }
+                                           Rectangle {
+                                               anchors.fill: parent
+                                               radius: 10
+                                               color: themeHov.hovered ? "#ffffff" : "transparent"
+                                               opacity: 0.04
+                                               Behavior on opacity { NumberAnimation { duration: 100 } }
+                                           }
+
+
+                                           MouseArea {
+                                               anchors.fill: parent
+                                               enabled: index === 0
+                                               onClicked: parent.parent.parent.selectedTheme = index
+                                               cursorShape: index === 0 ? Qt.PointingHandCursor : Qt.ForbiddenCursor
+                                           }
+                                       }
+
+
+                                       // ── Name label BELOW the card ──
+                                       Text {
+                                           Layout.alignment: Qt.AlignHCenter
+                                           text: modelData.name
+                                           color: parent.active ? "white" : (index === 0 ? "#888888" : "#3a3a3a")
+                                           font.pixelSize: 11
+                                           font.bold: parent.active
+
+
+                                           Behavior on color { ColorAnimation { duration: 120 } }
+                                       }
+                                   }
+                               }
+                           }
+                           Item { height: 140 }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

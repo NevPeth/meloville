@@ -5,6 +5,7 @@
 #include "albuminfo.h"
 #include "albumlistmodel.h"
 #include "mprisadapter.h"
+#include "listenalongserver.h"
 #include <QFileDialog>
 #include <QDir>
 #include <QJsonDocument>
@@ -95,6 +96,29 @@ MainWindow::MainWindow(QObject *parent)
     updatePlaylistNames();
     playlistModel = new PlaylistModel(playlistManager, this);
     loadSessionState();
+
+    listenAlongServer = new ListenAlongServer(this);
+
+    connect(listenAlongServer, &ListenAlongServer::candidateUrlsReady,
+            this, &MainWindow::listenAlongUrlsReady);
+
+    connect(listenAlongServer, &ListenAlongServer::sessionStopped,
+            this, &MainWindow::listenAlongStopped);
+
+    connect(listenAlongServer, &ListenAlongServer::listenerCountChanged,
+            this, &MainWindow::listenAlongListenerCountChanged);
+
+    connect(playbackController, &PlaybackController::positionChanged,
+        this, [this](qint64 pos) {
+            if (listenAlongServer->isRunning())
+                listenAlongServer->syncPlaybackPosition(pos);
+        });
+
+    connect(playbackController, &PlaybackController::playbackStateChanged,
+        this, [this](QMediaPlayer::PlaybackState state) {
+            if (listenAlongServer->isRunning())
+                listenAlongServer->setPaused(state != QMediaPlayer::PlayingState);
+        });
 }
 
 MainWindow::~MainWindow()
@@ -389,6 +413,20 @@ void MainWindow::playSong(int libraryIndex)
     currentPlaybackIndex = libraryIndexToPlaybackPos.value(libraryIndex, -1);
     songModel->setPlayingIndex(libraryIndex); 
     currentLibraryIndex = libraryIndex;
+
+    //Server is running, set the playing info
+    if (listenAlongServer->isRunning()) {
+        listenAlongServer->setNowPlaying(
+            song.filePath,
+            song.title,
+            song.artist,
+            song.duration,
+            song.coverPath
+        );
+        listenAlongServer->syncPlaybackPosition(0);
+        listenAlongServer->setPaused(false);
+    }
+
     emit currentLibraryIndexChanged();
     emit currentSongChanged();
 }
@@ -1304,4 +1342,36 @@ void MainWindow::loadSessionState()
         playbackController->player()->setPosition(savedPos);
         emit sessionRestored(savedPos);
     });
+}
+
+void MainWindow::startListenAlongServer(int port)
+{
+    if (!listenAlongServer->start(static_cast<quint16>(port))) {
+        emit listenAlongUrlsReady({});   // empty list signals failure to QML
+        return;
+    }
+
+    // If a song is already loaded, tell the server about it immediately
+    if (currentLibraryIndex >= 0 && currentLibraryIndex < library.size()) {
+        const SongData &song = library[currentLibraryIndex];
+        listenAlongServer->setNowPlaying(
+            song.filePath,
+            song.title,
+            song.artist,
+            song.duration,
+            song.coverPath
+        );
+        listenAlongServer->syncPlaybackPosition(playerPosition);
+        listenAlongServer->setPaused(!playing);
+    }
+}
+
+void MainWindow::stopListenAlongServer()
+{
+    listenAlongServer->stop();
+}
+
+bool MainWindow::isListenAlongRunning() const
+{
+    return listenAlongServer->isRunning();
 }

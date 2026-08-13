@@ -52,6 +52,10 @@ Item {
                 mouse.accepted = true
             }
         }
+        WheelHandler {
+            acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+            onWheel: function(event) { event.accepted = true }
+        }
     }
 
     // Main dialog frame

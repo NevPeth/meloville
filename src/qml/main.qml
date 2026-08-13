@@ -105,6 +105,13 @@ ApplicationWindow {
         }
     }
 
+    SettingsPage {
+        id: settingsPage
+        anchors.fill: parent
+        visible: false
+        onClosed: settingsPage.visible = false
+    }
+
     SongContextMenu {
         id: contextMenu
 
@@ -1553,6 +1560,7 @@ ApplicationWindow {
                                                 : "image://svgicons/settingsIconNormal"
                                             fillMode: Image.PreserveAspectFit
                                         }
+                                        onClicked: settingsPage.visible = true
                                     }
 
                                 }

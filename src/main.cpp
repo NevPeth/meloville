@@ -9,17 +9,12 @@
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
-    
-    // Set application metadata
     app.setApplicationName("Meloville");
     
-    // Set the Quick style
     QQuickStyle::setStyle("Basic");
     
-    // Create the main window (backend logic)
     MainWindow mainWindow;
     
-    // Create QML engine
     QQmlApplicationEngine engine;
     
     // Expose MainWindow to QML with a clear name

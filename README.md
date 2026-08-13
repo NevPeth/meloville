@@ -24,19 +24,26 @@
 
 ## Features
 
+* Native Linux support
+    * <small>I literally don't have access to a machine running Windows or MacOS</small>
 * Support for mp3, flac, m4a, and ogg files
 * Bluetooth headphone playback support
 * In-built metadata editor for songs
-* Auto sorting of albums
-* Drag and drop songs to switch songs in playlists (Suprisingly a lot of other local music players don't have this)
+* Drag and drop songs to switch songs in playlists
+    * <small>Suprisingly a lot of other local music players don't have this</small>
 * A "Big Picture" mode to see song covers in fullscreen
-* Native Linux support
 * Svg based UI assets so it looks great even on on high DPI monitors
+* A "listen along" feature where you can open a mini server and stream your current playing song to friends
+    * <small>This requires port forwarding if your listener isn't on the same wifi network as you, but as a pro it only requires them to have a browser and an internet connection.</small>
+* A playlist and album system that is based on song titles and artists, not filenames, so even renaming files or switching them to different will keep your playlists and albums perfectly intact.
+* Smart album sorting where even if a song has "Artist feat Other Artist" it will still correctly be sorted into the album from "Artist"
+    * <small>May seem obvious but for songs that have the same album name, differentiating them is something often mislooked from other applications, especially if you don't have a database to check against</small>
 
 ## Features That I Am Currently Working On
 
-* Add a "listen along" feature where you can open a mini server and stream your current playing song to friends
 * Lyrics Support
+* Add scrolling for super long titles and artists
+* Add a way to normalize the audio for a seamless listening experience
 * Packages for arch and maybe a flatpak
 * Themes
 

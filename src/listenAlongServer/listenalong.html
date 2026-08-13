@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meloville &mdash; Listen Along</title>
+<style>
+    * { box-sizing: border-box; }
+    html, body {
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: #0b0b0e;
+    }
+    body {
+        color: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    /* Full-bleed animated background -- three blurred color blobs sampled
+        from the cover art, nudged around each frame by the track's bass/mid/
+        treble energy. No card, no chrome -- this *is* the page. */
+    #bg {
+        position: fixed;
+        inset: 0;
+        overflow: hidden;
+        z-index: 0;
+        background: #0b0b0e;
+    }
+    .blob {
+        position: absolute;
+        width: 75vmax;
+        height: 75vmax;
+        border-radius: 50%;
+        filter: blur(70px);
+        will-change: transform, opacity;
+        transition: background 1.4s ease;
+    }
+    .blob1 { top: -25%;  left: -20%; }
+    .blob2 { bottom: -30%; right: -20%; }
+    .blob3 { top: 28%;   left: 30%; }
+    #bg-tint {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.35) 60%, rgba(0,0,0,0.65) 100%);
+    }
+
+    .content {
+        position: relative;
+        z-index: 1;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        text-align: center;
+    }
+
+    .volume-icon {
+        width: 16px;
+        height: 16px;
+        opacity: 0.5;
+    }
+
+    #artwork {
+        width: 240px;
+        height: 240px;
+        margin: 0 auto 26px;
+        border-radius: 20px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        transition: transform 0.5s ease;
+        background: linear-gradient(135deg, #2a2a33, #17171c);
+    }
+    /* Subtle "breathing" while actively playing -- purely decorative, never
+        tied to playback control. */
+    #artwork.playing { animation: artworkPulse 3.2s ease-in-out infinite; }
+    @keyframes artworkPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.015); }
+    }
+    #artwork::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 28% 22%, rgba(255,255,255,0.18), transparent 55%);
+    }
+
+    h1#nowplaying-title {
+        font-size: 20px;
+        margin: 0 0 4px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        max-width: 90vw;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-height: 24px;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.4);
+    }
+    #nowplaying-artist {
+        color: rgba(255,255,255,0.72);
+        font-size: 15px;
+        margin-bottom: 26px;
+        max-width: 90vw;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.4);
+    }
+
+    #progress-wrap { width: 100%; max-width: 300px; margin-bottom: 4px; }
+    #progress-bar {
+        width: 100%;
+        height: 5px;
+        background: rgba(255,255,255,0.15);
+        border-radius: 3px;
+        overflow: hidden;
+        /* purely informational -- no click/drag handlers attached, ever */
+        pointer-events: none;
+    }
+    #progress-fill {
+        height: 100%;
+        width: 0%;
+        background: rgba(255,255,255,0.92);
+        border-radius: 3px;
+        transition: width 0.25s linear;
+    }
+    #progress-times {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        color: rgba(255,255,255,0.55);
+        margin-top: 6px;
+        max-width: 300px;
+        width: 100%;
+    }
+    #volume-wrap {
+        display: flex;
+        align-items: center;
+        gap: 0px;
+        width: 100%;
+        max-width: 300px;
+    }
+
+    #volume-wrap span {
+        font-size: 16px;
+        opacity: .8;
+    }
+
+    #volume-slider {
+        flex: 1;
+        appearance: none;
+        -webkit-appearance: none;
+        height: 4px;
+        border-radius: 999px;
+        outline: none;
+        cursor: pointer;
+        transition: height .15s ease;
+    }
+
+    /* Hide the thumb completely */
+    #volume-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 0;
+        height: 0;
+    }
+
+    #volume-slider::-moz-range-thumb {
+        width: 0;
+        height: 0;
+        border: none;
+        background: transparent;
+    }
+
+    /* Chrome/Safari track */
+    #volume-slider::-webkit-slider-runnable-track {
+        height: 4px;
+        border-radius: 999px;
+        background: transparent;
+        transition: height .15s ease;
+    }
+
+    /* Firefox */
+    #volume-slider::-moz-range-track {
+        height: 4px;
+        border-radius: 999px;
+        background: transparent;
+    }
+
+    #volume-slider:hover {
+        height: 6px;
+    }
+
+    #volume-slider:hover::-webkit-slider-runnable-track,
+    #volume-slider:hover::-moz-range-track {
+        height: 6px;
+    }
+    /* Only ever used for the one-time "tap to start" autoplay-unlock prompt */
+    #status { color: rgba(255,255,255,0.6); font-size: 12px; margin-top: 18px; min-height: 16px; }
+
+    /* No visible native player UI -- there is no seek/pause exposed anywhere. */
+    audio { display: none; }
+</style>
+</head>
+<body>
+  <div id="bg">
+    <div class="blob blob1"></div>
+    <div class="blob blob2"></div>
+    <div class="blob blob3"></div>
+    <div id="bg-tint"></div>
+  </div>
+
+  <div class="content">
+    <div id="artwork"></div>
+
+    <h1 id="nowplaying-title">&nbsp;</h1>
+    <div id="nowplaying-artist">&nbsp;</div>
+
+    <div id="progress-wrap">
+      <div id="progress-bar"><div id="progress-fill"></div></div>
+      <div id="progress-times">
+        <span id="time-elapsed">0:00</span>
+        <span id="time-total">0:00</span>
+      </div>
+    </div>
+
+    <audio id="player" autoplay preload="none" tabindex="-1"></audio>
+    <div id="volume-wrap">
+        <svg class="volume-icon" xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round">
+
+            <!-- Speaker -->
+            <path d="M11 5L6 9H3V15H6L11 19V5Z"/>
+
+            <!-- Sound wave -->
+            <path d="M15 9C16.5 10.5 16.5 13.5 15 15"/>
+        </svg>
+        <input id="volume-slider"
+            type="range"
+            min="0"
+            max="100"
+            value="100">
+        <svg class="volume-icon" xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round">
+
+            <!-- Speaker -->
+            <path d="M11 5L6 9H3V15H6L11 19V5Z"/>
+
+            <!-- Sound wave -->
+            <path d="M15 9C16.5 10.5 16.5 13.5 15 15"/>
+            <path d="M18 6C21 9 21 15 18 18"/>
+
+        </svg>
+    </div>
+    <div id="status"></div>
+  </div>
+
+<script>
+    const parts = window.location.pathname.split('/').filter(Boolean);
+    const token = parts[0] || '';
+    const audio = document.getElementById('player');
+    const titleDiv = document.getElementById('nowplaying-title');
+    const artistDiv = document.getElementById('nowplaying-artist');
+    const statusDiv = document.getElementById('status');
+    const progressFill = document.getElementById('progress-fill');
+    const timeElapsed = document.getElementById('time-elapsed');
+    const timeTotal = document.getElementById('time-total');
+    const artworkEl = document.getElementById('artwork');
+    const blob1 = document.querySelector('.blob1');
+    const blob2 = document.querySelector('.blob2');
+    const blob3 = document.querySelector('.blob3');
+    const volumeSlider = document.getElementById('volume-slider');
+    const savedVolume = localStorage.getItem('listenAlongVolume');
+
+    if (savedVolume !== null) {
+        audio.volume = Number(savedVolume);
+        volumeSlider.value = Math.round(audio.volume * 100);
+    } else {
+        audio.volume = 1.0;
+    }
+
+    volumeSlider.addEventListener('input', () => {
+        audio.volume = volumeSlider.value / 100;
+        localStorage.setItem('listenAlongVolume', audio.volume);
+    });
+    const slider = document.getElementById("volume-slider");
+
+function updateSlider() {
+    const min = Number(slider.min);
+    const max = Number(slider.max);
+    const value = Number(slider.value);
+
+    const percent = ((value - min) / (max - min)) * 100;
+
+    const hover = slider.matches(":hover");
+
+    const fill = hover
+        ? "rgba(255,255,255,0.85)"
+        : "rgba(255,255,255,0.65)";
+
+    slider.style.background = `
+        linear-gradient(
+            to right,
+            ${fill} 0%,
+            ${fill} ${percent}%,
+            rgba(204,204,204,.20) ${percent}%,
+            rgba(204,204,204,.20) 100%
+        )
+    `;
+}
+
+slider.addEventListener("input", updateSlider);
+slider.addEventListener("mouseenter", updateSlider);
+slider.addEventListener("mouseleave", updateSlider);
+
+updateSlider();
+
+    function updateArtwork(trackGeneration) {
+        const url = `/${token}/cover?g=${trackGeneration}`;
+        artworkEl.style.backgroundImage = `url('${url}')`;
+        artworkEl.style.backgroundSize = 'cover';
+        artworkEl.style.backgroundPosition = 'center';
+        sampleBackgroundColors(url);
+    }
+
+    function setEyebrow(state) {
+        // state: 'connecting' | 'live' | 'paused' | 'buffering'
+        // There is no status indicator anywhere on the page anymore -- the
+        // only thing this drives is the artwork's subtle "breathing" while live.
+        artworkEl.classList.toggle('playing', state === 'live');
+    }
+
+    let audioCtx = null;
+    let analyser = null;
+    let freqData = null;
+    let blobColors = ['46,58,89', '92,42,74', '30,74,68']; // fallback trio until cover art loads
+
+    function setupAudioGraph() {
+        if (audioCtx) return;
+        try {
+            const Ctx = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new Ctx();
+            const sourceNode = audioCtx.createMediaElementSource(audio);
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 256;
+            analyser.smoothingTimeConstant = 0.8;
+            freqData = new Uint8Array(analyser.frequencyBinCount);
+            sourceNode.connect(analyser);
+            analyser.connect(audioCtx.destination);
+        } catch (e) {
+            // Web Audio unavailable -- background falls back to ambient
+            // drift only, playback itself is unaffected.
+        }
+    }
+
+    function resumeAudioGraph() {
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume().catch(() => {});
+        }
+    }
+
+    function sampleBackgroundColors(url) {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+            try {
+                const c = document.createElement('canvas');
+                c.width = 40;
+                c.height = 40;
+                const cctx = c.getContext('2d');
+                cctx.drawImage(img, 0, 0, 40, 40);
+                const regions = [
+                    { x: 0, y: 0, w: 24, h: 24 },   // top-left-ish -> blob1
+                    { x: 16, y: 16, w: 24, h: 24 }, // bottom-right-ish -> blob2
+                    { x: 8, y: 4, w: 24, h: 32 },   // center-ish -> blob3
+                ];
+                blobColors = regions.map(reg => {
+                    const data = cctx.getImageData(reg.x, reg.y, reg.w, reg.h).data;
+                    let r = 0, g = 0, b = 0, n = 0;
+                    for (let i = 0; i < data.length; i += 4) {
+                        r += data[i]; g += data[i + 1]; b += data[i + 2]; n++;
+                    }
+                    r = r / n; g = g / n; b = b / n;
+                    const boost = v => Math.max(30, Math.min(255, Math.round(v * 1.15 + 10)));
+                    return `${boost(r)},${boost(g)},${boost(b)}`;
+                });
+            } catch (e) {
+                // Cover art wasn't readable pixel-by-pixel -- keep previous colors.
+            }
+        };
+        img.src = url;
+    }
+
+    function bandEnergy(from, to) {
+        if (!freqData) return 0;
+        let sum = 0, n = 0;
+        for (let i = from; i < to && i < freqData.length; i++) { sum += freqData[i]; n++; }
+        return n ? (sum / n) / 255 : 0;
+    }
+
+    let bgStartTime = performance.now();
+    function animateBackground() {
+        requestAnimationFrame(animateBackground);
+        const t = (performance.now() - bgStartTime) / 1000;
+
+        // Slow ambient drift so the scene keeps breathing even in silence,
+        // plus an audio-reactive kick layered on top of each blob.
+        const bass = bandEnergy(0, 8);
+        const mid = bandEnergy(8, 40);
+        const treble = bandEnergy(40, 100);
+
+        const drift1x = Math.sin(t * 0.15) * 6;
+        const drift1y = Math.cos(t * 0.12) * 6;
+        const drift2x = Math.sin(t * 0.13 + 2) * 6;
+        const drift2y = Math.cos(t * 0.17 + 2) * 6;
+        const drift3x = Math.sin(t * 0.11 + 4) * 6;
+        const drift3y = Math.cos(t * 0.14 + 4) * 6;
+
+        blob1.style.transform = `translate(${drift1x}vmax, ${drift1y}vmax) scale(${1 + bass * 0.22})`;
+        blob2.style.transform = `translate(${drift2x}vmax, ${drift2y}vmax) scale(${1 + mid * 0.20})`;
+        blob3.style.transform = `translate(${drift3x}vmax, ${drift3y}vmax) scale(${1 + treble * 0.24})`;
+
+        blob1.style.background = `radial-gradient(circle, rgba(${blobColors[0]},0.95) 0%, rgba(${blobColors[0]},0) 70%)`;
+        blob2.style.background = `radial-gradient(circle, rgba(${blobColors[1]},0.95) 0%, rgba(${blobColors[1]},0) 70%)`;
+        blob3.style.background = `radial-gradient(circle, rgba(${blobColors[2]},0.9) 0%, rgba(${blobColors[2]},0) 70%)`;
+    }
+    requestAnimationFrame(animateBackground);
+    // ---------- end animated background ----------
+
+    let reconnectTimer = null;
+    let reconnecting = false;
+    let isPausedByServer = false;
+
+    let lastKnownPositionMs = 0;
+    let lastKnownDurationMs = 0;
+    let lastKnownAtWallClock = 0;
+
+    function attemptPlay() {
+        setupAudioGraph();
+        const p = audio.play();
+        if (p && p.catch) {
+            p.catch(() => {
+                // Browser blocked autoplay-with-sound; this is only a
+                // one-time permission grant, not a playback control --
+                // there is still no play/pause/seek exposed to the user.
+                statusDiv.textContent = 'Tap anywhere to start listening';
+                const unlock = () => {
+                    document.removeEventListener('click', unlock);
+                    document.removeEventListener('touchend', unlock);
+                    statusDiv.textContent = '';
+                    resumeAudioGraph();
+                    audio.play().catch(() => {});
+                };
+                document.addEventListener('click', unlock, { once: true });
+                document.addEventListener('touchend', unlock, { once: true });
+            });
+        }
+        resumeAudioGraph();
+    }
+
+    function connectStream() {
+        clearTimeout(reconnectTimer);
+        reconnecting = false;
+        audio.src = '/' + token + '/stream?_=' + Date.now();
+        attemptPlay();
+        setEyebrow('live');
+    }
+
+    function forceStop() {
+        audio.pause();
+        audio.removeAttribute('src');
+        audio.load(); // drop any buffered audio so nothing lingers after pause
+    }
+
+    function scheduleReconnect() {
+        if (isPausedByServer) {
+            setEyebrow('paused');
+            return;
+        }
+        setEyebrow('buffering');
+        // Debounce: ignore repeat triggers while a reconnect is already pending/in-flight.
+        if (reconnecting) return;
+        reconnecting = true;
+        clearTimeout(reconnectTimer);
+        reconnectTimer = setTimeout(connectStream, 1500);
+    }
+
+    function syncToServerPosition(force) {
+        return fetch('/' + token + '/nowplaying', { cache: 'no-store' })
+            .then(r => r.json())
+            .then(d => {
+                const targetSec = d.positionMs / 1000;
+                if (!isFinite(targetSec) || audio.seeking) return;
+                const drift = Math.abs(audio.currentTime - targetSec);
+                // Tighter threshold (2s) so small drift gets corrected
+                // quickly instead of accumulating.
+                if (force || drift > 2) {
+                    audio.currentTime = targetSec;
+                }
+            })
+            .catch(() => {});
+    }
+
+    audio.addEventListener('error', () => scheduleReconnect());
+    audio.addEventListener('ended', () => scheduleReconnect());
+    audio.addEventListener('waiting', () => setEyebrow('buffering'));
+    // 'stalled' just means data isn't arriving fast enough right now -- this is
+    // normal buffering, not a failure. Don't tear down the connection for it.
+    audio.addEventListener('stalled', () => setEyebrow('buffering'));
+    audio.addEventListener('loadedmetadata', () => syncToServerPosition(true));
+
+    // Periodic resync every 250ms so small drift (VBR bitrate rounding,
+    // network jitter) gets corrected almost immediately, without needing a
+    // full reconnect.
+    setInterval(() => syncToServerPosition(false), 250);
+
+    // Prevent OS/lock-screen media controls (which appear automatically via
+    // the Media Session API) from letting the listener pause or seek.
+    if ('mediaSession' in navigator) {
+        ['play', 'pause', 'stop', 'seekto', 'seekforward', 'seekbackward'].forEach(action => {
+            try { navigator.mediaSession.setActionHandler(action, () => {}); } catch (e) {}
+        });
+    }
+
+    function formatTime(ms) {
+        const totalSec = Math.max(0, Math.floor(ms / 1000));
+        const m = Math.floor(totalSec / 60);
+        const s = totalSec % 60;
+        return m + ':' + String(s).padStart(2, '0');
+    }
+
+    function renderProgress() {
+        if (lastKnownDurationMs <= 0) return;
+        // Interpolate forward from the last server-reported position so the
+        // bar advances smoothly rather than stepping once per poll. This is
+        // purely visual -- it never feeds back into playback or sync logic.
+        const elapsedSincePoll = isPausedByServer ? 0 : (Date.now() - lastKnownAtWallClock);
+        const estimatedPos = Math.min(lastKnownPositionMs + elapsedSincePoll, lastKnownDurationMs);
+
+        progressFill.style.width = (estimatedPos / lastKnownDurationMs * 100) + '%';
+        timeElapsed.textContent = formatTime(estimatedPos);
+        timeTotal.textContent = formatTime(lastKnownDurationMs);
+    }
+    setInterval(renderProgress, 250);
+
+    let lastKnownTrackGeneration = null;
+
+    async function pollNowPlaying() {
+        try {
+            const res = await fetch('/' + token + '/nowplaying', { cache: 'no-store' });
+            if (res.ok) {
+                const data = await res.json();
+                titleDiv.textContent = data.title;
+                artistDiv.textContent = data.artist;
+
+                if (data.trackGeneration !== lastKnownTrackGeneration) {
+                    updateArtwork(data.trackGeneration);
+                }
+
+                lastKnownPositionMs = data.positionMs;
+                lastKnownDurationMs = data.durationMs;
+                lastKnownAtWallClock = Date.now();
+                renderProgress();
+
+                if (data.isPaused && !isPausedByServer) {
+                    isPausedByServer = true;
+                    clearTimeout(reconnectTimer);
+                    forceStop();
+                    setEyebrow('paused');
+                } else if (!data.isPaused && isPausedByServer) {
+                    isPausedByServer = false;
+                    lastKnownTrackGeneration = data.trackGeneration; // adopt current, avoid double-trigger
+                    connectStream();
+                } else if (lastKnownTrackGeneration !== null
+                        && data.trackGeneration !== lastKnownTrackGeneration
+                        && !isPausedByServer) {
+                    // Track changed underneath us -- don't wait for the <audio>
+                    // element to notice its socket died. Reconnect right now.
+                    lastKnownTrackGeneration = data.trackGeneration;
+                    clearTimeout(reconnectTimer);
+                    reconnecting = false;
+                    forceStop();
+                    connectStream();
+                }
+
+                if (lastKnownTrackGeneration !== data.trackGeneration) {
+                    lastKnownTrackGeneration = data.trackGeneration;
+                }
+            }
+        } catch (e) {
+            // Server may be between songs or offline; the stream handler retries on its own.
+        }
+        setTimeout(pollNowPlaying, 250);
+    }
+
+    connectStream();
+    pollNowPlaying();
+</script>
+</body>
+</html>

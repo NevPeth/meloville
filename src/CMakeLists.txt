@@ -57,6 +57,9 @@ qt_add_executable(Meloville
     svgLogic/svgimageprovider.h
     svgLogic/seticons.h
 
+    listenAlongServer/listenalongserver.h
+    listenAlongServer/listenalongserver.cpp
+
     resources.qrc
 )
 
@@ -79,4 +82,5 @@ target_include_directories(Meloville PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/svgLogic
     ${CMAKE_CURRENT_SOURCE_DIR}/playlistLogic
     ${CMAKE_CURRENT_SOURCE_DIR}/albumLogic
+    ${CMAKE_CURRENT_SOURCE_DIR}/listenAlongServer
 )
