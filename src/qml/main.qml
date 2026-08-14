@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
 import QtQml.Models
+import QtQuick.Effects
 
 ApplicationWindow {
     id: appWindow
@@ -364,6 +365,8 @@ ApplicationWindow {
                             width: 50; height: 50
                             fillMode: Image.PreserveAspectCrop
                             visible: !backend.isInAlbumView
+                            mipmap: true
+                            smooth: true
                             source: {
                                 if (model.coverPath === "") return "qrc:/icons/default.svg"
                                 return "file://" + model.coverPath + "?" + mainPageRoot.coverCacheBuster
@@ -1185,6 +1188,8 @@ ApplicationWindow {
                                     Image {
                                         anchors.fill: parent
                                         fillMode: Image.PreserveAspectCrop
+                                        mipmap: true
+                                        smooth: true
                                         source: backend.currentSongCoverPath !== ""
                                                 ? "file://" + backend.currentSongCoverPath
                                                 : "qrc:/icons/default.svg"
