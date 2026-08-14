@@ -4,6 +4,7 @@
 #include <QDir>
 #include <QRegularExpression>
 #include <QCryptographicHash>
+#include <QDirIterator>
 
 #include <taglib/fileref.h>
 #include <taglib/tag.h>
@@ -439,8 +440,29 @@ QString MetadataReader::cacheKeyForPath(const QString &absPath) {
     ).toHex());
 }
 
-QString MetadataReader::findLrcFile(const QString& dir, const QString& baseName)
+// QString MetadataReader::findLrcFile(const QString& dir, const QString& baseName)
+// {
+//     QString candidate = dir + "/" + baseName + ".lrc";
+//     return QFile::exists(candidate) ? candidate : QString();
+// }
+QString MetadataReader::findLrcFile(
+    const QString& dir,
+    const QString& baseName,
+    const QString& musicFolder)
 {
     QString candidate = dir + "/" + baseName + ".lrc";
-    return QFile::exists(candidate) ? candidate : QString();
+    if (QFile::exists(candidate))
+        return candidate;
+
+    QDirIterator it(
+        musicFolder,
+        QStringList() << baseName + ".lrc",
+        QDir::Files,
+        QDirIterator::Subdirectories
+    );
+
+    if (it.hasNext())
+        return it.next();
+
+    return QString();
 }

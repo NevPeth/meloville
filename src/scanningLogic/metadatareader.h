@@ -39,7 +39,7 @@ public:
 
     static QString cacheKeyForPath(const QString &absPath);
 
-    static QString findLrcFile(const QString& dir, const QString& baseName);
+    static QString findLrcFile(const QString& dir, const QString& baseName, const QString& musicFolder);
 
 private:
     static QPixmap extractMp3Cover(const QString& path);

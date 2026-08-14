@@ -326,7 +326,7 @@ void MainWindow::loadLibrary()
 
             SongData song = MetadataReader::readSong(absPath);
             song.coverPath = MetadataReader::cacheCoverArt(song.filePath, appDataPath + "/cache", MetadataReader::cacheKeyForPath(song.filePath));
-            song.lyricsPath = MetadataReader::findLrcFile(fileInfo.absolutePath(), fileInfo.completeBaseName());
+            song.lyricsPath = MetadataReader::findLrcFile(fileInfo.absolutePath(), fileInfo.completeBaseName(), currentMusicFolder);
             
             auto pos = std::lower_bound(library.begin(), library.end(), song, songTitleLess);
             library.insert(pos, song);
@@ -356,7 +356,7 @@ void MainWindow::loadLibrary()
     for (SongData &song : library) {
         QFileInfo fi(song.filePath);
         QString previousLyricsPath = song.lyricsPath;
-        song.lyricsPath = MetadataReader::findLrcFile(fi.absolutePath(), fi.completeBaseName());
+        song.lyricsPath = MetadataReader::findLrcFile(fi.absolutePath(), fi.completeBaseName(), currentMusicFolder);
         if (song.lyricsPath != previousLyricsPath) {
             addedLyrics = true;
         }
