@@ -9,6 +9,7 @@
         <file>qml/EditSongDialog.qml</file>
         <file>qml/AlbumGridView.qml</file>
         <file>qml/SettingsPage.qml</file>
+        <file>qml/LyricsView.qml</file>
     </qresource>
     <qresource prefix="/">
         <file>icons/addPlaylistsIcon.svg</file>

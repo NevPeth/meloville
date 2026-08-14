@@ -438,3 +438,9 @@ QString MetadataReader::cacheKeyForPath(const QString &absPath) {
         absPath.toUtf8(), QCryptographicHash::Md5
     ).toHex());
 }
+
+QString MetadataReader::findLrcFile(const QString& dir, const QString& baseName)
+{
+    QString candidate = dir + "/" + baseName + ".lrc";
+    return QFile::exists(candidate) ? candidate : QString();
+}

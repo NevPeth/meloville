@@ -30,6 +30,7 @@ class MainWindow : public QObject
     Q_PROPERTY(bool scanning READ getScanning NOTIFY scanningChanged)
     Q_PROPERTY(bool libraryPresent READ getLibraryPresent NOTIFY libraryPresentChanged)
     Q_PROPERTY(int currentLibraryIndex READ getCurrentLibraryIndex NOTIFY currentLibraryIndexChanged)
+    Q_PROPERTY(QString currentSongLyricsPath READ getCurrentSongLyricsPath NOTIFY currentSongChanged)
     Q_PROPERTY(QString currentSongTitle READ getCurrentSongTitle NOTIFY currentSongChanged)
     Q_PROPERTY(QString currentSongArtist READ getCurrentSongArtist NOTIFY currentSongChanged)
     Q_PROPERTY(QString currentSongCoverPath READ getCurrentSongCoverPath NOTIFY currentSongChanged)
@@ -91,6 +92,7 @@ public:
     Q_INVOKABLE void startListenAlongServer(int port);
     Q_INVOKABLE void stopListenAlongServer();
     Q_INVOKABLE bool isListenAlongRunning() const;
+    Q_INVOKABLE QString readFileAsString(const QString& path) const;
 
     double getProgress() const { return progress; }
     PlaylistModel* getPlaylistModel() const { return playlistModel; }
@@ -98,6 +100,10 @@ public:
     bool getScanning() const { return scanning; }
     bool getLibraryPresent() const { return libraryPresent; }
     int getCurrentLibraryIndex() const { return currentLibraryIndex; }
+    QString getCurrentSongLyricsPath() const {
+        if (currentLibraryIndex < 0 || currentLibraryIndex >= library.size()) return QString();
+        return library[currentLibraryIndex].lyricsPath;
+    }
     QString getCurrentSongTitle() const {
         if (currentLibraryIndex < 0 || currentLibraryIndex >= library.size()) return QString();
         return library[currentLibraryIndex].title.toHtmlEscaped();

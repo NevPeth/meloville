@@ -234,6 +234,7 @@ void MainWindow::saveLibrary()
     for (const SongData &song : library) {
         QJsonObject obj;
         obj["filePath"] = song.filePath;
+        obj["lyricsPath"] = song.lyricsPath;
         obj["title"] = song.title;
         obj["artist"] = song.artist;
         obj["album"] = song.album;
@@ -277,6 +278,7 @@ void MainWindow::loadLibrary()
         QJsonObject obj = val.toObject();
         SongData s;
         s.filePath = obj["filePath"].toString();
+        s.lyricsPath = obj["lyricsPath"].toString();
         s.title = obj["title"].toString();
         s.artist = obj["artist"].toString();
         s.album = obj["album"].toString();
@@ -324,6 +326,7 @@ void MainWindow::loadLibrary()
 
             SongData song = MetadataReader::readSong(absPath);
             song.coverPath = MetadataReader::cacheCoverArt(song.filePath, appDataPath + "/cache", MetadataReader::cacheKeyForPath(song.filePath));
+            song.lyricsPath = MetadataReader::findLrcFile(fileInfo.absolutePath(), fileInfo.completeBaseName());
             
             auto pos = std::lower_bound(library.begin(), library.end(), song, songTitleLess);
             library.insert(pos, song);
@@ -348,6 +351,17 @@ void MainWindow::loadLibrary()
         }
     }
 
+    // Double checks for missing lyrics files
+    bool addedLyrics = false;
+    for (SongData &song : library) {
+        QFileInfo fi(song.filePath);
+        QString previousLyricsPath = song.lyricsPath;
+        song.lyricsPath = MetadataReader::findLrcFile(fi.absolutePath(), fi.completeBaseName());
+        if (song.lyricsPath != previousLyricsPath) {
+            addedLyrics = true;
+        }
+    }
+
     currentViewSongs.clear();
     for (int i = 0; i < library.size(); i++) {
         currentViewSongs.push_back(i);
@@ -358,7 +372,7 @@ void MainWindow::loadLibrary()
     rebuildPlaybackMap();
     songModel->setSongs(&library, &visibleSongs);
 
-    if (addedAny || removedAny) {
+    if (addedAny || removedAny || addedLyrics) {
         saveLibrary();
     }
 }
@@ -771,6 +785,7 @@ void MainWindow::saveSongEdits(int libraryIndex, const QString& title, const QSt
         int oldIndex = currentLibraryIndex;
         SongData newSong;
         newSong.filePath    = currSong.filePath;
+        newSong.lyricsPath  = currSong.lyricsPath;
         newSong.title       = title;
         newSong.artist      = artist;
         newSong.album       = album;
@@ -807,6 +822,7 @@ void MainWindow::saveSongEdits(int libraryIndex, const QString& title, const QSt
     } else {
         SongData &song = library[libraryIndex];
         song.filePath = currSong.filePath;
+        song.lyricsPath = currSong.lyricsPath;
         song.title = title;
         song.artist = artist;
         song.album = album;
@@ -1374,4 +1390,13 @@ void MainWindow::stopListenAlongServer()
 bool MainWindow::isListenAlongRunning() const
 {
     return listenAlongServer->isRunning();
+}
+
+QString MainWindow::readFileAsString(const QString& path) const
+{
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+        return QString();
+    QTextStream in(&file);
+    return in.readAll();
 }

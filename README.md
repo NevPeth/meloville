@@ -38,10 +38,11 @@
 * A playlist and album system that is based on song titles and artists, not filenames, so even renaming files or switching them to different will keep your playlists and albums perfectly intact.
 * Smart album sorting where even if a song has "Artist feat Other Artist" it will still correctly be sorted into the album from "Artist"
     * <small>May seem obvious but for songs that have the same album name, differentiating them is something often mislooked from other applications, especially if you don't have a database to check against</small>
+* Synced Lyrics Support
+    * <small>Only works with .lrc files and must be the same name as music file. Just have the .lrc be somewhere in the music folder and it will automatically find it on relaunch.</small>
 
 ## Features That I Am Currently Working On
 
-* Lyrics Support
 * Add scrolling for super long titles and artists
 * Add a way to normalize the audio for a seamless listening experience
 * Packages for arch and maybe a flatpak

@@ -51,6 +51,7 @@ void LibraryScanner::start()
         song.coverPath = MetadataReader::cacheCoverArt(
             song.filePath, cacheDir, fileInfo.baseName()
         );
+        song.lyricsPath = MetadataReader::findLrcFile(fileInfo.absolutePath(), fileInfo.completeBaseName());
         library.append(song);
         emit progress(i + 1, total);
 

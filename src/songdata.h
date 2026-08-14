@@ -4,6 +4,7 @@
 
 struct SongData {
     QString filePath;
+    QString lyricsPath;
     QString title;
     QString artist;
     QString album;
