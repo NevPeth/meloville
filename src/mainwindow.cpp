@@ -26,7 +26,7 @@ MainWindow::MainWindow(QObject *parent)
     songModel = new SongModel(this);
     playlistManager = new PlaylistManager(this);
     albumModel = new AlbumListModel(this);
-    
+
     connect(playlistManager, &PlaylistManager::playlistChanged,
             this, &MainWindow::updatePlaylistNames);
 
@@ -387,11 +387,12 @@ void MainWindow::playSongAtVisibleIndex(int visibleIndex)
 
     if (isInPlaylistView) {
         currentlyPlayingPlaylist = viewingPlaylist;
+        playlistManager->changePlaylistToTop(currentlyPlayingPlaylist);
         currentlyPlayingAlbum.clear();
         currentlyPlayingAlbumArtist.clear();
         currentlyPlayingAlbumCoverPath.clear();
     } else if (isInAlbumView) {
-        currentlyPlayingAlbum        = viewingAlbum;
+        currentlyPlayingAlbum = viewingAlbum;
         currentlyPlayingAlbumArtist  = viewingAlbumArtist;
         currentlyPlayingAlbumCoverPath = viewingAlbumCoverPath;
         currentlyPlayingPlaylist.clear();

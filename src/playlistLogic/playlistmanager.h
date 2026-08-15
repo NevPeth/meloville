@@ -49,6 +49,7 @@ public:
     void removeSongFromAllPlaylists(int libraryIndex);
 
     void reorderPlaylist(const QString& playlistName, int from, int to);
+    void changePlaylistToTop(const QString& playlistName);
 
 signals:
     void playlistChanged();

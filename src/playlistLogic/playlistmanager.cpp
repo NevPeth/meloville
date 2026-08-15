@@ -371,3 +371,15 @@ void PlaylistManager::reorderPlaylist(const QString& playlistName, int from, int
     savePlaylists();
     emit playlistChanged();
 }
+
+void PlaylistManager::changePlaylistToTop(const QString& playlistName)
+{
+    if (playlistOrder[0] == playlistName)
+        return;
+
+    playlistOrder.removeAll(playlistName);
+    playlistOrder.prepend(playlistName);
+
+    savePlaylists();
+    emit playlistChanged();
+}
