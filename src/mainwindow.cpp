@@ -996,6 +996,9 @@ void MainWindow::reorderPlaylist(int from, int to)
 
     playlistManager->reorderPlaylist(viewingPlaylist, from, to);
 
+    currentPlaybackSongs = currentViewSongs;
+    rebuildPlaybackMap();
+
     if (shuffleMode)
         rebuildShufflePool();
 }

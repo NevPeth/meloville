@@ -204,7 +204,8 @@ ApplicationWindow {
                         var to   = delegateRoot.DelegateModel.itemsIndex
                         visualModel.items.move(from, to)
 
-                        drag.source.parent.parent.currentIndex = to
+                        //drag.source.parent.parent.currentIndex = to
+                        backend.reorderPlaylist(from, to)
                     }
 
                     // ── The draggable content ──
@@ -304,10 +305,6 @@ ApplicationWindow {
                                     held = false
                                     scrollSpeed = 0
                                     listViewSongs.interactive = true
-
-                                    // Use startIndex → currentIndex, not itemsIndex on release
-                                    if (startIndex !== currentIndex)
-                                        backend.reorderPlaylist(startIndex, currentIndex)
 
                                     startIndex   = -1
                                     currentIndex = -1
