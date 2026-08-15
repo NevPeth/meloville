@@ -30,8 +30,6 @@ private:
     QAudioOutput* audioOutput;
     PulseAudioService* pulseAudioService; //Creates variables necessary for correct audio output
 
-    //int currentSongIndex = -1;
-
     void loadSettings();
     void saveSettings();
 };

@@ -18,8 +18,8 @@ find_package(Qt6 REQUIRED COMPONENTS
 )
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(TAGLIB REQUIRED taglib)
 
+pkg_check_modules(TAGLIB REQUIRED taglib)
 include_directories(${TAGLIB_INCLUDE_DIRS})
 link_directories(${TAGLIB_LIBRARY_DIRS})
 

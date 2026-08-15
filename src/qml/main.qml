@@ -14,9 +14,9 @@ ApplicationWindow {
 
     Component.onCompleted: {
         var geo = backend.loadWindowGeometry()
-        appWindow.x      = geo.x
-        appWindow.y      = geo.y
-        appWindow.width  = geo.width
+        appWindow.x = geo.x
+        appWindow.y = geo.y
+        appWindow.width = geo.width
         appWindow.height = geo.height
     }
 

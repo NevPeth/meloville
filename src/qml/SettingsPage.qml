@@ -480,16 +480,6 @@ Item {
                                 hoverEnabled: false
                             }
 
-
-                            Rectangle { Layout.fillWidth: true; height: 1; color: "#1a1a1a" }
-
-                            ToggleRow {
-                                label: "Close to system tray"
-                                description: "Keep Meloville running in the background when the window is closed."
-                                toggled: false
-                                enabled: false 
-                                opacity: 0.4
-                            }
                             Rectangle { Layout.fillWidth: true; height: 1; color: "#1a1a1a" }
 
                             Item { height: 60 }
