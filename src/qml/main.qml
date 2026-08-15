@@ -533,7 +533,8 @@ ApplicationWindow {
                                         anchors.margins: 0
                                         fillMode: Image.PreserveAspectCrop
                                         source: model.imagePath ? model.imagePath : "qrc:/icons/default.svg"
-                                        visible: source !== ""
+                                        mipmap: true
+                                        smooth: true
                                         layer.enabled: true
                                         layer.effect: OpacityMask {
                                             maskSource: Rectangle {
