@@ -379,7 +379,7 @@ void MainWindow::playSongAtVisibleIndex(int visibleIndex)
         return;
 
     int libraryIndex = visibleSongs[visibleIndex];
-    currentPlaybackSongs = currentViewSongs; // or whatever you need
+    currentPlaybackSongs = currentViewSongs;
     rebuildPlaybackMap();
     currentVisibleIndex = visibleIndex;
     currentLibraryIndex = libraryIndex;
@@ -992,12 +992,14 @@ void MainWindow::reorderPlaylist(int from, int to)
 
     songModel->moveRow(from, to);
 
-    currentViewSongs = visibleSongs;
-
     playlistManager->reorderPlaylist(viewingPlaylist, from, to);
+    currentViewSongs = visibleSongs;
 
     currentPlaybackSongs = currentViewSongs;
     rebuildPlaybackMap();
+
+    if (currentLibraryIndex >= 0)
+        currentPlaybackIndex = libraryIndexToPlaybackPos.value(currentLibraryIndex, -1);
 
     if (shuffleMode)
         rebuildShufflePool();
