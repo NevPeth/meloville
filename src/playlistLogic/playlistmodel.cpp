@@ -6,8 +6,6 @@ PlaylistModel::PlaylistModel(PlaylistManager *manager, QObject *parent)
     , m_manager(manager)
 {
     // Connect to all signals that affect the playlist list
-    connect(m_manager, &PlaylistManager::playlistCreated, this, &PlaylistModel::refresh);
-    connect(m_manager, &PlaylistManager::playlistDeleted, this, &PlaylistModel::refresh);
     connect(m_manager, &PlaylistManager::playlistChanged, this, &PlaylistModel::refresh);
 
     refresh(); // load initial data

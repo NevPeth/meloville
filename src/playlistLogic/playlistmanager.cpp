@@ -28,7 +28,7 @@ void PlaylistManager::createPlaylist(
     playlistOrder.prepend(name);
 
     savePlaylists();
-    emit playlistCreated(name);
+    emit playlistChanged();
 }
 
 void PlaylistManager::addSongToPlaylist(
@@ -270,7 +270,7 @@ void PlaylistManager::loadPlaylists(
         playlists[playlist] = indices;
 
         if (emitSignals)
-            emit playlistCreated(playlist);
+            emit playlistChanged();
     }
 }
 
@@ -314,7 +314,7 @@ void PlaylistManager::editPlaylist(
     
     if (changed){
         savePlaylists();
-        emit playlistChanged(newName);
+        emit playlistChanged();
     }
 }
 
@@ -338,28 +338,7 @@ void PlaylistManager::deletePlaylist(
     playlistOrder.removeAll(playlistName);
 
     savePlaylists();
-    emit playlistDeleted(playlistName);
-}
-
-int PlaylistManager::calculateTitleSize(const QString& text)
-{
-    constexpr int maxSize = 65;
-    constexpr int minSize = 1;
-    constexpr int maxWidth = 1200; // Available label width
-
-    for (int size = maxSize; size >= minSize; --size)
-    {
-        QFont font;
-        font.setPixelSize(size);
-        font.setBold(true);
-
-        QFontMetrics fm(font);
-
-        if (fm.horizontalAdvance(text) <= maxWidth)
-            return size;
-    }
-
-    return minSize;
+    emit playlistChanged();
 }
 
 QString PlaylistManager::fullImagePath(const QString& playlistName) const
@@ -390,5 +369,5 @@ void PlaylistManager::reorderPlaylist(const QString& playlistName, int from, int
     defs.insert(to, song);
 
     savePlaylists();
-    emit playlistChanged(playlistName);
+    emit playlistChanged();
 }

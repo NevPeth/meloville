@@ -26,11 +26,7 @@ MainWindow::MainWindow(QObject *parent)
     songModel = new SongModel(this);
     playlistManager = new PlaylistManager(this);
     albumModel = new AlbumListModel(this);
-
-    connect(playlistManager, &PlaylistManager::playlistCreated,
-            this, &MainWindow::updatePlaylistNames);
-    connect(playlistManager, &PlaylistManager::playlistDeleted,
-            this, &MainWindow::updatePlaylistNames);
+    
     connect(playlistManager, &PlaylistManager::playlistChanged,
             this, &MainWindow::updatePlaylistNames);
 
