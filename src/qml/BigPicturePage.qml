@@ -84,13 +84,14 @@ Item {
         anchors.leftMargin:   5
         anchors.rightMargin:  5
         anchors.topMargin:    5
-        anchors.bottomMargin: 70
+        anchors.bottomMargin: 0
         spacing: 0
 
         ColumnLayout {
             Layout.fillHeight: true
             Layout.fillWidth: !root.hasLyrics
             Layout.preferredWidth: root.hasLyrics ? root.width * 0.45 : root.width
+            Layout.bottomMargin: 70
             spacing: 0
 
             // ── TOP BAR ───────────────────────────────────────────────

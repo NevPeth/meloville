@@ -107,8 +107,15 @@ Item {
                 break
         }
 
-        if (idx !== activeLine)
+        if (idx !== activeLine) {
             activeLine = idx
+
+            // No active line means we're before the first lyric — snap to top
+            if (idx === -1) {
+                scrollAnim.stop()
+                lyricsView.contentY = 0
+            }
+        }
     }
 
     // ------------------------------------------------------------
