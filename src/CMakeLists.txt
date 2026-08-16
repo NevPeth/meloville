@@ -7,6 +7,8 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
+include(GNUInstallDirs)
+
 find_package(Qt6 REQUIRED COMPONENTS 
     Core 
     Quick 
@@ -83,4 +85,25 @@ target_include_directories(Meloville PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/playlistLogic
     ${CMAKE_CURRENT_SOURCE_DIR}/albumLogic
     ${CMAKE_CURRENT_SOURCE_DIR}/listenAlongServer
+)
+
+# Installation
+install(
+    TARGETS Meloville
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+install(
+    FILES meloville.desktop
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/applications
+)
+
+install(
+    FILES icons/meloville.svg
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps
+)
+
+install(
+    FILES ../LICENSE
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/Meloville
 )

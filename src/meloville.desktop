@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Meloville
+Comment=A music player built for people who just want to listen to their music
+Exec=Meloville
+Icon=meloville
+Terminal=false
+Type=Application
+Categories=AudioVideo;Audio;Player;
