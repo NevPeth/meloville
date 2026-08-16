@@ -43,10 +43,10 @@
 
 ## Features That I Am Currently Working On
 
-* Add scrolling for super long titles and artists
-* Add a way to normalize the audio for a seamless listening experience
+* Making auto-generated covers for playlists based on song covers
+* Option to switch music folder
+* Adjustable heights for the songs
 * Packages for arch and maybe a flatpak
-* Themes
 
 ## Getting Started
 

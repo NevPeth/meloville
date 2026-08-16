@@ -19,7 +19,6 @@ public:
         CoverPathRole,
         TrackNumberRole,
         IsPlayingRole,
-        IsActiveRole,
         IsPausedRole
     };
 

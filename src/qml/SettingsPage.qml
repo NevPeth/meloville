@@ -8,7 +8,7 @@ Item {
     signal closed()
 
     // ── Internal state ──────────────────────────────────────────────────────
-    property int activeSection: 0   // 0 = General, 1 = ListenAlong, 2 = Themes
+    property int activeSection: 0   // 0 = General, 1 = ListenAlong
     property bool serverRunning: false
     property string serverUrl: "" 
     property bool urlCopied: false
@@ -158,7 +158,6 @@ Item {
                     }
                     TabButton { label: "General";      sectionIndex: 0 }
                     TabButton { label: "Listen Along"; sectionIndex: 1 }
-                    TabButton { label: "Themes";       sectionIndex: 2 }
 
                     Item { Layout.fillHeight: true }
                 }
@@ -431,61 +430,86 @@ Item {
 
                             SectionHeader {
                                 title: "General"
-                                subtitle: "Playback behaviour, display, and app-wide preferences."
-                            }
-
-                            // ── DISPLAY ────────────────────────────────────────
-                            Text {
-                                text: "DISPLAY"
-                                color: "#555555"
-                                font.pixelSize: 10
-                                font.letterSpacing: 1.5
-                                font.bold: true
+                                subtitle: ""
                             }
 
                             ToggleRow {
-                                label: "Compact song rows"
+                                label: "Compact mode"
                                 description: "Reduce the height of each song row for a denser list."
                                 toggled: false
-                                enabled: false 
-                                opacity: 0.4
                             }
 
-                            Rectangle { Layout.fillWidth: true; height: 1; color: "#1a1a1a" }
-
-                            // ── PLAYBACK ───────────────────────────────────────
-                            Text {
-                                text: "PLAYBACK"
-                                color: "#555555"
-                                font.pixelSize: 10
-                                font.letterSpacing: 1.5
-                                font.bold: true
-                            }
-
-                            ToggleRow {
-                                label: "Normalise volume"
-                                description: "Automatically level out volume differences between tracks."
-                                toggled: false
-                                enabled: false 
-                                opacity: 0.4
-                            }
-
-                            // Crossfade slider
                             AnimatedSlider {
-                                label: "Crossfade"
-                                unit: "s"
-                                from: 0; to: 12; value: 3; stepSize: 1
-                                enabled: false 
-                                opacity: 0.4
-                                hoverEnabled: false
+                                label: "Song height"
+                                unit: "px"
+                                from: 32
+                                to: 96
+                                value: 56
+                                stepSize: 1
                             }
 
-                            Rectangle { Layout.fillWidth: true; height: 1; color: "#1a1a1a" }
+                            Rectangle {
+                                Layout.fillWidth: true
+                                height: 1
+                                color: "#1a1a1a"
+                            }
+
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 12
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 2
+
+                                    Text {
+                                        text: "Music folder"
+                                        color: "white"
+                                        font.pixelSize: 13
+                                        font.bold: true
+                                    }
+
+                                    Text {
+                                        text: "Choose the folder where your music is stored."
+                                        color: "#888888"
+                                        font.pixelSize: 12
+                                        wrapMode: Text.WordWrap
+                                        Layout.fillWidth: true
+                                    }
+                                }
+
+                                Rectangle {
+                                    width: 110
+                                    height: 34
+                                    radius: 6
+                                    color: folderButtonHover.hovered ? "#f0f0f0" : "white"
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "Change folder"
+                                        color: "#111111"
+                                        font.pixelSize: 12
+                                        font.bold: true
+                                    }
+
+                                    HoverHandler {
+                                        id: folderButtonHover
+                                    }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: {
+                                            if (backend.selectMusicFolder)
+                                                backend.selectMusicFolder()
+                                        }
+                                    }
+                                }
+                            }
 
                             Item { height: 60 }
                         }
                     }
-
 
                     // ════════════════════════════════════════════════════════
                     //  SECTION 1 — LISTEN ALONG
@@ -659,155 +683,6 @@ Item {
                             }
 
                             Item { height: 200 }
-                        }
-                    }
-
-
-                    // ════════════════════════════════════════════════════════
-                    //  SECTION 2 — THEMES
-                    // ════════════════════════════════════════════════════════
-                    Item {
-                        id: themesSection
-                        Layout.fillWidth: true
-                        implicitHeight: themesCol.implicitHeight
-
-                        ColumnLayout {
-                            id: themesCol
-                            anchors.fill: parent
-                            anchors.margins: 32
-                            anchors.topMargin: 16
-                            spacing: 20
-
-                            SectionHeader {
-                                title: "Themes"
-                                subtitle: "Personalize the look of Meloville."
-                            }
-
-                            Text {
-                                text: "APP THEME"
-                                color: "#555555"
-                                font.pixelSize: 10
-                                font.letterSpacing: 1.5
-                                font.bold: true
-                            }
-
-                            GridLayout {
-                               Layout.fillWidth: true
-                               columns: 3
-                               columnSpacing: 12
-                               rowSpacing: 12
-
-
-                               property int selectedTheme: 0
-
-
-                               Repeater {
-                                   model: [
-                                       { name: "Midnight",  bg: "#121212", accent: "#ffffff", text: "#b3b3b3" },
-                                       { name: "Slate",     bg: "#1a1f2e", accent: "#7289da", text: "#99aab5" },
-                                       { name: "Forest",    bg: "#0f1a14", accent: "#1db954", text: "#8ab89a" },
-                                       { name: "Ember",     bg: "#1a0f0f", accent: "#e05c2e", text: "#c9896a" },
-                                       { name: "Lavender",  bg: "#16121e", accent: "#a78bfa", text: "#9f8fbc" },
-                                       { name: "Ocean",     bg: "#0f1620", accent: "#38bdf8", text: "#7baec8" },
-                                   ]
-                                   delegate: ColumnLayout {
-                                       Layout.preferredWidth: 0
-                                       Layout.fillWidth: true
-                                       spacing: 6
-
-
-                                       property bool active: parent.selectedTheme === index
-
-
-                                       // Preview card (no label inside)
-                                       Rectangle {
-                                           Layout.fillWidth: true
-                                           height: 76
-                                           radius: 10
-                                           color: modelData.bg
-                                           border.color: parent.active ? "white" : "#2a2a2a"
-                                           border.width: parent.active ? 2 : 1
-                                           opacity: parent.active || index === 0 ? 1.0 : 0.35
-
-
-                                           Behavior on border.color { ColorAnimation { duration: 120 } }
-                                           Behavior on border.width { NumberAnimation { duration: 120 } }
-
-
-                                           // Accent bar
-                                           Rectangle {
-                                               x: 12; y: 12
-                                               width: parent.width - 24; height: 6
-                                               radius: 3
-                                               color: modelData.accent
-                                               opacity: 0.85
-                                           }
-                                           // Title mock line
-                                           Rectangle {
-                                               x: 12; y: 24
-                                               width: (parent.width - 24) * 0.6; height: 4
-                                               radius: 2
-                                               color: modelData.text
-                                               opacity: 0.6
-                                           }
-                                           // Subtitle mock line
-                                           Rectangle {
-                                               x: 12; y: 33
-                                               width: (parent.width - 24) * 0.4; height: 4
-                                               radius: 2
-                                               color: modelData.text
-                                               opacity: 0.35
-                                           }
-                                           // Mini playback bar
-                                           Rectangle {
-                                               x: 12; y: parent.height - 18
-                                               width: parent.width - 24; height: 3
-                                               radius: 1.5
-                                               color: "#333333"
-                                               Rectangle {
-                                                   width: parent.width * 0.45
-                                                   height: parent.height
-                                                   radius: 1.5
-                                                   color: modelData.accent
-                                               }
-                                           }
-
-
-                                           // Hover tint
-                                           HoverHandler { id: themeHov }
-                                           Rectangle {
-                                               anchors.fill: parent
-                                               radius: 10
-                                               color: themeHov.hovered ? "#ffffff" : "transparent"
-                                               opacity: 0.04
-                                               Behavior on opacity { NumberAnimation { duration: 100 } }
-                                           }
-
-
-                                           MouseArea {
-                                               anchors.fill: parent
-                                               enabled: index === 0
-                                               onClicked: parent.parent.parent.selectedTheme = index
-                                               cursorShape: index === 0 ? Qt.PointingHandCursor : Qt.ForbiddenCursor
-                                           }
-                                       }
-
-
-                                       // ── Name label BELOW the card ──
-                                       Text {
-                                           Layout.alignment: Qt.AlignHCenter
-                                           text: modelData.name
-                                           color: parent.active ? "white" : (index === 0 ? "#888888" : "#3a3a3a")
-                                           font.pixelSize: 11
-                                           font.bold: parent.active
-
-
-                                           Behavior on color { ColorAnimation { duration: 120 } }
-                                       }
-                                   }
-                               }
-                           }
-                           Item { height: 140 }
                         }
                     }
                 }

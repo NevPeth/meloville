@@ -237,7 +237,6 @@ ApplicationWindow {
                         Rectangle {
                             anchors.fill: parent
                             color: isPlaying          ? "#2a2a2a"
-                                : isActive           ? "#2f2f2f"
                                 : hoverHandler.hovered ? "#202020"
                                 : "#181818"
                         }
@@ -322,7 +321,6 @@ ApplicationWindow {
 
                         property bool isPlaying: model.isPlaying
                         property bool isPaused:  model.isPaused
-                        property bool isActive:  model.isActive
 
                         // ── play/pause area ──────────────────────────────────────────────
                         Item {

@@ -46,8 +46,6 @@ QVariant SongModel::data(const QModelIndex &index, int role) const
         return (songIndex == playingLibraryIndex);
     case IsPausedRole:
         return (songIndex == playingLibraryIndex && paused);
-    case IsActiveRole:
-        return (songIndex == playingLibraryIndex);
     default:
         return QVariant();
     }
@@ -65,7 +63,6 @@ QHash<int, QByteArray> SongModel::roleNames() const
     roles[TrackNumberRole] = "trackNumber";
     roles[IsPlayingRole] = "isPlaying";
     roles[IsPausedRole]  = "isPaused";
-    roles[IsActiveRole]  = "isActive";
     return roles;
 }
 
@@ -90,7 +87,7 @@ void SongModel::setPlayingIndex(int libraryIndex)
         int row = libIndexToRow.value(libIdx, -1);
         if (row < 0) return;
         QModelIndex mi = index(row);
-        emit dataChanged(mi, mi, {IsPlayingRole, IsPausedRole, IsActiveRole});
+        emit dataChanged(mi, mi, {IsPlayingRole, IsPausedRole});
     };
 
     notify(oldIndex);
