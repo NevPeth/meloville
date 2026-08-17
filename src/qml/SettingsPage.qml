@@ -431,14 +431,15 @@ Item {
                             ToggleRow {
                                 label: "Compact mode"
                                 description: "Reduce the height of each song row for a denser list."
-                                toggled: false
+                                toggled: backend.isCompact
+                                onToggledChanged2: function(val) { backend.setCompactMode(val) }
                             }
 
                             AnimatedSlider {
                                 label: "Song height"
                                 unit: "px"
                                 from: 32
-                                to: 96
+                                to: 150
                                 value: backend.delegateHeight
                                 stepSize: 1
                                 onSliderMoved: function(val) { backend.setDelegateHeight(val) }

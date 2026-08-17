@@ -198,7 +198,7 @@ ApplicationWindow {
                     property int visualIndex: DelegateModel.itemsIndex
 
                     width: ListView.view ? ListView.view.width : 0
-                    height: delegateHeight
+                    height: backend.isCompact ? delegateHeight/2 : delegateHeight
 
                     // ── Live visual reorder: fires as the dragged item enters this delegate ──
                     onEntered: function(drag) {
@@ -212,15 +212,15 @@ ApplicationWindow {
                     // ── The draggable content ──
                     Rectangle {
                         id: songRow
-                        width:  parent.width
-                        height: delegateHeight
-                        color:  "transparent"
+                        width: parent.width
+                        height: backend.isCompact ? delegateHeight/2 : delegateHeight
+                        color: "transparent"
 
                         // Lift the row visually while dragging
-                        Drag.active:     dragArea.held
-                        Drag.source:     delegateRoot   // expose DelegateModel.itemsIndex to DropArea.onEntered
-                        Drag.hotSpot.x:  width  / 2
-                        Drag.hotSpot.y:  height / 2
+                        Drag.active: dragArea.held
+                        Drag.source: delegateRoot   // expose DelegateModel.itemsIndex to DropArea.onEntered
+                        Drag.hotSpot.x: width  / 2
+                        Drag.hotSpot.y: height / 2
 
                         states: State {
                             when: dragArea.held
@@ -366,7 +366,7 @@ ApplicationWindow {
                             width: 50 * delegateScale
                             height: 50 * delegateScale
                             fillMode: Image.PreserveAspectCrop
-                            visible: !backend.isInAlbumView
+                            visible: !backend.isInAlbumView && !backend.isCompact
                             mipmap: true
                             smooth: true
                             source: {
@@ -376,7 +376,9 @@ ApplicationWindow {
                         }
 
                         // ── title + artist ───────────────────────────────────────────────
+                        //When not compact (stacked on top of each other)
                         Column {
+                            visible: !backend.isCompact
                             x: !backend.isInAlbumView ? coverImage.x + coverImage.width + 10 : coverImage.x
                             width: parent.width - x - 120
                             anchors.verticalCenter: parent.verticalCenter
@@ -399,9 +401,37 @@ ApplicationWindow {
                             }
                         }
 
+                        Row {
+                            visible: backend.isCompact
+                            x: 50 * delegateScale   // flush after the track number area
+                            width: parent.width - x - 120
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 0
+
+                            Text {
+                                text: model.title
+                                color: "white"
+                                font.pixelSize: Math.round(13 * delegateScale)
+                                elide: Text.ElideRight
+                                width: Math.min(implicitWidth, parent.width * 0.55)
+                            }
+                            Text {
+                                text: "  ·  "
+                                color: "#555555"
+                                font.pixelSize: Math.round(12 * delegateScale)
+                            }
+                            Text {
+                                text: model.artist
+                                color: "#b3b3b3"
+                                font.pixelSize: Math.round(12 * delegateScale)
+                                elide: Text.ElideRight
+                                width: parent.width - parent.children[0].width - parent.children[1].implicitWidth
+                            }
+                        }
+
                         // ── duration ─────────────────────────────────────────────────────
                         Text {
-                            x: parent.width - (105*delegateScale)
+                            x: parent.width - 30*delegateScale - 45*delegateScale - (45*delegateScale)
                             width: 60
                             anchors.verticalCenter: parent.verticalCenter
                             text: model.duration

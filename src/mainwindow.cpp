@@ -1236,6 +1236,7 @@ void MainWindow::saveSessionState()
     settings.setValue("session/currentlyPlayingAlbumArtist", currentlyPlayingAlbumArtist);
     settings.setValue("session/currentlyPlayingAlbumCoverPath", currentlyPlayingAlbumCoverPath);
     settings.setValue("ui/delegateHeight", delegateHeight);
+    settings.setValue("ui/isCompact", isCompact);
 
     QJsonArray playbackArr;
     for (int idx : currentPlaybackSongs) {
@@ -1283,6 +1284,7 @@ void MainWindow::loadSessionState()
     QSettings settings("Meloville", "Meloville");
 
     delegateHeight = settings.value("ui/delegateHeight", 62.0).toReal();
+    isCompact = settings.value("ui/isCompact", false).toBool();
 
     QString savedTitle  = settings.value("session/title",  QString()).toString();
     QString savedArtist = settings.value("session/artist", QString()).toString();
@@ -1489,4 +1491,11 @@ void MainWindow::setDelegateHeight(qreal h)
 {
     delegateHeight = h;
     emit delegateHeightChanged(h);
+}
+
+void MainWindow::setCompactMode(bool compact)
+{
+    if (isCompact == compact) return;
+    isCompact = compact;
+    emit isCompactChanged();
 }

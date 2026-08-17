@@ -58,6 +58,7 @@ class MainWindow : public QObject
     Q_PROPERTY(QObject* albumModel READ getAlbumModel CONSTANT)
 
     Q_PROPERTY(QString currentMusicFolder READ getMusicFolder NOTIFY musicFolderChanged)
+    Q_PROPERTY(bool isCompact READ getIsCompact WRITE setCompactMode NOTIFY isCompactChanged)
 
 public:
     explicit MainWindow(QObject *parent = nullptr);
@@ -99,6 +100,7 @@ public:
     Q_INVOKABLE QString readFileAsString(const QString& path) const;
     Q_INVOKABLE void selectMusicFolder();
     Q_INVOKABLE void setDelegateHeight(qreal h);
+    Q_INVOKABLE void setCompactMode(bool compact);
 
     double getProgress() const { return progress; }
     PlaylistModel* getPlaylistModel() const { return playlistModel; }
@@ -135,6 +137,7 @@ public:
     bool getPlaying() const { return playing; }
     void setPlaying(bool p);
     qreal getDelegateHeight() const { return delegateHeight; }
+    bool getIsCompact() const { return isCompact; }
 
     QString getViewingPlaylist() const { return viewingPlaylist; }
     PlaylistManager* getPlaylistManager() const { return playlistManager; }
@@ -200,6 +203,7 @@ signals:
     void listenAlongListenerCountChanged(int count);
     void musicFolderChanged(const QString &path);
     void delegateHeightChanged(qreal height);
+    void isCompactChanged();
 
 private:
     QVector<SongData> library;
@@ -235,6 +239,7 @@ private:
     QString currentlyPlayingPlaylist;
     QVector<QString> playlistNames;
     qreal delegateHeight = 62.0;
+    bool isCompact = false;
 
     QString filterText;
 
