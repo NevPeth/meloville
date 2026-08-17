@@ -170,6 +170,8 @@ ApplicationWindow {
     property string currentPlaylistName: ""
     property string currentPlaylistCover: ""
     property string heroSharedSearchText: ""
+    property real delegateHeight: backend.delegateHeight
+    property real delegateScale: delegateHeight / 62
     Component {
         id: mainPageComponent
         Rectangle {
@@ -195,8 +197,8 @@ ApplicationWindow {
 
                     property int visualIndex: DelegateModel.itemsIndex
 
-                    width:  ListView.view ? ListView.view.width : 0
-                    height: 62
+                    width: ListView.view ? ListView.view.width : 0
+                    height: delegateHeight
 
                     // ── Live visual reorder: fires as the dragged item enters this delegate ──
                     onEntered: function(drag) {
@@ -211,7 +213,7 @@ ApplicationWindow {
                     Rectangle {
                         id: songRow
                         width:  parent.width
-                        height: 62
+                        height: delegateHeight
                         color:  "transparent"
 
                         // Lift the row visually while dragging
@@ -324,18 +326,23 @@ ApplicationWindow {
                         // ── play/pause area ──────────────────────────────────────────────
                         Item {
                             id: playArea
-                            x: 0; y: 0; width: 50; height: parent.height
+                            x: 0
+                            y: 0
+                            width: 50 * delegateScale
+                            height: parent.height
 
                             Text {
                                 anchors.centerIn: parent
                                 visible: !songRow.isPlaying && !hoverHandler.hovered
                                 text:    (delegateRoot.DelegateModel.itemsIndex + 1).toString()
-                                color: "#b3b3b3"; font.pixelSize: 13
+                                color: "#b3b3b3"
+                                font.pixelSize: Math.round(13*delegateScale)
                             }
                             Image {
                                 anchors.centerIn: parent
                                 visible: songRow.isPlaying || hoverHandler.hovered
-                                width: 22; height: 22
+                                width: 22 * delegateScale
+                                height: 22 * delegateScale
                                 source: (songRow.isPlaying && !songRow.isPaused)
                                         ? "qrc:/icons/menuPauseIcon.svg"
                                         : "qrc:/icons/menuPlayIcon.svg"
@@ -354,9 +361,10 @@ ApplicationWindow {
                         // ── album cover ──────────────────────────────────────────────────
                         Image {
                             id: coverImage
-                            x: 50
+                            x: 50 * delegateScale
                             y: (parent.height - height) / 2
-                            width: 50; height: 50
+                            width: 50 * delegateScale
+                            height: 50 * delegateScale
                             fillMode: Image.PreserveAspectCrop
                             visible: !backend.isInAlbumView
                             mipmap: true
@@ -372,42 +380,48 @@ ApplicationWindow {
                             x: !backend.isInAlbumView ? coverImage.x + coverImage.width + 10 : coverImage.x
                             width: parent.width - x - 120
                             anchors.verticalCenter: parent.verticalCenter
-                            spacing: 4
+                            spacing: 4 * delegateScale
 
                             Text {
                                 width: parent.width
                                 text: model.title
-                                color: "white"; font.pixelSize: 13; font.bold: true
+                                color: "white"
+                                font.pixelSize: Math.round(13 * delegateScale)
+                                font.bold: true
                                 elide: Text.ElideRight
                             }
                             Text {
                                 width: parent.width
                                 text: model.artist
-                                color: "#b3b3b3"; font.pixelSize: 12
+                                color: "#b3b3b3"
+                                font.pixelSize: Math.round(12 * delegateScale)
                                 elide: Text.ElideRight
                             }
                         }
 
                         // ── duration ─────────────────────────────────────────────────────
                         Text {
-                            x: parent.width - 105
+                            x: parent.width - (105*delegateScale)
                             width: 60
                             anchors.verticalCenter: parent.verticalCenter
                             text: model.duration
-                            color: "#b3b3b3"; font.pixelSize: 12
+                            color: "#b3b3b3"
+                            font.pixelSize: Math.round(12 * delegateScale)
                             horizontalAlignment: Text.AlignHCenter
                         }
 
                         // ── dots / context menu ──────────────────────────────────────────
                         Item {
                             id: menuArea
-                            x: parent.width - 45
+                            x: parent.width - (45*delegateScale)
                             anchors.verticalCenter: parent.verticalCenter
-                            width: 30; height: 30
+                            width: 30 * delegateScale
+                            height: 30 * delegateScale
 
                             Image {
                                 anchors.centerIn: parent
-                                width: 18; height: 4
+                                width: 18 * delegateScale
+                                height: 4 * delegateScale
                                 source: "image://svgicons/dots"
                             }
                             MouseArea {
@@ -514,6 +528,7 @@ ApplicationWindow {
                                 clip: true
                                 spacing: 8
                                 ScrollBar.horizontal: ScrollBar { policy: ScrollBar.AlwaysOff }
+                                
                                 delegate: Rectangle {
                                     width: 51
                                     height: 51

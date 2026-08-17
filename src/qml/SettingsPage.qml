@@ -324,6 +324,7 @@ Item {
                         property real stepSize: 1
                         property string displayValue: Math.round(sliderInner.value) + " " + unit
                         property bool hoverEnabled: true
+                        signal sliderMoved(real val)
 
                         id: animSliderRoot
                         Layout.fillWidth: true
@@ -362,6 +363,7 @@ Item {
                             to: animSliderRoot.to
                             value: animSliderRoot.value
                             stepSize: animSliderRoot.stepSize
+                            onValueChanged: animSliderRoot.sliderMoved(value)
 
                             handle: Rectangle {
                                 implicitWidth: 16
@@ -437,8 +439,9 @@ Item {
                                 unit: "px"
                                 from: 32
                                 to: 96
-                                value: 56
+                                value: backend.delegateHeight
                                 stepSize: 1
+                                onSliderMoved: function(val) { backend.setDelegateHeight(val) }
                             }
 
                             Rectangle {

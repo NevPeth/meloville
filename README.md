@@ -44,7 +44,6 @@
 ## Features That I Am Currently Working On
 
 * Making auto-generated covers for playlists based on song covers
-* Adjustable heights for the songs
 * Packages for arch and maybe a flatpak
 
 ## Getting Started

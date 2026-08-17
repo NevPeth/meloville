@@ -1235,6 +1235,7 @@ void MainWindow::saveSessionState()
     settings.setValue("session/currentlyPlayingAlbum", currentlyPlayingAlbum);
     settings.setValue("session/currentlyPlayingAlbumArtist", currentlyPlayingAlbumArtist);
     settings.setValue("session/currentlyPlayingAlbumCoverPath", currentlyPlayingAlbumCoverPath);
+    settings.setValue("ui/delegateHeight", delegateHeight);
 
     QJsonArray playbackArr;
     for (int idx : currentPlaybackSongs) {
@@ -1280,6 +1281,8 @@ void MainWindow::saveSessionAndWindow(int x, int y, int w, int h)
 void MainWindow::loadSessionState()
 {
     QSettings settings("Meloville", "Meloville");
+
+    delegateHeight = settings.value("ui/delegateHeight", 62.0).toReal();
 
     QString savedTitle  = settings.value("session/title",  QString()).toString();
     QString savedArtist = settings.value("session/artist", QString()).toString();
@@ -1480,4 +1483,10 @@ void MainWindow::selectMusicFolder()
 
     scannerThread->start();
     QMetaObject::invokeMethod(scanner, "start", Qt::QueuedConnection);
+}
+
+void MainWindow::setDelegateHeight(qreal h)
+{
+    delegateHeight = h;
+    emit delegateHeightChanged(h);
 }

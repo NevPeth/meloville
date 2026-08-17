@@ -41,6 +41,7 @@ class MainWindow : public QObject
     Q_PROPERTY(bool shuffleMode READ getShuffleMode NOTIFY shuffleModeChanged)
     Q_PROPERTY(int volume READ getVolume WRITE setVolume NOTIFY volumeChanged)
     Q_PROPERTY(bool playing READ getPlaying NOTIFY playingChanged)
+    Q_PROPERTY(qreal delegateHeight READ getDelegateHeight WRITE setDelegateHeight NOTIFY delegateHeightChanged)
     
     Q_PROPERTY(QString viewingPlaylist READ getViewingPlaylist NOTIFY viewingPlaylistChanged)
     Q_PROPERTY(PlaylistManager* playlistManager READ getPlaylistManager CONSTANT)
@@ -97,6 +98,7 @@ public:
     Q_INVOKABLE bool isListenAlongRunning() const;
     Q_INVOKABLE QString readFileAsString(const QString& path) const;
     Q_INVOKABLE void selectMusicFolder();
+    Q_INVOKABLE void setDelegateHeight(qreal h);
 
     double getProgress() const { return progress; }
     PlaylistModel* getPlaylistModel() const { return playlistModel; }
@@ -132,6 +134,8 @@ public:
     void setVolume(int vol);
     bool getPlaying() const { return playing; }
     void setPlaying(bool p);
+    qreal getDelegateHeight() const { return delegateHeight; }
+
     QString getViewingPlaylist() const { return viewingPlaylist; }
     PlaylistManager* getPlaylistManager() const { return playlistManager; }
     QStringList getPlaylistNames() const { return playlistNames; }
@@ -195,6 +199,7 @@ signals:
     void listenAlongStopped();
     void listenAlongListenerCountChanged(int count);
     void musicFolderChanged(const QString &path);
+    void delegateHeightChanged(qreal height);
 
 private:
     QVector<SongData> library;
@@ -229,6 +234,7 @@ private:
     PlaylistModel *playlistModel = nullptr;
     QString currentlyPlayingPlaylist;
     QVector<QString> playlistNames;
+    qreal delegateHeight = 62.0;
 
     QString filterText;
 
