@@ -1402,3 +1402,82 @@ QString MainWindow::readFileAsString(const QString& path) const
     QTextStream in(&file);
     return in.readAll();
 }
+
+void MainWindow::selectMusicFolder()
+{
+    QString folder = QFileDialog::getExistingDirectory(
+        nullptr,
+        tr("Select Music Folder"),
+        currentMusicFolder.isEmpty() ? QDir::homePath() : currentMusicFolder,
+        QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
+    );
+
+    if (folder.isEmpty())
+        return;
+
+    if (scanning)
+        return;
+
+    //Clearing all cached images
+    QDir cacheDir(appDataPath + "/cache");
+    cacheDir.removeRecursively();
+    QDir().mkpath(appDataPath + "/cache");
+
+    currentMusicFolder = folder;
+
+    scannerThread = new QThread(this);
+    LibraryScanner *scanner = new LibraryScanner();
+    scanner->setFolderPath(folder);
+    scanner->setCacheDir(appDataPath + "/cache");
+    scanner->moveToThread(scannerThread);
+
+    connect(scanner, &LibraryScanner::progress, this, &MainWindow::onScanProgress);
+    connect(scanner, &LibraryScanner::error,    this, &MainWindow::onScanError);
+
+    // Custom finish handler for folder-change (not onScanFinished,
+    // which replaces the library entirely and switches UI pages)
+    connect(scanner, &LibraryScanner::finished, this,
+        [this](const QVector<SongData> &scannedSongs, const QString &folderPath)
+    {
+        // Replace library with the freshly scanned songs
+        library = scannedSongs;   // already sorted by LibraryScanner
+
+        currentViewSongs.clear();
+        for (int i = 0; i < library.size(); ++i)
+            currentViewSongs.push_back(i);
+        visibleSongs        = currentViewSongs;
+        currentPlaybackSongs = currentViewSongs;
+        rebuildPlaybackMap();
+
+        songModel->setSongs(&library, &visibleSongs);
+        saveLibrary();
+
+        // Library is fully populated — safe to load playlists now
+        playlistManager->loadPlaylists(library, false);
+        updatePlaylistNames();
+
+        scanning = false;
+        emit scanningChanged();
+        emit musicFolderChanged(folderPath);
+
+        if (scannerThread) {
+            scannerThread->quit();
+        }
+    });
+
+    connect(scannerThread, &QThread::finished, scanner, &QObject::deleteLater);
+    connect(scannerThread, &QThread::finished, this, [this]() {
+        scannerThread->deleteLater();
+        scannerThread = nullptr;
+    });
+
+    scanning = true;
+    emit scanningChanged();
+    progress = 0.0;
+    emit progressChanged();
+    statusMessage = tr("Starting scan...");
+    emit statusMessageChanged();
+
+    scannerThread->start();
+    QMetaObject::invokeMethod(scanner, "start", Qt::QueuedConnection);
+}

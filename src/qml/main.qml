@@ -204,7 +204,6 @@ ApplicationWindow {
                         var to   = delegateRoot.DelegateModel.itemsIndex
                         visualModel.items.move(from, to)
 
-                        //drag.source.parent.parent.currentIndex = to
                         backend.reorderPlaylist(from, to)
                     }
 

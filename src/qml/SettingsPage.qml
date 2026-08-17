@@ -177,9 +177,7 @@ Item {
                 // Track active section by scroll position
                 onContentYChanged: {
                     var midScroll = contentY + height / 3
-                    if (themesSection.y !== undefined && midScroll >= themesSection.y) {
-                        root.activeSection = 2
-                    } else if (listenAlongSection.y !== undefined && midScroll >= listenAlongSection.y) {
+                    if (listenAlongSection.y !== undefined && midScroll >= listenAlongSection.y) {
                         root.activeSection = 1
                     } else {
                         root.activeSection = 0
@@ -192,11 +190,6 @@ Item {
                     } else if (idx === 1) {
                         contentFlick.contentY = Math.min(
                             listenAlongSection.y,
-                            contentFlick.contentHeight - contentFlick.height
-                        )
-                    } else if (idx === 2) {
-                        contentFlick.contentY = Math.min(
-                            themesSection.y,
                             contentFlick.contentHeight - contentFlick.height
                         )
                     }
@@ -454,13 +447,14 @@ Item {
                                 color: "#1a1a1a"
                             }
 
+                            // Music folder
                             RowLayout {
                                 Layout.fillWidth: true
                                 spacing: 12
 
                                 ColumnLayout {
                                     Layout.fillWidth: true
-                                    spacing: 2
+                                    spacing: 4
 
                                     Text {
                                         text: "Music folder"
@@ -476,37 +470,100 @@ Item {
                                         wrapMode: Text.WordWrap
                                         Layout.fillWidth: true
                                     }
+
+                                    Text {
+                                        id: currentFolderLabel
+                                        text: backend.currentMusicFolder || "No folder selected"
+                                        color: "#AAAAAA"
+                                        font.pixelSize: 11
+                                        elide: Text.ElideMiddle
+                                        Layout.fillWidth: true
+
+                                        Connections {
+                                            target: backend
+                                            function onMusicFolderChanged(path) {
+                                                currentFolderLabel.text = path || "No folder selected"
+                                            }
+                                        }
+                                    }
+
+                                    // ── Scan progress (visible only while scanning) ──────────────────
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 6
+                                        visible: backend.scanning
+
+                                        RowLayout {
+                                            Layout.fillWidth: true
+                                            spacing: 8
+
+                                            // Track bar
+                                            Rectangle {
+                                                Layout.fillWidth: true
+                                                height: 4
+                                                radius: 2
+                                                color: "#222222"
+
+                                                Rectangle {
+                                                    width: parent.width * backend.progress
+                                                    height: parent.height
+                                                    radius: 2
+                                                    color: "white"
+
+                                                    Behavior on width {
+                                                        NumberAnimation { duration: 120; easing.type: Easing.OutQuad }
+                                                    }
+                                                }
+                                            }
+
+                                            // Percentage label
+                                            Text {
+                                                text: Math.round(backend.progress * 100) + "%"
+                                                color: "#888888"
+                                                font.pixelSize: 11
+                                            }
+                                        }
+
+                                        Text {
+                                            text: backend.statusMessage
+                                            color: "#AAAAAA"
+                                            font.pixelSize: 11
+                                            elide: Text.ElideRight
+                                            Layout.fillWidth: true
+                                        }
+                                    }
                                 }
 
                                 Rectangle {
                                     width: 110
                                     height: 34
                                     radius: 6
-                                    color: folderButtonHover.hovered ? "#f0f0f0" : "white"
+                                    // Dim the button while scanning so it's clear it's locked
+                                    opacity: backend.scanning ? 0.35 : 1.0
+                                    color: folderButtonHover.hovered && !backend.scanning ? "#f0f0f0" : "white"
+
+                                    Behavior on opacity { NumberAnimation { duration: 150 } }
 
                                     Text {
                                         anchors.centerIn: parent
-                                        text: "Change folder"
+                                        text: backend.scanning ? "Scanning…" : "Change folder"
                                         color: "#111111"
                                         font.pixelSize: 12
                                         font.bold: true
                                     }
 
-                                    HoverHandler {
-                                        id: folderButtonHover
-                                    }
+                                    HoverHandler { id: folderButtonHover }
 
                                     MouseArea {
                                         anchors.fill: parent
-                                        cursorShape: Qt.PointingHandCursor
+                                        cursorShape: backend.scanning ? Qt.ArrowCursor : Qt.PointingHandCursor
                                         onClicked: {
-                                            if (backend.selectMusicFolder)
+                                            if (!backend.scanning)
                                                 backend.selectMusicFolder()
                                         }
                                     }
                                 }
                             }
-
                             Item { height: 60 }
                         }
                     }

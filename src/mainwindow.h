@@ -41,6 +41,7 @@ class MainWindow : public QObject
     Q_PROPERTY(bool shuffleMode READ getShuffleMode NOTIFY shuffleModeChanged)
     Q_PROPERTY(int volume READ getVolume WRITE setVolume NOTIFY volumeChanged)
     Q_PROPERTY(bool playing READ getPlaying NOTIFY playingChanged)
+    
     Q_PROPERTY(QString viewingPlaylist READ getViewingPlaylist NOTIFY viewingPlaylistChanged)
     Q_PROPERTY(PlaylistManager* playlistManager READ getPlaylistManager CONSTANT)
     Q_PROPERTY(PlaylistModel* playlistModel READ getPlaylistModel CONSTANT)
@@ -54,6 +55,8 @@ class MainWindow : public QObject
     Q_PROPERTY(QString viewingAlbumArtist READ getViewingAlbumArtist NOTIFY albumViewStateChanged)
     Q_PROPERTY(QString viewingAlbumCover READ getViewingAlbumCover NOTIFY albumViewStateChanged)
     Q_PROPERTY(QObject* albumModel READ getAlbumModel CONSTANT)
+
+    Q_PROPERTY(QString currentMusicFolder READ getMusicFolder NOTIFY musicFolderChanged)
 
 public:
     explicit MainWindow(QObject *parent = nullptr);
@@ -93,6 +96,7 @@ public:
     Q_INVOKABLE void stopListenAlongServer();
     Q_INVOKABLE bool isListenAlongRunning() const;
     Q_INVOKABLE QString readFileAsString(const QString& path) const;
+    Q_INVOKABLE void selectMusicFolder();
 
     double getProgress() const { return progress; }
     PlaylistModel* getPlaylistModel() const { return playlistModel; }
@@ -139,6 +143,8 @@ public:
     QString getViewingAlbumArtist() const { return viewingAlbumArtist; }
     QString getViewingAlbumCover() const { return viewingAlbumCoverPath; }
     QObject* getAlbumModel() const { return albumModel; }
+
+    QString getMusicFolder() const { return currentMusicFolder; }
 
 public slots:
     void onScanProgress(int current, int total);
@@ -188,6 +194,7 @@ signals:
     void listenAlongUrlsReady(QStringList urls);
     void listenAlongStopped();
     void listenAlongListenerCountChanged(int count);
+    void musicFolderChanged(const QString &path);
 
 private:
     QVector<SongData> library;

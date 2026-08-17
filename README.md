@@ -44,7 +44,6 @@
 ## Features That I Am Currently Working On
 
 * Making auto-generated covers for playlists based on song covers
-* Option to switch music folder
 * Adjustable heights for the songs
 * Packages for arch and maybe a flatpak
 
@@ -96,7 +95,7 @@ I want this project to last a long, long time.
 ## License
 
 Meloville is released under the **GNU General Public License v3.0**.
-Basically as long as your making an open source project, use it as you wish.
+Basically as long as you're making an open source project, use it as you wish.
 
 ## Support the Project
 
