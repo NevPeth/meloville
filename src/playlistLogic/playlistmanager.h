@@ -9,6 +9,7 @@ struct PlaylistSong
 {
     QString title;
     QString artist;
+    QString coverPath;
 };
 
 class PlaylistManager : public QObject
@@ -23,10 +24,7 @@ public:
     QStringList playlistNames() const;
     QList<int> getPlaylistSongs(const QString& playlistName) const;
     /*Functions that actually manipulate the playlist contents*/
-    void createPlaylist(
-        const QString& name,
-        const QString& imagePath
-    );
+    Q_INVOKABLE void createPlaylist( const QString& name, const QString& sourceImagePath);
     void addSongToPlaylist(
         const QString& playlistName,
         int libraryIndex,
@@ -45,7 +43,7 @@ public:
         const QString& imagePath
     );
     void deletePlaylist(const QString& playlistName);
-    void editSongFromAllPlaylists(int libraryIndex, const QString& newSongTitle, const QString& newArtist);
+    void editSongFromAllPlaylists(int libraryIndex, const QString& newSongTitle, const QString& newArtist, const QString& imagePath);
     void removeSongFromAllPlaylists(int libraryIndex);
 
     void reorderPlaylist(const QString& playlistName, int from, int to);
@@ -54,10 +52,17 @@ public:
 signals:
     void playlistChanged();
 
+private slots:
+    void updateAutoGenSongs(const QString& playlistName);
+
 private:
+    QString appDataPath;QString coverPath;
     QStringList playlistOrder;
     QMap<QString, QString> playlistImages;
     QMap<QString, QList<int>> playlists;
     QMap<QString, QList<PlaylistSong>> playlistDefinitions;
     QString playlistPath;
+
+    QMap<QString, bool> playlistAutoGenerate;
+    QMap<QString, QList<PlaylistSong>> playlistAutoGenSongs; //stores first 4 songs for each playlist to see if they changed
 };

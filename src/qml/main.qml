@@ -205,8 +205,6 @@ ApplicationWindow {
                         var from = drag.source.DelegateModel.itemsIndex
                         var to   = delegateRoot.DelegateModel.itemsIndex
                         visualModel.items.move(from, to)
-
-                        backend.reorderPlaylist(from, to)
                     }
 
                     // ── The draggable content ──
@@ -302,6 +300,8 @@ ApplicationWindow {
 
                             onReleased: {
                                 if (held) {
+                                    backend.reorderPlaylist(startIndex, delegateRoot.DelegateModel.itemsIndex)
+
                                     held = false
                                     scrollSpeed = 0
                                     listViewSongs.interactive = true
@@ -1611,6 +1611,17 @@ ApplicationWindow {
                                 }
                             }
                         }
+                    }
+                }
+            }
+
+            Connections {
+                target: backend
+                function onPlaylistNamesChanged() {
+                    if (backend.playlistManager) {
+                        currentPlaylistCover = backend.playlistManager.fullImagePath(backend.viewingPlaylist)
+                    } else {
+                        currentPlaylistCover = ""
                     }
                 }
             }

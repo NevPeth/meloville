@@ -77,7 +77,6 @@ public:
     Q_INVOKABLE void toggleShuffle();
     Q_INVOKABLE void toggleRepeat();
     Q_INVOKABLE void filterSongsAndAlbums(const QString &text);
-    Q_INVOKABLE void createPlaylistFromDialog(const QString& name, const QString& sourceImagePath);
     Q_INVOKABLE void loadPlaylistView(const QString& playlistName);
     Q_INVOKABLE void returnToLibrary();
     Q_INVOKABLE void openSongContextMenu(int visibleIndex, int x, int y);

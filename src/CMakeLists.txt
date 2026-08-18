@@ -17,6 +17,7 @@ find_package(Qt6 REQUIRED COMPONENTS
     Multimedia
     Svg
     DBus
+    Concurrent
 )
 
 find_package(PkgConfig REQUIRED)
@@ -73,6 +74,7 @@ target_link_libraries(Meloville PRIVATE
     Qt6::Multimedia
     Qt6::Svg
     Qt6::DBus
+    Qt6::Concurrent
     ${TAGLIB_LIBRARIES}
     pulse
 )

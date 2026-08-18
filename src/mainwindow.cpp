@@ -637,33 +637,6 @@ void MainWindow::filterSongsAndAlbums(const QString& text)
    }
 }
 
-void MainWindow::createPlaylistFromDialog(
-    const QString& name,
-    const QString& sourceImagePath
-)
-{
-    QDir().mkpath(appDataPath + "/playlistCovers");
-
-    QFileInfo info(sourceImagePath);
-
-    QString selectedImagePath = "";
-    if (!sourceImagePath.isEmpty()){
-        selectedImagePath = "/playlistCovers/" + QUuid::createUuid().toString(QUuid::WithoutBraces) + "." + info.suffix();
-    
-        QString localSource = sourceImagePath;
-        if (localSource.startsWith("file://"))
-            localSource = QUrl(localSource).toLocalFile();
-
-        QFile::copy(localSource, appDataPath + selectedImagePath);
-    }
-
-    playlistManager->createPlaylist(
-        name,
-        selectedImagePath
-    );
-
-}
-
 void MainWindow::loadPlaylistView(const QString& playlistName)
 {
     isInPlaylistView = true;
@@ -776,7 +749,7 @@ void MainWindow::saveSongEdits(int libraryIndex, const QString& title, const QSt
                                 imagePath.isEmpty() ? "" : selectedImagePath);
 
     // ── 3. Update in-memory library + model ───────────────────────────────────
-    playlistManager->editSongFromAllPlaylists(libraryIndex, title, artist);
+    playlistManager->editSongFromAllPlaylists(libraryIndex, title, artist, selectedImagePath);
 
     if (currSong.title != title) {
         int oldIndex = currentLibraryIndex;
@@ -921,8 +894,10 @@ void MainWindow::saveSongEdits(int libraryIndex, const QString& title, const QSt
             currentViewSongs.push_back(i);
         }
         visibleSongs = currentViewSongs;
-        currentPlaybackSongs = currentViewSongs;
-        rebuildPlaybackMap();
+        if (currentlyPlayingPlaylist.isEmpty() && currentlyPlayingAlbum.isEmpty()) {
+            currentPlaybackSongs = currentViewSongs;
+            rebuildPlaybackMap();
+        }
         songModel->setSongs(&library, &visibleSongs);
         filterSongsAndAlbums(filterText);
     }

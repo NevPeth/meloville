@@ -232,7 +232,7 @@ Item {
                     onClicked: {
                         if (nameInput.text.trim() === "") return
                         if (mode === "create") {
-                            backend.createPlaylistFromDialog(nameInput.text.trim(), selectedImagePath)
+                            backend.playlistManager.createPlaylist(nameInput.text.trim(), selectedImagePath)
                         } else {
                             backend.editPlaylist(editName, nameInput.text.trim(), selectedImagePath)
                         }
