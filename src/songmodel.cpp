@@ -148,3 +148,20 @@ int SongModel::visibleRowForLibraryIndex(int libraryIndex) const
 {
     return libIndexToRow.value(libraryIndex, -1);
 }
+
+void SongModel::removeRow(int visibleIndex)
+{
+    if (!visibleSongs || visibleIndex < 0 || visibleIndex >= visibleSongs->size())
+        return;
+
+    int libraryIndex = visibleSongs->at(visibleIndex);
+
+    beginRemoveRows(QModelIndex(), visibleIndex, visibleIndex);
+    visibleSongs->removeAt(visibleIndex);
+    endRemoveRows();
+
+    // Remove the entry and shift all rows above it down by 1
+    libIndexToRow.remove(libraryIndex);
+    for (int row = visibleIndex; row < visibleSongs->size(); ++row)
+        libIndexToRow[(*visibleSongs)[row]] = row;
+}

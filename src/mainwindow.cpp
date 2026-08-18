@@ -916,18 +916,22 @@ void MainWindow::removeFromCurrentPlaylist(int visibleIndex)
     if (visibleIndex < 0 || visibleIndex >= visibleSongs.size()) return;
     
     int libraryIndex = visibleSongs[visibleIndex];
-    
-    // Use timer to avoid segfault (as in your original code)
-    QTimer::singleShot(0, this, [this, libraryIndex]() {
+    QTimer::singleShot(0, this, [this, visibleIndex, libraryIndex]() {
         playlistManager->removeSongFromPlaylist(viewingPlaylist, libraryIndex);
-        loadPlaylistView(viewingPlaylist);
-        // Update all the lists
-        currentPlaybackSongs = currentViewSongs;
-        rebuildPlaybackMap();
-        visibleSongs = currentViewSongs;
+
+        currentViewSongs.removeOne(libraryIndex);
+        currentPlaybackSongs.removeOne(libraryIndex);
         unplayedIndices.removeOne(libraryIndex);
         playHistory.removeAll(libraryIndex);
         nextUp.removeOne(libraryIndex);
+
+        rebuildPlaybackMap();
+
+        if (currentLibraryIndex >= 0)
+            currentPlaybackIndex = libraryIndexToPlaybackPos.value(currentLibraryIndex, -1);
+
+        songModel->removeRow(visibleIndex);
+
         updatePlaylistNames();
     });
 }

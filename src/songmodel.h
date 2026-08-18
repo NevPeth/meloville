@@ -33,6 +33,7 @@ public:
     void setPlayingIndex(int libraryIndex);
     void setPausedState(bool paused);
     int visibleRowForLibraryIndex(int libraryIndex) const;
+    void removeRow(int visibleIndex);
 
     Q_INVOKABLE void moveRow(int from, int to);
 

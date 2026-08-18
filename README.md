@@ -40,10 +40,10 @@
     * <small>May seem obvious but for songs that have the same album name, differentiating them is something often mislooked from other applications, especially if you don't have a database to check against</small>
 * Synced Lyrics Support
     * <small>Only works with .lrc files and must be the same name as music file. Just have the .lrc be somewhere in the music folder and it will automatically find it on relaunch.</small>
+* Making auto-generated covers for playlists based on top four song covers
 
 ## Features That I Am Currently Working On
 
-* Making auto-generated covers for playlists based on song covers
 * Packages for arch and maybe a flatpak
 
 ## Getting Started

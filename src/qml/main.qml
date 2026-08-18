@@ -1664,6 +1664,7 @@ ApplicationWindow {
                 target: backend
                 function onReturnedToLibrary() {
                     listViewSongs.contentY = 0
+                    searchField.clear()
                 }
             }
         }
