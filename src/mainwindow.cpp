@@ -754,14 +754,14 @@ void MainWindow::saveSongEdits(int libraryIndex, const QString& title, const QSt
     if (currSong.title != title) {
         int oldIndex = currentLibraryIndex;
         SongData newSong;
-        newSong.filePath    = currSong.filePath;
-        newSong.lyricsPath  = currSong.lyricsPath;
-        newSong.title       = title;
-        newSong.artist      = artist;
-        newSong.album       = album;
+        newSong.filePath = currSong.filePath;
+        newSong.lyricsPath = currSong.lyricsPath;
+        newSong.title = title;
+        newSong.artist = artist;
+        newSong.album = album;
         newSong.trackNumber = trackNumber;
-        newSong.coverPath   = selectedImagePath;
-        newSong.duration    = currSong.duration;
+        newSong.coverPath = selectedImagePath;
+        newSong.duration = currSong.duration;
 
         library.removeAt(libraryIndex);
 
@@ -778,10 +778,14 @@ void MainWindow::saveSongEdits(int libraryIndex, const QString& title, const QSt
             return shifted;
         };
 
-        for (int &i : playHistory)          i = remap(i);
+        for (int &i : playHistory) i = remap(i);
         for (int i = 0; i < nextUp.size(); ++i) nextUp[i] = remap(nextUp[i]);
         for (int &i : currentPlaybackSongs) i = remap(i);
-        for (int &i : unplayedIndices)      i = remap(i);
+        for (int &i : unplayedIndices) i = remap(i);
+
+        rebuildPlaybackMap();
+        if (currentLibraryIndex >= 0)
+            currentPlaybackIndex = libraryIndexToPlaybackPos.value(currentLibraryIndex, -1);
 
         if (oldIndex == libraryIndex) {
             songModel->setPlayingIndex(newIndex);
@@ -867,11 +871,28 @@ void MainWindow::saveSongEdits(int libraryIndex, const QString& title, const QSt
         currentViewSongs.push_back(i);
 
     if (isInPlaylistView) {
-        loadPlaylistView(viewingPlaylist);
+        // Rebuild the view for the playlist being viewed
+        QList<int> songs = playlistManager->getPlaylistSongs(viewingPlaylist);
+        currentViewSongs.clear();
+        for (int libraryIndex : songs)
+            currentViewSongs.push_back(libraryIndex);
+
+        visibleSongs = currentViewSongs;
+        songModel->setSongs(&library, &visibleSongs);
+
+        // Only update playback context if we're actually playing from this playlist
+        if (currentlyPlayingPlaylist == viewingPlaylist) {
+            currentPlaybackSongs = currentViewSongs;
+            rebuildPlaybackMap();
+            if (currentLibraryIndex >= 0)
+                currentPlaybackIndex = libraryIndexToPlaybackPos.value(currentLibraryIndex, -1);
+            if (shuffleMode)
+                rebuildShufflePool();
+        }
+        // else: playing from library, different playlist, or album — leave
+        // currentPlaybackSongs / currentPlaybackIndex untouched
+
     } else if (isInAlbumView) {
-        // Already handled inside the else-branch above for track-number /
-        // album-tag changes; this ensures the song list is always fresh
-        // after the title-changed branch too (which bails out of the else).
         currentViewSongs.clear();
         for (int i = 0; i < library.size(); ++i) {
             if (library[i].album == viewingAlbum)
@@ -879,28 +900,91 @@ void MainWindow::saveSongEdits(int libraryIndex, const QString& title, const QSt
         }
         std::sort(currentViewSongs.begin(), currentViewSongs.end(),
             [this](int a, int b){ return library[a].trackNumber < library[b].trackNumber; });
-        std::sort(currentPlaybackSongs.begin(), currentPlaybackSongs.end(),
-            [this](int a, int b){ return library[a].trackNumber < library[b].trackNumber; });
+
         visibleSongs = currentViewSongs;
         songModel->setSongs(&library, &visibleSongs);
+
+        // Only update playback context if we're playing from THIS album
+        // (not from a playlist or a different album)
+        if (currentlyPlayingPlaylist.isEmpty() &&
+            currentlyPlayingAlbum == viewingAlbum)
+        {
+            std::sort(currentPlaybackSongs.begin(), currentPlaybackSongs.end(),
+                [this](int a, int b){ return library[a].trackNumber < library[b].trackNumber; });
+            rebuildPlaybackMap();
+            if (currentLibraryIndex >= 0)
+                currentPlaybackIndex = libraryIndexToPlaybackPos.value(currentLibraryIndex, -1);
+            if (shuffleMode)
+                rebuildShufflePool();
+        }
+
     } else if (isInAlbumsGridView) {
         allAlbums = buildAlbumList();
         albumModel->setAlbums(allAlbums);
-        // filterSongsAndAlbums re-applies any active search text
         filterSongsAndAlbums(filterText);
+
     } else {
-        currentViewSongs.clear();
-        for (int i = 0; i < library.size(); i++) {
-            currentViewSongs.push_back(i);
-        }
+        // Library view — only update playback if actually playing from library
         visibleSongs = currentViewSongs;
         if (currentlyPlayingPlaylist.isEmpty() && currentlyPlayingAlbum.isEmpty()) {
             currentPlaybackSongs = currentViewSongs;
             rebuildPlaybackMap();
+            if (currentLibraryIndex >= 0)
+                currentPlaybackIndex = libraryIndexToPlaybackPos.value(currentLibraryIndex, -1);
         }
         songModel->setSongs(&library, &visibleSongs);
         filterSongsAndAlbums(filterText);
     }
+
+    // if (isInPlaylistView) {
+    //     QList<int> songs = playlistManager->getPlaylistSongs(viewingPlaylist);
+    //     currentViewSongs.clear();
+    //     for (int libraryIndex : songs)
+    //         currentViewSongs.push_back(libraryIndex);
+
+    //     visibleSongs = currentViewSongs;
+    //     currentPlaybackSongs = currentViewSongs;
+    //     rebuildPlaybackMap();
+
+    //     if (currentLibraryIndex >= 0)
+    //         currentPlaybackIndex = libraryIndexToPlaybackPos.value(currentLibraryIndex, -1);
+
+    //     songModel->setSongs(&library, &visibleSongs);
+    //     if (shuffleMode)
+    //         rebuildShufflePool();
+    // } else if (isInAlbumView) {
+    //     // Already handled inside the else-branch above for track-number /
+    //     // album-tag changes; this ensures the song list is always fresh
+    //     // after the title-changed branch too (which bails out of the else).
+    //     currentViewSongs.clear();
+    //     for (int i = 0; i < library.size(); ++i) {
+    //         if (library[i].album == viewingAlbum)
+    //             currentViewSongs.push_back(i);
+    //     }
+    //     std::sort(currentViewSongs.begin(), currentViewSongs.end(),
+    //         [this](int a, int b){ return library[a].trackNumber < library[b].trackNumber; });
+    //     std::sort(currentPlaybackSongs.begin(), currentPlaybackSongs.end(),
+    //         [this](int a, int b){ return library[a].trackNumber < library[b].trackNumber; });
+    //     visibleSongs = currentViewSongs;
+    //     songModel->setSongs(&library, &visibleSongs);
+    // } else if (isInAlbumsGridView) {
+    //     allAlbums = buildAlbumList();
+    //     albumModel->setAlbums(allAlbums);
+    //     // filterSongsAndAlbums re-applies any active search text
+    //     filterSongsAndAlbums(filterText);
+    // } else {
+    //     currentViewSongs.clear();
+    //     for (int i = 0; i < library.size(); i++) {
+    //         currentViewSongs.push_back(i);
+    //     }
+    //     visibleSongs = currentViewSongs;
+    //     if (currentlyPlayingPlaylist.isEmpty() && currentlyPlayingAlbum.isEmpty()) {
+    //         currentPlaybackSongs = currentViewSongs;
+    //         rebuildPlaybackMap();
+    //     }
+    //     songModel->setSongs(&library, &visibleSongs);
+    //     filterSongsAndAlbums(filterText);
+    // }
 
     if (currentLibraryIndex >= 0) {
         currentPlaybackIndex = libraryIndexToPlaybackPos.value(currentLibraryIndex, -1);
