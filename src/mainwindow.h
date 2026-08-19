@@ -62,6 +62,7 @@ class MainWindow : public QObject
 
     Q_PROPERTY(QString currentMusicFolder READ getMusicFolder NOTIFY musicFolderChanged)
     Q_PROPERTY(bool isCompact READ getIsCompact WRITE setCompactMode NOTIFY isCompactChanged)
+    Q_PROPERTY(bool playlistRenewal READ getPlaylistRenewal WRITE setPlaylistRenewalMode NOTIFY playlistRenewalChanged)
 
 public:
     explicit MainWindow(QObject *parent = nullptr);
@@ -103,6 +104,7 @@ public:
     Q_INVOKABLE void selectMusicFolder();
     Q_INVOKABLE void setDelegateHeight(qreal h);
     Q_INVOKABLE void setCompactMode(bool compact);
+    Q_INVOKABLE void setPlaylistRenewalMode(bool renewal);
 
     double getProgress() const { return progress; }
     PlaylistModel* getPlaylistModel() const { return playlistModel; }
@@ -138,9 +140,7 @@ public:
     void setVolume(int vol);
     bool getPlaying() const { return playing; }
     void setPlaying(bool p);
-    qreal getDelegateHeight() const { return delegateHeight; }
-    bool getIsCompact() const { return isCompact; }
-
+    // Playlist and Album Stuff
     QString getViewingPlaylist() const { return viewingPlaylist; }
     PlaylistManager* getPlaylistManager() const { return playlistManager; }
     QStringList getPlaylistNames() const { return playlistNames; }
@@ -152,8 +152,11 @@ public:
     QString getViewingAlbumArtist() const { return viewingAlbumArtist; }
     QString getViewingAlbumCover() const { return viewingAlbumCoverPath; }
     QObject* getAlbumModel() const { return albumModel; }
-
+    // Values retrieved in settings
     QString getMusicFolder() const { return currentMusicFolder; }
+    qreal getDelegateHeight() const { return delegateHeight; }
+    bool getIsCompact() const { return isCompact; }
+    bool getPlaylistRenewal() const { return playlistRenewal; }
 
 public slots:
     void onScanProgress(int current, int total);
@@ -206,6 +209,7 @@ signals:
     void musicFolderChanged(const QString &path);
     void delegateHeightChanged(qreal height);
     void isCompactChanged();
+    void playlistRenewalChanged();
 
 private:
     QVector<SongData> library;
@@ -240,8 +244,6 @@ private:
     PlaylistModel *playlistModel = nullptr;
     QString currentlyPlayingPlaylist;
     QVector<QString> playlistNames;
-    qreal delegateHeight = 62.0;
-    bool isCompact = false;
 
     QString filterText;
 
@@ -257,6 +259,11 @@ private:
     QVector<AlbumInfo> allAlbums;
 
     ListenAlongServer *listenAlongServer = nullptr;
+
+    //Variables used in Settings
+    qreal delegateHeight = 62.0;
+    bool isCompact = false;
+    bool playlistRenewal = true;
 };
 
 #endif // MAINWINDOW_H

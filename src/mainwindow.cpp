@@ -401,7 +401,8 @@ void MainWindow::playSongAtVisibleIndex(int visibleIndex)
 
     if (isInPlaylistView) {
         currentlyPlayingPlaylist = viewingPlaylist;
-        playlistManager->changePlaylistToTop(currentlyPlayingPlaylist);
+        if (playlistRenewal)
+            playlistManager->changePlaylistToTop(viewingPlaylist);
         currentlyPlayingAlbum.clear();
         currentlyPlayingAlbumArtist.clear();
         currentlyPlayingAlbumCoverPath.clear();
@@ -1241,6 +1242,12 @@ QRect MainWindow::loadWindowGeometry() const
     return settings.value("window/geometry", QRect(100, 100, 1280, 720)).toRect();
 }
 
+void MainWindow::saveSessionAndWindow(int x, int y, int w, int h)
+{
+    saveWindowGeometry(x, y, w, h);
+    saveSessionState();
+}
+
 void MainWindow::saveSessionState()
 {
     QSettings settings("Meloville", "Meloville");
@@ -1266,6 +1273,7 @@ void MainWindow::saveSessionState()
     settings.setValue("session/currentlyPlayingAlbumCoverPath", currentlyPlayingAlbumCoverPath);
     settings.setValue("ui/delegateHeight", delegateHeight);
     settings.setValue("ui/isCompact", isCompact);
+    settings.setValue("ui/playlistRenewal", playlistRenewal);
 
     QJsonArray playbackArr;
     for (int idx : currentPlaybackSongs) {
@@ -1302,18 +1310,13 @@ void MainWindow::saveSessionState()
     settings.setValue("session/nextUp", QJsonDocument(nextUpArr).toJson(QJsonDocument::Compact));
 }
 
-void MainWindow::saveSessionAndWindow(int x, int y, int w, int h)
-{
-    saveWindowGeometry(x, y, w, h);
-    saveSessionState();
-}
-
 void MainWindow::loadSessionState()
 {
     QSettings settings("Meloville", "Meloville");
 
     delegateHeight = settings.value("ui/delegateHeight", 62.0).toReal();
     isCompact = settings.value("ui/isCompact", false).toBool();
+    playlistRenewal = settings.value("ui/playlistRenewal", true).toBool();
 
     QString savedTitle  = settings.value("session/title",  QString()).toString();
     QString savedArtist = settings.value("session/artist", QString()).toString();
@@ -1524,7 +1527,12 @@ void MainWindow::setDelegateHeight(qreal h)
 
 void MainWindow::setCompactMode(bool compact)
 {
-    if (isCompact == compact) return;
     isCompact = compact;
     emit isCompactChanged();
+}
+
+void MainWindow::setPlaylistRenewalMode(bool renewal)
+{
+    playlistRenewal = renewal;
+    emit playlistRenewalChanged();
 }

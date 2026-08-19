@@ -451,6 +451,13 @@ Item {
                                 color: "#1a1a1a"
                             }
 
+                            ToggleRow {
+                                label: "Automatic playlist renewal"
+                                description: "When playing a playlist, move it to the top of the list."
+                                toggled: backend.playlistRenewal
+                                onToggledChanged2: function(val) { backend.setPlaylistRenewalMode(val) }
+                            }
+
                             // Music folder
                             RowLayout {
                                 Layout.fillWidth: true

@@ -64,7 +64,7 @@ Check this repo [Meloville for Arch](https://github.com/NevPeth/meloville-arch) 
 
 ## For other distros
 
-I currently do not officially support other distros, not because I don't like you, specifically, but because I do not use other distros and am unfamiliar with their convenctions. Though I do plan on other packaging methods in (hopefully) the near future.
+I currently do not officially support other distros, not because I don't like you, specifically, but because I do not use other distros and am unfamiliar with their conventions. Though I do plan on other packaging methods in (hopefully) the near future.
 
 ## To Run Locally Without Installing
 
