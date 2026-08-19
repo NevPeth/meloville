@@ -25,7 +25,7 @@ public:
     QHash<int, QByteArray> roleNames() const override;
 
 public slots:
-    void refresh();   // called whenever the playlist list changes
+    void refresh(); // called whenever the playlist list changes
 
 private:
     PlaylistManager *m_manager;

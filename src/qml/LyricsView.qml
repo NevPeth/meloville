@@ -20,6 +20,7 @@ Item {
     readonly property bool lyricFontBold: true
 
     // Active lyric is centered around this percentage of the viewport.
+    // So 35%
     readonly property real activeCenterRatio: 0.35
 
     property bool animationsEnabled: true
@@ -118,10 +119,7 @@ Item {
         }
     }
 
-    // ------------------------------------------------------------
     // Height measurement
-    // ------------------------------------------------------------
-
     Repeater {
         id: measurementRepeater
 
@@ -205,10 +203,7 @@ Item {
         return lineHeights[index]
     }
 
-    // ------------------------------------------------------------
     // Exact layout margins
-    // ------------------------------------------------------------
-
     function updateMargins() {
         if (!measurementsReady || lines.length === 0)
             return
@@ -229,10 +224,7 @@ Item {
         )
     }
 
-    // ------------------------------------------------------------
     // Exact positioning
-    // ------------------------------------------------------------
-
     function targetYForLine(index) {
         if (!measurementsReady)
             return 0
@@ -245,11 +237,9 @@ Item {
         if (!item)
             return 0
 
-        // IMPORTANT:
         // item.y is relative to contentColumn.
-        //
         // contentColumn.y is the actual top margin inside the Flickable.
-        // Therefore this is the real content-space position of the lyric.
+        // So this is the real content-space position of the lyric.
         var itemTop = contentColumn.y + item.y
 
         return itemTop

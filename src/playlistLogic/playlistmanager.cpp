@@ -424,7 +424,6 @@ void PlaylistManager::changePlaylistToTop(const QString& playlistName)
     emit playlistChanged();
 }
 
-// Pure function — no `this`, runs on thread pool
 static QString generateCompositeImage(
     const QList<PlaylistSong>& four,
     const QString& appDataPath,
@@ -483,9 +482,6 @@ void PlaylistManager::updateAutoGenSongs(const QString& playlistName)
     QList<PlaylistSong> four = defs.mid(0, 4);
     QString oldRelative = playlistImages.value(playlistName);
 
-    // Snapshot what we need — no captures of `this` in the worker
-    QString appData = appDataPath;
-
     auto* watcher = new QFutureWatcher<QString>(this);
 
     connect(watcher, &QFutureWatcher<QString>::finished, this,
@@ -506,6 +502,6 @@ void PlaylistManager::updateAutoGenSongs(const QString& playlistName)
     );
 
     watcher->setFuture(
-        QtConcurrent::run(generateCompositeImage, four, appData, oldRelative)
+        QtConcurrent::run(generateCompositeImage, four, appDataPath, oldRelative)
     );
 }

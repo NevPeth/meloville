@@ -573,7 +573,7 @@ Item {
                     }
 
                     // ════════════════════════════════════════════════════════
-                    //  SECTION 1 — LISTEN ALONG
+                    //  SECTION 1 — LISTEN ALONG SECTION
                     // ════════════════════════════════════════════════════════
                     Item {
                         id: listenAlongSection

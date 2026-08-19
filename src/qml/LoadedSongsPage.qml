@@ -53,7 +53,7 @@ Rectangle {
                 continueButtonClicked()
             }
             
-            // Set cursor shape using MouseArea
+            // Just sets cursor
             MouseArea {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor

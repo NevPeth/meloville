@@ -8,7 +8,7 @@ Item {
     id: root
 
     // Properties
-    property string mode: "create"   // "create" or "edit"
+    property string mode: "create" // "create" or "edit"
     property string editName: ""
     property string editImagePath: ""  // absolute path or qrc
 
@@ -255,11 +255,9 @@ Item {
     }
 
     function closeDialog() {
-        // Reset state
         selectedImagePath = ""
         nameInput.text = ""
         root.visible = false
-        // Optionally emit rejected if not already
     }
 
     // When dialog becomes visible, focus the name input
@@ -269,7 +267,6 @@ Item {
             nameInput.selectAll()
             if (mode === "edit") {
                 nameInput.text = editName
-                // set selectedImagePath to empty so we know we haven't changed image
                 selectedImagePath = ""
             } else {
                 nameInput.text = ""

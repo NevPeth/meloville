@@ -66,7 +66,6 @@ QHash<int, QByteArray> SongModel::roleNames() const
     return roles;
 }
 
-// Changed to non-const pointers
 void SongModel::setSongs(QVector<SongData> *newLibrary, QVector<int> *newVisibleSongs)
 {
     beginResetModel();

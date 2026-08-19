@@ -11,7 +11,7 @@ public:
         enum class RenderType {
             SingleColor,
             DualColor,
-            GradientColor      // <-- new
+            GradientColor
         };
 
         QString path;

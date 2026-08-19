@@ -69,8 +69,6 @@ void PulseAudioService::contextStateCallback(pa_context* context, void* userdata
 
     if (state == PA_CONTEXT_READY) {
 
-        //qDebug() << "PulseAudio context ready";
-
         pa_context_get_server_info(
             context,
             serverInfoCallback,
@@ -141,16 +139,12 @@ void PulseAudioService::subscribeCallback(
     }
 }
 
-void PulseAudioService::handleDefaultSinkChanged(const QString& newSink)
-{
-    //qDebug() << "Default sink changed:" << newSink;
+void PulseAudioService::handleDefaultSinkChanged(const QString& newSink){
 
     QTimer::singleShot(500, this, [this]()
         {
             QAudioDevice newDevice =
                 QMediaDevices::defaultAudioOutput();
-
-            //qDebug() << "Qt default device:" << newDevice.description();
 
             if (newDevice.isNull()) {
                 qWarning()
@@ -160,11 +154,8 @@ void PulseAudioService::handleDefaultSinkChanged(const QString& newSink)
 
             if (m_audioOutput->device() == newDevice)
             {
-                //qDebug() << "Device already active";
                 return;
             }
-
-            //qDebug() << "Switching to:" << newDevice.description();
 
             m_audioOutput->setDevice(newDevice);
 

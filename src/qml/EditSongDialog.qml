@@ -7,7 +7,6 @@ import Qt5Compat.GraphicalEffects
 Item {
     id: root
 
-    // ── Public API ────────────────────────────────────────────────────────────
     property int    libraryIndex:    -1
     property string songFilePath:    ""
     property string editTitle:       ""
@@ -19,7 +18,6 @@ Item {
     signal accepted()
     signal rejected()
 
-    // ── Internal ──────────────────────────────────────────────────────────────
     property string selectedImagePath: ""
 
     function normalizeImageSource(path) {
@@ -30,24 +28,24 @@ Item {
     }
 
     function openEdit(index, filePath, coverPath, title, artist, album, trackNumber) {
-        libraryIndex       = index
-        songFilePath       = filePath
-        editCoverPath      = coverPath
-        editTitle          = title
-        editArtist         = artist
-        editAlbum          = album
-        editTrackNumber    = trackNumber
-        selectedImagePath  = ""
-        root.visible       = true
+        libraryIndex = index
+        songFilePath = filePath
+        editCoverPath = coverPath
+        editTitle = title
+        editArtist = artist
+        editAlbum = album
+        editTrackNumber = trackNumber
+        selectedImagePath = ""
+        root.visible = true
     }
 
     function closeDialog() {
         selectedImagePath = ""
-        titleInput.text   = ""
-        artistInput.text  = ""
-        albumInput.text   = ""
-        trackInput.text   = ""
-        root.visible      = false
+        titleInput.text = ""
+        artistInput.text = ""
+        albumInput.text = ""
+        trackInput.text = ""
+        root.visible = false
     }
 
     onVisibleChanged: {
@@ -102,10 +100,10 @@ Item {
 
             // Title
             Text {
-                text:             "Edit Song"
-                color:            "white"
-                font.pixelSize:   16
-                font.bold:        true
+                text: "Edit Song"
+                color: "white"
+                font.pixelSize: 16
+                font.bold: true
                 Layout.alignment: Qt.AlignHCenter
             }
 
@@ -136,7 +134,7 @@ Item {
                     Image {
                         id: coverImage
                         anchors.fill: parent
-                        fillMode:     Image.PreserveAspectCrop
+                        fillMode: Image.PreserveAspectCrop
                         source: {
                             if (selectedImagePath !== "")
                                 return selectedImagePath
@@ -149,26 +147,26 @@ Item {
 
                     Text {
                         anchors.centerIn: parent
-                        visible:          coverImage.source === ""
-                        text:             "No Image"
-                        color:            "#888888"
-                        font.pixelSize:   14
+                        visible: coverImage.source === ""
+                        text: "No Image"
+                        color: "#888888"
+                        font.pixelSize: 14
                     }
                 }
 
                 // Upload button — mirrors playlist dialog placement
                 Button {
                     id: uploadButton
-                    anchors.right:        imagePreview.right
-                    anchors.bottom:       imagePreview.bottom
-                    anchors.rightMargin:  -52
+                    anchors.right: imagePreview.right
+                    anchors.bottom: imagePreview.bottom
+                    anchors.rightMargin: -52
                     anchors.bottomMargin: -9
                     background: Item {}
-                    width:  50
+                    width: 50
                     height: 50
 
                     contentItem: Image {
-                        source:   "image://svgicons/uploadIcon"
+                        source: "image://svgicons/uploadIcon"
                         fillMode: Image.PreserveAspectFit
                     }
 
@@ -186,16 +184,16 @@ Item {
                     spacing: 4
 
                     Text {
-                        text:           "Title"
-                        color:          "white"
+                        text: "Title"
+                        color: "white"
                         font.pixelSize: 14
                     }
                     TextField {
-                        id:               titleInput
+                        id: titleInput
                         Layout.fillWidth: true
                         placeholderText:  "Song title"
-                        color:            "white"
-                        selectByMouse:    true
+                        color: "white"
+                        selectByMouse: true
                         background: Rectangle { color: "#222222"; radius: 6 }
                     }
                 }
@@ -205,16 +203,16 @@ Item {
                     spacing: 4
 
                     Text {
-                        text:           "Artist"
-                        color:          "white"
+                        text: "Artist"
+                        color: "white"
                         font.pixelSize: 14
                     }
                     TextField {
-                        id:               artistInput
+                        id: artistInput
                         Layout.fillWidth: true
-                        placeholderText:  "Artist name"
-                        color:            "white"
-                        selectByMouse:    true
+                        placeholderText: "Artist name"
+                        color: "white"
+                        selectByMouse: true
                         background: Rectangle { color: "#222222"; radius: 6 }
                     }
                 }
@@ -230,16 +228,16 @@ Item {
                     spacing: 4
 
                     Text {
-                        text:           "Album"
-                        color:          "white"
+                        text: "Album"
+                        color: "white"
                         font.pixelSize: 14
                     }
                     TextField {
-                        id:               albumInput
+                        id: albumInput
                         Layout.fillWidth: true
-                        placeholderText:  "Album name"
-                        color:            "white"
-                        selectByMouse:    true
+                        placeholderText: "Album name"
+                        color: "white"
+                        selectByMouse: true
                         background: Rectangle { color: "#222222"; radius: 6 }
                     }
                 }
@@ -249,18 +247,18 @@ Item {
                     spacing: 4
 
                     Text {
-                        text:           "Track Number"
-                        color:          "white"
+                        text: "Track Number"
+                        color: "white"
                         font.pixelSize: 14
                     }
                     TextField {
-                        id:               trackInput
+                        id: trackInput
                         Layout.fillWidth: true
-                        placeholderText:  "1"
-                        color:            "white"
-                        selectByMouse:    true
+                        placeholderText: "1"
+                        color: "white"
+                        selectByMouse: true
                         inputMethodHints: Qt.ImhDigitsOnly
-                        validator:        IntValidator { bottom: 0; top: 9999 }
+                        validator: IntValidator { bottom: 0; top: 9999 }
                         background: Rectangle { color: "#222222"; radius: 6 }
                     }
                 }
@@ -313,6 +311,8 @@ Item {
                     onClicked: {
                         if (titleInput.text.trim() === "") return
 
+                        // QML has a really dumb system for how it gets file paths so I always
+                        // Have to do some form of sanitation like this
                         function toLocalPath(uri) {
                             if (!uri) return ""
                             var s = uri.toString()

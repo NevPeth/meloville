@@ -2,10 +2,6 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-// Replaces albumgridview.cpp + albumdelegate.cpp entirely.
-// The backend exposes albumModel (AlbumListModel) and signals
-// isInAlbumsGridView / isInAlbumView for visibility.
-
 Item {
     id: root
     anchors.fill: parent
@@ -20,9 +16,6 @@ Item {
 
         model: backend.albumModel
 
-        // Mirrors AlbumDelegate::kMinCoverSize logic:
-        // pick column count so each cell is at least 184px wide,
-        // then stretch evenly — same maths as AlbumGridView::recalculateGrid().
         readonly property int minTileWidth: 184
         readonly property int cellPad:      12   // kCellPadding
         readonly property int textBlock:    44   // kTextBlockHeight
@@ -38,10 +31,9 @@ Item {
             width:  albumGrid.cellWidth
             height: albumGrid.cellHeight
 
-            // ── hover state ──────────────────────────────────────────────
             HoverHandler { id: hov }
 
-            // ── hover/selection background ────────────────────────────────
+            // hover/selection background
             Rectangle {
                 anchors {
                     fill: parent
@@ -51,7 +43,7 @@ Item {
                 color: hov.hovered ? "#0f0f0f" : "transparent"
             }
 
-            // ── cover art ────────────────────────────────────────────────
+            // cover art
             Item {
                 id: coverItem
                 x: (parent.width - albumGrid.coverSize) / 2

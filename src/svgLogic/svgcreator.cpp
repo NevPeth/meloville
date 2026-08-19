@@ -6,6 +6,11 @@
 #include <QApplication>
 #include <QFile>
 
+/*
+    These only work since I made the svgs myself and edited the code follow these patterns. This is mainly made
+    since I planned on having themes but kind of scrapped it since no theme looks particularly good. But if you
+    want to help make a theme system, be my guest.
+*/
 QImage SvgCreator::makeImage(const QString& path, const QColor& color, const QSize& size, const qreal dpr)
 {
     QImage image(size.width() * dpr, size.height() * dpr, QImage::Format_ARGB32_Premultiplied);
@@ -56,6 +61,7 @@ QImage SvgCreator::colorizeSvgDual(
         size.height() * dpr,
         QImage::Format_ARGB32_Premultiplied
     );
+
     image.setDevicePixelRatio(dpr);
     image.fill(Qt::transparent);
 

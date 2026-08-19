@@ -22,12 +22,11 @@ Item {
         color: "#121212"
     }
 
-    // ── 1. Low‑resolution source (loses fine detail) ──
     Item {
         id: blurSource
-        width:  root.width          // tiny → only broad colour areas remain after blur
+        width:  root.width
         height: root.height
-        visible: false       // we don't need to see it directly
+        visible: false
 
         Image {
             anchors.fill: parent
@@ -35,11 +34,12 @@ Item {
                     ? "file://" + backend.currentSongCoverPath
                     : "qrc:/icons/default.svg"
             fillMode: Image.PreserveAspectCrop
-            smooth: true      // smooth scaling keeps colour blending clean
+            smooth: true
         }
     }
 
-    // ── 2. Three heavy blur passes (combined radius ~192 on a 100‑px image) ──
+    // Three heavy blur passes othwerwise it still looks too crsip
+    // I know it's hella graphic intensive but like, I need it to look good to, y'know?
     GaussianBlur {
         id: pass1
         anchors.fill: blurSource
@@ -71,14 +71,12 @@ Item {
         cached: true
     }
 
-    // ── 5. Dim overlay (unchanged) ──
+    // Dim overlay so that user can actually see play controls
     Rectangle {
         anchors.fill: parent
         color: Qt.rgba(0, 0, 0, 45 / 255.0)
     }
-    // ─────────────────────────────────────────────────────────────
-    // CONTENT — proportional layout that works at any window height
-    // ─────────────────────────────────────────────────────────────
+    
     RowLayout {
         anchors.fill: parent
         anchors.leftMargin:   5
@@ -162,7 +160,7 @@ Item {
                             ? "file://" + backend.currentSongCoverPath
                             : "qrc:/icons/default.svg"
                             
-                    visible: false  // OpacityMask renders it; this stays hidden
+                    visible: false
                     smooth: true
 
                     onSourceChanged: {
@@ -334,7 +332,7 @@ Item {
                 Item { Layout.fillWidth: true }
             }
 
-            // Small fixed gap
+            // This is just a small fixed gap
             Item {
                 Layout.fillWidth: true
                 Layout.minimumHeight: root.hasLyrics ? 20 : 12

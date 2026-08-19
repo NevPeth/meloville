@@ -177,7 +177,7 @@ Popup {
 
         ColumnLayout {
             id: subContent
-            width: parent.width   // fill horizontally only
+            width: parent.width
             spacing: 0
 
             TextField {

@@ -17,9 +17,7 @@
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
-    /* Full-bleed animated background -- three blurred color blobs sampled
-        from the cover art, nudged around each frame by the track's bass/mid/
-        treble energy. No card, no chrome -- this *is* the page. */
+    /* Animated background */
     #bg {
         position: fixed;
         inset: 0;
@@ -201,7 +199,6 @@
     /* Only ever used for the one-time "tap to start" autoplay-unlock prompt */
     #status { color: rgba(255,255,255,0.6); font-size: 12px; margin-top: 18px; min-height: 16px; }
 
-    /* No visible native player UI -- there is no seek/pause exposed anywhere. */
     audio { display: none; }
 </style>
 </head>
@@ -457,9 +454,7 @@ updateSlider();
         const p = audio.play();
         if (p && p.catch) {
             p.catch(() => {
-                // Browser blocked autoplay-with-sound; this is only a
-                // one-time permission grant, not a playback control --
-                // there is still no play/pause/seek exposed to the user.
+                // Browser blocked autoplay-with-sound
                 statusDiv.textContent = 'Tap anywhere to start listening';
                 const unlock = () => {
                     document.removeEventListener('click', unlock);

@@ -740,6 +740,9 @@ ApplicationWindow {
                             }
                         }
 
+                        // Main content for all songs that will be seen throughout the program
+                        // Please refer to the top for the delegate as it needed to be seperated
+                        // while adding the logic to switch songs
                         ListView {
                             id: listViewSongs
                             Layout.fillWidth: true
@@ -751,12 +754,13 @@ ApplicationWindow {
                             ScrollBar.horizontal: ScrollBar { policy: ScrollBar.AsNeeded }
                             visible: !backend.isInAlbumsGridView
 
-                            // ----- Pixel‑accurate scrolling on Wayland -----
+                            // *should* get pixel‑accurate scrolling on Wayland
                             pixelAligned: true
 
                             boundsBehavior: Flickable.StopAtBounds
                             boundsMovement: Flickable.StopAtBounds
 
+                            // CUSTOM SCROLLING BECAUSE DEFAULT SUCKS BRO
                             property real velocity: 0
                             property real threshold: 40
 
@@ -807,6 +811,7 @@ ApplicationWindow {
                                         listViewSongs.velocity *= 0.90    // glide
                                 }
                             }
+                            // -------CUSTOM SCROLLING END-----------------
 
                             model: visualModel
 
@@ -820,6 +825,9 @@ ApplicationWindow {
                                 NumberAnimation { properties: "x,y"; duration: 170; easing.type: Easing.OutCubic }
                             }
 
+                            // This is the "hero" or "playlistInfo" so to speak when in playlist or album view
+                            // Made it it called "hero" since there's no good specific name as it displays
+                            // both playlist and album info
                             header: (backend.isInPlaylistView || backend.isInAlbumView) ? heroComponent : null
 
                             Component {
@@ -1185,9 +1193,9 @@ ApplicationWindow {
                         }
                     }
                 }
-                // -------- Music Metadata Bar --------
+                // -------- Bottom bar on the screen for playing song info, play controls, etc --------
                 Rectangle {
-                    id: frameNowPlaying
+                    id: bottomBar
                     Layout.fillWidth: true
                     Layout.preferredHeight: 90
                     color: "#121212"

@@ -72,7 +72,7 @@ inline void registerIcons(SvgImageProvider& provider)
     provider.registerIcon("closeIcon", ":/icons/closeIcon.svg", Qt::white, QSize(30,30));
     provider.registerIcon("pencilIcon",":/icons/pencil.svg",Qt::white,QSize(60, 60));
 
-    //Now icons that are for the big picture page
+    // Icons that are for the big picture page
     provider.registerIcon("shuffleIconBigNormal",":/icons/shuffle.svg",QColor(255,255,255,50), QSize(60, 42));
     provider.registerIcon("shuffleIconBigHovered",":/icons/shuffle.svg", QColor(255,255,255,170),QSize(60, 42));
     provider.registerIcon("reverseIconBig",":/icons/reverseBig.svg",QColor(255, 255, 255, 230),QSize(70, 70));

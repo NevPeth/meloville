@@ -28,7 +28,6 @@ public:
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     QHash<int, QByteArray> roleNames() const override;
 
-    // Change to non-const pointers so we can modify visibleSongs
     void setSongs(QVector<SongData> *library, QVector<int> *visibleSongs);
     void setPlayingIndex(int libraryIndex);
     void setPausedState(bool paused);

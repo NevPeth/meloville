@@ -60,10 +60,12 @@ SongData MetadataReader::readSong(const QString& filePath)
     // Fallbacks
     if (artistAndTitleTagsWereMissing) {
         QFileInfo fileInfo(filePath);
-        QString baseName = fileInfo.completeBaseName(); // filename without extension
+        QString baseName = fileInfo.completeBaseName();
 
         // Match "artist - title", tolerant of missing/extra spaces around the dash,
         // and allowing hyphen, en-dash, or em-dash as the separator.
+        // This is for songs that don't have any metadata yet but may have the title
+        // properly formatted.
         static const QRegularExpression separatorRegex(
             QStringLiteral("\\s*[-\u2013\u2014]\\s*")
         );
@@ -139,35 +141,28 @@ QPixmap MetadataReader::extractCoverArt(
     else if (extension == "flac")
         return extractFlacCover(filePath);
 
-    else if (extension == "m4a" || extension == "mp4" || extension == "aac"){
+    else if (extension == "m4a" || extension == "mp4" || extension == "aac")
         return extractM4ACover(filePath);
-    }
-    else if (extension == "ogg"){
+
+    else if (extension == "ogg")
         return extractOggCover(filePath);
-    }
 
     return fallbackCover();
 }
 
 QPixmap MetadataReader::extractMp3Cover(const QString& filePath){
-    TagLib::MPEG::File file(
-        filePath.toStdString().c_str()
-    );
+    TagLib::MPEG::File file(filePath.toStdString().c_str());
 
     auto* tag = file.ID3v2Tag();
-
     if (!tag)
         return fallbackCover();
 
     auto frames = tag->frameListMap()["APIC"];
-
     if (frames.isEmpty())
         return fallbackCover();
 
     auto* pictureFrame =
-        static_cast<
-            TagLib::ID3v2::AttachedPictureFrame*
-        >(frames.front());
+        static_cast<TagLib::ID3v2::AttachedPictureFrame*>(frames.front());
 
     QByteArray imageData(
         pictureFrame->picture().data(),
@@ -175,7 +170,6 @@ QPixmap MetadataReader::extractMp3Cover(const QString& filePath){
     );
 
     QPixmap cover;
-
     if (!cover.loadFromData(imageData))
         return fallbackCover();
 
@@ -183,9 +177,7 @@ QPixmap MetadataReader::extractMp3Cover(const QString& filePath){
 }
 
 QPixmap MetadataReader::extractFlacCover(const QString& filePath){
-    TagLib::FLAC::File file(
-        filePath.toStdString().c_str()
-    );
+    TagLib::FLAC::File file(filePath.toStdString().c_str());
 
     // Try native FLAC picture blocks first
     auto pictures = file.pictureList();
@@ -260,11 +252,10 @@ QPixmap MetadataReader::extractOggCover(const QString& filePath)
     if (!file.isValid())
         return fallbackCover();
 
-    auto* tag = file.tag(); // XiphComment
+    auto* tag = file.tag();
     if (!tag)
         return fallbackCover();
 
-    // XiphComment::pictureList() decodes METADATA_BLOCK_PICTURE internally
     const auto pictures = tag->pictureList();
     if (pictures.isEmpty())
         return fallbackCover();
@@ -440,11 +431,6 @@ QString MetadataReader::cacheKeyForPath(const QString &absPath) {
     ).toHex());
 }
 
-// QString MetadataReader::findLrcFile(const QString& dir, const QString& baseName)
-// {
-//     QString candidate = dir + "/" + baseName + ".lrc";
-//     return QFile::exists(candidate) ? candidate : QString();
-// }
 QString MetadataReader::findLrcFile(
     const QString& dir,
     const QString& baseName,
