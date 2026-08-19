@@ -6,6 +6,9 @@
 #include "svgimageprovider.h"
 #include "seticons.h"
 
+/*
+    Just sets up the mainWindow to be called from the main.qml (unlike their name, main.qml is the frontend while mainWindow is the backend logic).
+*/
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
@@ -17,7 +20,8 @@ int main(int argc, char *argv[])
     
     QQmlApplicationEngine engine;
     
-    // Expose MainWindow to QML with a clear name
+    // Although this is the main.cpp, all music player logic and 
+    // really the "backend" of this code is mainwindow.cpp
     engine.rootContext()->setContextProperty("backend", &mainWindow);
 
     auto* provider = new SvgImageProvider();
@@ -26,7 +30,6 @@ int main(int argc, char *argv[])
 
     engine.addImageProvider("svgicons", provider);
     
-    // Load QML
     engine.load(QUrl(QStringLiteral("qrc:/qml/main.qml")));
     
     if (engine.rootObjects().isEmpty())

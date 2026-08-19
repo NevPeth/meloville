@@ -22,14 +22,19 @@
 MainWindow::MainWindow(QObject *parent)
     : QObject(parent)
 {
+    //Standard path for storing data for programs. On linux these files can be found at .local/share/Meloville
     appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    songModel = new SongModel(this);
-    playlistManager = new PlaylistManager(this);
+    songModel = new SongModel(this); //This is the model for managing how the songs actually look like in the listViewSongs located in the qml
+    // Manages all playlist logic that can be abstracted away from the mainwindow (although a lot of calls
+    // are directly tied into mainwindow, it can be helped but it's a pain and the existing architecture works
+    // well enough. But if you just want low hanging fruit you can go do that. It's just busy work.)
+    playlistManager = new PlaylistManager(this); 
     albumModel = new AlbumListModel(this);
 
     connect(playlistManager, &PlaylistManager::playlistChanged,
             this, &MainWindow::updatePlaylistNames);
 
+    // The playback controller controls all audio playback that actually gets sent to the user
     playbackController = new PlaybackController(this);
     connect(playbackController, &PlaybackController::songFinished,
             this, &MainWindow::playNextSong);
@@ -84,6 +89,7 @@ MainWindow::MainWindow(QObject *parent)
         mpris->getPlayer()->setPlaybackStatus(isPlaying ? "Playing" : "Paused");
     });
     
+    // makes folder in .local/share/Meloville (on Linux)
     QDir().mkpath(appDataPath + "/cache");
     
     loadLibrary();
@@ -93,6 +99,8 @@ MainWindow::MainWindow(QObject *parent)
     playlistModel = new PlaylistModel(playlistManager, this);
     loadSessionState();
 
+    // There is an option to set a server on Meloville to listen along, be reassured that
+    // until listenAlongServer->start is called, there is no connection to the internet whatsoever
     listenAlongServer = new ListenAlongServer(this);
 
     connect(listenAlongServer, &ListenAlongServer::candidateUrlsReady,
@@ -119,9 +127,9 @@ MainWindow::MainWindow(QObject *parent)
 
 MainWindow::~MainWindow()
 {
-    delete playlistManager;
 }
 
+// Simply a helper function to compare two strings to more easily do sorting by title
 bool MainWindow::songTitleLess(const SongData &a, const SongData &b)
 {
     return QString::compare(a.title, b.title, Qt::CaseInsensitive) < 0;
@@ -131,13 +139,9 @@ void MainWindow::openFolder()
 {
     QString folder = QFileDialog::getExistingDirectory(nullptr, "Open Music Folder", "");
     if (folder.isEmpty()) return;
+    if (scanning) return;
 
-    if (scanning) {
-        // Already scanning, ignore new request
-        return;
-    }
-
-    // Create thread and worker
+    // Create a new thread and worker to scan library so the main thread can still update UI
     scannerThread = new QThread(this);
     LibraryScanner *scanner = new LibraryScanner();
     scanner->setFolderPath(folder);
@@ -170,6 +174,7 @@ void MainWindow::openFolder()
     QMetaObject::invokeMethod(scanner, "start", Qt::QueuedConnection);
 }
 
+// Simply helps display scanning progress
 void MainWindow::onScanProgress(int current, int total)
 {
     progress = static_cast<double>(current) / total;
@@ -181,7 +186,7 @@ void MainWindow::onScanProgress(int current, int total)
 void MainWindow::onScanFinished(const QVector<SongData>& songs, const QString& folderPath)
 {
     currentMusicFolder = folderPath;
-    library = songs;   // already sorted
+    library = songs; // already sorted
 
     // Build view indices
     currentViewSongs.clear();
@@ -192,10 +197,9 @@ void MainWindow::onScanFinished(const QVector<SongData>& songs, const QString& f
     currentPlaybackSongs = currentViewSongs;
     rebuildPlaybackMap();
 
-    // Update model
+    // Important note: visibleSongs is always directly tied to songModel (which means visibleSongs==songs visible to User)
     songModel->setSongs(&library, &visibleSongs);
 
-    // Save library
     saveLibrary();
 
     // Reload playlists (if needed)
@@ -224,6 +228,7 @@ void MainWindow::onScanError(const QString& message)
     }
 }
 
+// Saves library in .local/share/Meloville/library.json
 void MainWindow::saveLibrary()
 {
     QJsonArray arr;
@@ -252,6 +257,15 @@ void MainWindow::saveLibrary()
     }
 }
 
+/*
+Loads library but there are a lot of things to consider.
+    - Did user add new songs?
+        - Did you sort them properly in the list?
+    - Did the user remove a song?
+        - Did you remove it from the library put the rest of the songs back?
+    - Did the user add new lyrics files?
+    - Did the user remove lyrics files?
+*/ 
 void MainWindow::loadLibrary()
 {
     QFile file(appDataPath + "/library.json");

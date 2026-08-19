@@ -505,6 +505,7 @@ ApplicationWindow {
                                 Layout.preferredHeight: 65
                                 Layout.maximumWidth: 65
                                 Layout.maximumHeight: 65
+                                Layout.leftMargin: -2
                                 Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
 
                                 background: Item {}
@@ -531,6 +532,7 @@ ApplicationWindow {
                                 Layout.maximumHeight: 65
                                 Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
                                 Layout.topMargin: -10
+                                Layout.leftMargin: -2
 
                                 background: Item {}
 
@@ -551,17 +553,17 @@ ApplicationWindow {
                                 id: listWidgetPlaylists
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
-                                Layout.topMargin: 0
+                                Layout.topMargin: 2
                                 Layout.minimumWidth: 60
                                 Layout.maximumWidth: 60
-                                Layout.leftMargin: 7
+                                Layout.leftMargin: 8
                                 clip: true
-                                spacing: 8
+                                spacing: 10
                                 ScrollBar.horizontal: ScrollBar { policy: ScrollBar.AlwaysOff }
                                 
                                 delegate: Rectangle {
-                                    width: 51
-                                    height: 51
+                                    width: 50
+                                    height: 50
                                     radius: 4
                                     color: "transparent"
 
