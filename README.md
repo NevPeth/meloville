@@ -42,11 +42,12 @@
     * <small>Only works with .lrc files and must be the same name as music file. Just have the .lrc be somewhere in the music folder and it will automatically find it on relaunch.</small>
 * Making auto-generated covers for playlists based on top four song covers
 
-## Features That I Am Currently Working On
+## Features That I Plan On Implementing
 
-* Packages for arch and maybe a flatpak
+* Getting the pkgbuild on the AUR for arch (new registrations are currently closed so I would be happy if one of you could do that)
+* Adding official support for other distros
 
-## Getting Started
+## Installation
 
 ### Prerequisites
 
@@ -56,6 +57,16 @@ You'll need:
 * **Qt 6**
 * **TagLib**
 * **PulseAudio**
+
+### For Arch
+
+Check this repo [Meloville for Arch](https://github.com/NevPeth/meloville-arch) and follow the install instructions
+
+## For other distros
+
+I currently do not officially support other distros, not because I don't like you, specifically, but because I do not use other distros and am unfamiliar with their convenctions. Though I do plan on other packaging methods in (hopefully) the near future.
+
+## To Run Locally Without Installing
 
 ### Clone the repository
 

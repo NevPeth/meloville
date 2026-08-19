@@ -26,7 +26,7 @@ pkg_check_modules(TAGLIB REQUIRED taglib)
 include_directories(${TAGLIB_INCLUDE_DIRS})
 link_directories(${TAGLIB_LIBRARY_DIRS})
 
-qt_add_executable(Meloville
+qt_add_executable(meloville
     main.cpp
     mainwindow.h
     mainwindow.cpp
@@ -66,7 +66,7 @@ qt_add_executable(Meloville
     resources.qrc
 )
 
-target_link_libraries(Meloville PRIVATE
+target_link_libraries(meloville PRIVATE
     Qt6::Core
     Qt6::Quick
     Qt6::QuickControls2
@@ -79,7 +79,7 @@ target_link_libraries(Meloville PRIVATE
     pulse
 )
 
-target_include_directories(Meloville PRIVATE 
+target_include_directories(meloville PRIVATE 
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/audio
     ${CMAKE_CURRENT_SOURCE_DIR}/scanningLogic
@@ -91,7 +91,7 @@ target_include_directories(Meloville PRIVATE
 
 # Installation
 install(
-    TARGETS Meloville
+    TARGETS meloville
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
@@ -107,5 +107,5 @@ install(
 
 install(
     FILES ../LICENSE
-    DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/Meloville
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/meloville
 )
