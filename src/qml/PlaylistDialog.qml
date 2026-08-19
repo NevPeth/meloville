@@ -110,12 +110,12 @@ Item {
                         anchors.fill: parent
                         fillMode: Image.PreserveAspectCrop
                         source: {
-                            if (selectedImagePath !== "") {
+                            if (selectedImagePath !== "")
                                 return selectedImagePath
-                            }
-                            if (mode === "edit" && editImagePath !== "") {
+
+                            if (mode === "edit" && editImagePath !== "")
                                 return normalizeImageSource(editImagePath)
-                            }
+
                             return "qrc:/icons/default.svg"
                         }
                         visible: source !== ""

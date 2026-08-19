@@ -19,8 +19,7 @@ Item {
     readonly property real lyricFontSize: 40
     readonly property bool lyricFontBold: true
 
-    // Active lyric is centered around this percentage of the viewport.
-    // So 35%
+    // Active lyric is centered around this percentage of the viewport. So 35%
     readonly property real activeCenterRatio: 0.35
 
     property bool animationsEnabled: true
@@ -58,6 +57,7 @@ Item {
 
         var rawLines = raw.split("\n")
         var parsed = []
+        // Just regex for the timecode in the lrc
         var re = /^\[(\d{2}):(\d{2})[\.:](\d{2,3})\](.*)/
 
         for (var i = 0; i < rawLines.length; i++) {
@@ -93,6 +93,7 @@ Item {
         })
     }
 
+    // Updates the line position (the animations are automatically controlled by the SpringAnimations in the Flickable)
     function updateActiveLine() {
         if (lines.length === 0) {
             activeLine = -1
@@ -404,10 +405,7 @@ Item {
                             if (isPast) {
                                 var d = -dist
 
-                                return Math.max(
-                                    0.06,
-                                    0.30 - (d - 1) * 0.08
-                                )
+                                return Math.max( 0.06, 0.30 - (d - 1) * 0.08)
                             }
 
                             if (dist === 1)

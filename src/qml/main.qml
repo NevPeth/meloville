@@ -80,30 +80,16 @@ ApplicationWindow {
         }
     }
 
-    NewPlaylistDialog {
+    PlaylistDialog {
         id: playlistDialog
         anchors.fill: parent
-        visible: false   // initially hidden
-
-        onAccepted: {
-        }
-        onRejected: {
-        }
-        onDeleted: {
-        }
+        visible: false
     }
 
     EditSongDialog {
         id: editSongDialog
         anchors.fill: parent
         visible: false
-
-        onAccepted: {
-            // The backend will handle saving changes; we might want to refresh the song list.
-        }
-        onRejected: {
-            // just close
-        }
     }
 
     SettingsPage {
@@ -183,11 +169,17 @@ ApplicationWindow {
                 if (listViewSongs.headerItem)
                     listViewSongs.headerItem.forceActiveFocus()
             }
+            // These "delegates" are just a fancy way of saying items in the list
+            // So this DelegateModel governs the items while the songDelegate which
+            // comes right after the actually layout and logic for each item in the main
+            // song list in this program
             DelegateModel {
                 id: visualModel
                 model: backend.songModel
                 delegate: songDelegate
             }
+            // Again, because this is techinically a part of listViewSongs a lot of the parenting may seem
+            // nonsensical but it is required to properly switch songs in a playlist.
             Component {
                 id: songDelegate
 
@@ -198,6 +190,8 @@ ApplicationWindow {
                     property int visualIndex: DelegateModel.itemsIndex
 
                     width: ListView.view ? ListView.view.width : 0
+                    // This is so it relatively keeps the size the user would want the height to be if they picked compact mode
+                    // so that it's not jarring from compact to normal or vice versa
                     height: backend.isCompact ? delegateHeight/2 : delegateHeight
 
                     // ── Live visual reorder: fires as the dragged item enters this delegate ──
@@ -232,10 +226,10 @@ ApplicationWindow {
                             }
                         }
 
-                        // Background
+                        // Background color
                         Rectangle {
                             anchors.fill: parent
-                            color: isPlaying          ? "#2a2a2a"
+                            color: isPlaying ? "#2a2a2a"
                                 : hoverHandler.hovered ? "#202020"
                                 : "#181818"
                         }
@@ -245,20 +239,20 @@ ApplicationWindow {
                             id: dragArea
                             anchors.fill: parent
                             enabled: backend.dragReorderAllowed && !backend.filterText
-                            drag.target:         held ? songRow : undefined
-                            drag.axis:           Drag.YAxis
+                            drag.target: held ? songRow : undefined
+                            drag.axis: Drag.YAxis
                             drag.filterChildren: true
-                            drag.threshold:      10
+                            drag.threshold: 10
                             property bool held: false
-                            property int  startIndex: -1
-                            property int  currentIndex: -1
+                            property int startIndex: -1
+                            property int currentIndex: -1
 
                             // ── Auto-scroll state ────────────────────────────────────────────────
                             property real scrollSpeed: 0   // px per timer tick; negative = up
 
                             Timer {
                                 id: autoScrollTimer
-                                interval: 16               // ~60 fps
+                                interval: 16 // ~60 fps
                                 repeat:   true
                                 running:  dragArea.held && dragArea.scrollSpeed !== 0
                                 onTriggered: {
@@ -271,11 +265,7 @@ ApplicationWindow {
 
                             onPositionChanged: {
                                 if (!held) return
-
-                                // Update drop indicator
-                                var posInList = songRow.mapToItem(listViewSongs, 0, 0)
-
-                                // ── Auto-scroll ──────────────────────────────────────────────────
+                                // -- Auto-scroll Threshold -----
                                 var threshold = 120
 
                                 // Map through the window instead — survives the ParentChange reparent
@@ -292,7 +282,7 @@ ApplicationWindow {
                             }
 
                             onPressed: {
-                                startIndex   = delegateRoot.DelegateModel.itemsIndex
+                                startIndex = delegateRoot.DelegateModel.itemsIndex
                                 currentIndex = startIndex
                                 held = true
                                 listViewSongs.interactive = false
@@ -334,7 +324,7 @@ ApplicationWindow {
                             Text {
                                 anchors.centerIn: parent
                                 visible: !songRow.isPlaying && !hoverHandler.hovered
-                                text:    (delegateRoot.DelegateModel.itemsIndex + 1).toString()
+                                text: (delegateRoot.DelegateModel.itemsIndex + 1).toString()
                                 color: "#b3b3b3"
                                 font.pixelSize: Math.round(13*delegateScale)
                             }
@@ -403,7 +393,7 @@ ApplicationWindow {
 
                         Row {
                             visible: backend.isCompact
-                            x: 50 * delegateScale   // flush after the track number area
+                            x: 50 * delegateScale
                             width: parent.width - x - 120
                             anchors.verticalCenter: parent.verticalCenter
                             spacing: 0
@@ -431,6 +421,9 @@ ApplicationWindow {
 
                         // ── duration ─────────────────────────────────────────────────────
                         Text {
+                            // - 45*delegateScale is just the menuArea, and then I need go more right and since delegateScale can
+                            // get pretty small and lower values, if I actually add it to (120*delegateScale) makes look smaller due
+                            // to integer rounding.
                             x: parent.width - 30*delegateScale - 45*delegateScale - (45*delegateScale)
                             width: 60
                             anchors.verticalCenter: parent.verticalCenter
@@ -471,6 +464,9 @@ ApplicationWindow {
                 anchors.fill: parent
                 spacing: 0
 
+                // I have a lot of tap handlers like this since for some reason
+                // Qt doesn't handle unfocusing search fields in a way most
+                // users would expect so I had to get creative
                 TapHandler {
                     onTapped: unfocusSearchFields()
                 }
@@ -496,8 +492,6 @@ ApplicationWindow {
                             anchors.fill: parent
                             spacing: 0
 
-                            // Add Playlist button
-                            
                             Button {
                                 id: btnAddPlaylist
 
@@ -1070,9 +1064,9 @@ ApplicationWindow {
                                 // ── Cover art ─────────────────────────────────────────
                                 Item {
                                     id: coverItem
-                                    x:      (parent.width - albumGrid.coverSz) / 2
-                                    y:      albumGrid.pad
-                                    width:  albumGrid.coverSz
+                                    x: (parent.width - albumGrid.coverSz) / 2
+                                    y: albumGrid.pad
+                                    width: albumGrid.coverSz
                                     height: albumGrid.coverSz
 
                                     Rectangle {
@@ -1099,13 +1093,6 @@ ApplicationWindow {
                                         radius: 8
                                         color: "#2a2a2a"
                                         visible: coverImg.status !== Image.Ready
-
-                                        Text {
-                                            anchors.centerIn: parent
-                                            text: "♫"
-                                            font.pixelSize: 32
-                                            color: "#666666"
-                                        }
                                     }
                                 }
 
@@ -1222,9 +1209,8 @@ ApplicationWindow {
                                 anchors.fill: parent
                                 spacing: 0
 
-                                // labelCoverArt
                                 Rectangle {
-                                    id: labelCoverArt
+                                    id: bottomCoverArt
                                     width: 64
                                     height: 64
                                     Layout.preferredWidth: 64
@@ -1319,16 +1305,6 @@ ApplicationWindow {
                                         Layout.preferredHeight: 60
                                         background: Item {}
 
-                                        Connections {
-                                            target: backend.songModel
-                                            function onDataChanged(topLeft, bottomRight, roles) {
-                                                // Re-evaluate playing state whenever the model updates
-                                                // We check if any row reports isPlaying && !isPaused.
-                                                // A simpler proxy: currentLibraryIndex >= 0 and not paused.
-                                                // We drive this via the playbackState signal below instead.
-                                            }
-                                        }
-
                                         contentItem: Image {
                                             source: backend.playing
                                                     ? "image://svgicons/pauseButtonIcon"
@@ -1407,7 +1383,7 @@ ApplicationWindow {
                                         hoverEnabled: true
 
                                         onPressedChanged: {
-                                            if (!pressed) //On release go to part in song
+                                            if (!pressed) //This acts like an "onReleased"
                                                 backend.seekTo(sliderPosition.value)
                                         }
 
@@ -1466,7 +1442,7 @@ ApplicationWindow {
                             }
                         }
 
-                        // RIGHT — extra buttons + volume
+                        // Extra buttons + volume controls
                         Item {
                             id: rightSection
                             Layout.preferredWidth: 300
@@ -1481,7 +1457,6 @@ ApplicationWindow {
                                 layoutDirection: Qt.RightToLeft
                                 anchors.verticalCenter: parent.verticalCenter
 
-                                // Volume slider
                                 Slider {
                                     id: sliderVolume
 
@@ -1533,7 +1508,6 @@ ApplicationWindow {
                                     }
                                 }
 
-                                // speakerIcon
                                 Button {
                                     id: speakerIcon
                                     enabled: false
@@ -1550,7 +1524,6 @@ ApplicationWindow {
                                 }
 
                                 // Extra buttons row
-
                                 RowLayout {
                                     id: layoutBottomButtons
                                     spacing: 3
@@ -1600,6 +1573,9 @@ ApplicationWindow {
                                             fillMode: Image.PreserveAspectFit
                                         }
 
+                                        // Immediately go to big picture mode and don't do any animations
+                                        // I tried configuring the animations but I couldn't get one that looked good
+                                        // while also not being completely annoying while switching in and out of the view
                                         onClicked: stackView.push(bigPicturePageComponent, StackView.Immediate)
                                     }
 

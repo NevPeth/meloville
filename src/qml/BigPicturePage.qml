@@ -32,7 +32,7 @@ Item {
             anchors.fill: parent
             source: backend.currentSongCoverPath !== ""
                     ? "file://" + backend.currentSongCoverPath
-                    : "qrc:/icons/default.svg"
+                    : ""
             fillMode: Image.PreserveAspectCrop
             smooth: true
         }

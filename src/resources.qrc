@@ -3,13 +3,13 @@
         <file>qml/main.qml</file>
         <file>qml/LoadPage.qml</file>
         <file>qml/LoadedSongsPage.qml</file>
-        <file>qml/NewPlaylistDialog.qml</file>
         <file>qml/SongContextMenu.qml</file>
         <file>qml/BigPicturePage.qml</file>
         <file>qml/EditSongDialog.qml</file>
         <file>qml/AlbumGridView.qml</file>
         <file>qml/SettingsPage.qml</file>
         <file>qml/LyricsView.qml</file>
+        <file>qml/PlaylistDialog.qml</file>
     </qresource>
     <qresource prefix="/">
         <file>icons/addPlaylistsIcon.svg</file>

@@ -7,12 +7,12 @@ import Qt5Compat.GraphicalEffects
 Item {
     id: root
 
-    property int    libraryIndex:    -1
+    property int libraryIndex:    -1
     property string songFilePath:    ""
     property string editTitle:       ""
     property string editArtist:      ""
     property string editAlbum:       ""
-    property int    editTrackNumber: 0
+    property int editTrackNumber: 0
     property string editCoverPath:   ""
 
     signal accepted()
@@ -21,9 +21,10 @@ Item {
     property string selectedImagePath: ""
 
     function normalizeImageSource(path) {
-        if (!path)                      return ""
-        if (path.startsWith("file://")) return path
-        if (path.startsWith("/"))       return "file://" + path
+        if (!path)
+            return ""
+        if (path.startsWith("/"))
+            return "file://" + path
         return path
     }
 
@@ -50,10 +51,10 @@ Item {
 
     onVisibleChanged: {
         if (visible) {
-            titleInput.text  = editTitle
+            titleInput.text = editTitle
             artistInput.text = editArtist
-            albumInput.text  = editAlbum
-            trackInput.text  = editTrackNumber > 0 ? editTrackNumber.toString() : ""
+            albumInput.text = editAlbum
+            trackInput.text = editTrackNumber > 0 ? editTrackNumber.toString() : ""
             selectedImagePath = ""
             titleInput.forceActiveFocus()
             titleInput.selectAll()
@@ -345,9 +346,9 @@ Item {
 
     // ── File picker ───────────────────────────────────────────────────────────
     FileDialog {
-        id:          fileDialog
-        title:       "Choose Song Cover Image"
+        id: fileDialog
+        title: "Choose Song Cover Image"
         nameFilters: ["Images (*.png *.jpg *.jpeg *.bmp)"]
-        onAccepted:  root.selectedImagePath = selectedFile.toString()
+        onAccepted: root.selectedImagePath = selectedFile.toString()
     }
 }
