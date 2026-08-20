@@ -114,12 +114,17 @@ ApplicationWindow {
         }
     }
 
-    // Ctrl+Q completely quits Meloville.
+    // Ctrl+Q completely quits Meloville. So people without a in-built
+    // Alt-F4 can still close the app as it doesn't have a app close button
     Shortcut {
         sequence: "Ctrl+Q"
         context: Qt.ApplicationShortcut
 
         onActivated: {
+            backend.saveSessionAndWindow(
+                appWindow.x, appWindow.y,
+                appWindow.width, appWindow.height
+            )
             appWindow.reallyQuit = true
             Qt.quit()
         }
@@ -127,7 +132,6 @@ ApplicationWindow {
 
     Component.onCompleted: {
         var geo = backend.loadWindowGeometry()
-
         appWindow.x = geo.x
         appWindow.y = geo.y
         appWindow.width = geo.width
@@ -138,13 +142,11 @@ ApplicationWindow {
     // Ctrl+Q and Tray -> Quit bypass this.
     onClosing: function(close) {
         backend.saveSessionAndWindow(
-            appWindow.x,
-            appWindow.y,
-            appWindow.width,
-            appWindow.height
+            appWindow.x, appWindow.y,
+            appWindow.width, appWindow.height
         )
 
-        if (appWindow.reallyQuit) {
+        if (appWindow.reallyQuit || !backend.closeToTray) {
             close.accepted = true
         } else {
             close.accepted = false
@@ -163,21 +165,6 @@ ApplicationWindow {
                 : "Meloville"
         }
     }
-
-    // Component.onCompleted: {
-    //     var geo = backend.loadWindowGeometry()
-    //     appWindow.x = geo.x
-    //     appWindow.y = geo.y
-    //     appWindow.width = geo.width
-    //     appWindow.height = geo.height
-    // }
-
-    // onClosing: function(close) {
-    //     backend.saveSessionAndWindow(
-    //         appWindow.x, appWindow.y,
-    //         appWindow.width, appWindow.height
-    //     )
-    // }
 
     Shortcut {
         sequence: "Space"

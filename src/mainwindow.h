@@ -63,6 +63,7 @@ class MainWindow : public QObject
     Q_PROPERTY(QString currentMusicFolder READ getMusicFolder NOTIFY musicFolderChanged)
     Q_PROPERTY(bool isCompact READ getIsCompact WRITE setCompactMode NOTIFY isCompactChanged)
     Q_PROPERTY(bool playlistRenewal READ getPlaylistRenewal WRITE setPlaylistRenewalMode NOTIFY playlistRenewalChanged)
+    Q_PROPERTY(bool closeToTray READ getCloseToTray WRITE setCloseToTray NOTIFY closeToTrayChanged)
 
 public:
     explicit MainWindow(QObject *parent = nullptr);
@@ -105,6 +106,7 @@ public:
     Q_INVOKABLE void setDelegateHeight(qreal h);
     Q_INVOKABLE void setCompactMode(bool compact);
     Q_INVOKABLE void setPlaylistRenewalMode(bool renewal);
+    Q_INVOKABLE void setCloseToTray(bool close);
 
     double getProgress() const { return progress; }
     PlaylistModel* getPlaylistModel() const { return playlistModel; }
@@ -157,6 +159,7 @@ public:
     qreal getDelegateHeight() const { return delegateHeight; }
     bool getIsCompact() const { return isCompact; }
     bool getPlaylistRenewal() const { return playlistRenewal; }
+    bool getCloseToTray() const { return closeToTray; }
 
 public slots:
     void onScanProgress(int current, int total);
@@ -210,6 +213,7 @@ signals:
     void delegateHeightChanged(qreal height);
     void isCompactChanged();
     void playlistRenewalChanged();
+    void closeToTrayChanged();
 
 private:
     QVector<SongData> library;
@@ -264,6 +268,7 @@ private:
     qreal delegateHeight = 62.0;
     bool isCompact = false;
     bool playlistRenewal = true;
+    bool closeToTray = false;
 };
 
 #endif // MAINWINDOW_H

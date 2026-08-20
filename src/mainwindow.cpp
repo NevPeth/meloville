@@ -1274,6 +1274,7 @@ void MainWindow::saveSessionState()
     settings.setValue("ui/delegateHeight", delegateHeight);
     settings.setValue("ui/isCompact", isCompact);
     settings.setValue("ui/playlistRenewal", playlistRenewal);
+    settings.setValue("ui/closeToTray", closeToTray);
 
     QJsonArray playbackArr;
     for (int idx : currentPlaybackSongs) {
@@ -1317,6 +1318,7 @@ void MainWindow::loadSessionState()
     delegateHeight = settings.value("ui/delegateHeight", 62.0).toReal();
     isCompact = settings.value("ui/isCompact", false).toBool();
     playlistRenewal = settings.value("ui/playlistRenewal", true).toBool();
+    closeToTray = settings.value("ui/closeToTray", false).toBool();
 
     QString savedTitle  = settings.value("session/title",  QString()).toString();
     QString savedArtist = settings.value("session/artist", QString()).toString();
@@ -1519,20 +1521,8 @@ void MainWindow::selectMusicFolder()
     QMetaObject::invokeMethod(scanner, "start", Qt::QueuedConnection);
 }
 
-void MainWindow::setDelegateHeight(qreal h)
-{
-    delegateHeight = h;
-    emit delegateHeightChanged(h);
-}
-
-void MainWindow::setCompactMode(bool compact)
-{
-    isCompact = compact;
-    emit isCompactChanged();
-}
-
-void MainWindow::setPlaylistRenewalMode(bool renewal)
-{
-    playlistRenewal = renewal;
-    emit playlistRenewalChanged();
-}
+// Setters for settings options, called in Settings.qml
+void MainWindow::setDelegateHeight(qreal h){ delegateHeight = h; emit delegateHeightChanged(h); }
+void MainWindow::setCompactMode(bool compact){ isCompact = compact; emit isCompactChanged(); }
+void MainWindow::setPlaylistRenewalMode(bool renewal){ playlistRenewal = renewal; emit playlistRenewalChanged(); }
+void MainWindow::setCloseToTray(bool close){ closeToTray = close; emit closeToTrayChanged(); }

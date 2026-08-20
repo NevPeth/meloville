@@ -458,6 +458,25 @@ Item {
                                 onToggledChanged2: function(val) { backend.setPlaylistRenewalMode(val) }
                             }
 
+                            Rectangle {
+                                Layout.fillWidth: true
+                                height: 1
+                                color: "#1a1a1a"
+                            }
+
+                            ToggleRow {
+                                label: "Close to tray icon"
+                                description: "If you want to fully close Meloville, there will be an option in the tray icon or you can use the keybind Ctrl + Q"
+                                toggled: backend.closeToTray
+                                onToggledChanged2: function(val) { backend.setCloseToTray(val) }
+                            }
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                height: 1
+                                color: "#1a1a1a"
+                            }
+
                             // Music folder
                             RowLayout {
                                 Layout.fillWidth: true
