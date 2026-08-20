@@ -1,7 +1,10 @@
 #pragma once
-#include "pulseaudioservice.h"
 #include <QObject>
 #include <QMediaPlayer>
+#include <QAudioOutput>
+#include <QMediaDevices>
+#include <QAudioDevice>
+#include <QTimer>
 
 class PlaybackController : public QObject
 {
@@ -24,12 +27,16 @@ signals:
     void volumeChanged(int volume);
     void positionChanged(qint64 position);
     void durationChanged(qint64 duration);
+    void audioOutputDeviceChanged();
 
 private:
-    QMediaPlayer* mediaPlayer;
-    QAudioOutput* audioOutput;
-    PulseAudioService* pulseAudioService; //Creates variables necessary for correct audio output
+    QMediaPlayer* mediaPlayer = nullptr;
+    QAudioOutput* audioOutput = nullptr;
+    QMediaDevices* mediaDevices = nullptr;
 
+    QTimer defaultAudioOutputTimer;
+
+    void handleDefaultAudioOutputChanged();
     void loadSettings();
     void saveSettings();
 };

@@ -56,7 +56,6 @@ You'll need:
 * **CMake 3.16+**
 * **Qt 6**
 * **TagLib**
-* **PulseAudio**
 
 ### For Arch
 

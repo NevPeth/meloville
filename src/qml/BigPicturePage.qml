@@ -74,7 +74,7 @@ Item {
     // Dim overlay so that user can actually see play controls
     Rectangle {
         anchors.fill: parent
-        color: Qt.rgba(0, 0, 0, 45 / 255.0)
+        color: Qt.rgba(0, 0, 0, 67 / 255.0)
     }
     
     RowLayout {
@@ -92,7 +92,7 @@ Item {
             Layout.bottomMargin: 70
             spacing: 0
 
-            // ── TOP BAR ───────────────────────────────────────────────
+            // ---- TOP BAR ----------------------------------------------------------------------------------------------
             RowLayout {
                 Layout.fillWidth: false
                 Layout.preferredHeight: 30
@@ -120,23 +120,21 @@ Item {
                 Item { Layout.fillWidth: true }
             }
 
-            // Flexible gap above album art (takes 1 share of remaining space)
             Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 Layout.minimumHeight: 8
             }
 
-            // ── ALBUM ART ─────────────────────────────────────────────
+            // -- ALBUM ART -----------------------
             // Sized to fit the available height proportionally — never overflows
             Item {
                 Layout.alignment: Qt.AlignHCenter
-                // Square: use the smaller of available width or 420
                 Layout.preferredWidth:  root.coverSize
                 Layout.preferredHeight: root.coverSize
                 Layout.leftMargin: root.hasLyrics ? root.layoutShift : 0
 
-                // Placeholder background — transparent, so nothing shows when no song
+                // Placeholder background so nothing shows when no song
                 Rectangle {
                     id: coverPlaceholder
                     anchors.fill: parent
@@ -210,7 +208,7 @@ Item {
                 Layout.maximumHeight: 24
             }
 
-            // ── SONG TITLE + ARTIST ───────────────────────────────────
+            // -- SONG TITLE + ARTIST -----------------------------------------
             Column {
                 Layout.fillWidth: true
                 Layout.leftMargin: root.hasLyrics ? root.layoutShift : 0
@@ -235,7 +233,7 @@ Item {
                 }
             }
 
-            // Gap between text and seek bar — also flexible but capped
+            // Gap between text and seek bar - also flexible but capped
             Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
@@ -243,7 +241,7 @@ Item {
                 Layout.maximumHeight: root.hasLyrics ? 30 : 20
             }
 
-            // ── SEEK BAR ──────────────────────────────────────────────
+            // -- SEEK BAR --------------------------------
             RowLayout {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 20
@@ -338,7 +336,7 @@ Item {
                 Layout.minimumHeight: root.hasLyrics ? 20 : 12
             }
 
-            // ── PLAYBACK BUTTONS ──────────────────────────────────────
+            // -- PLAYBACK BUTTONS -----------------------------------
             RowLayout {
                 Layout.alignment: Qt.AlignHCenter
                 Layout.fillWidth: true
@@ -428,7 +426,7 @@ Item {
                 Layout.minimumHeight: root.hasLyrics ? 20 : 12
             }
 
-            // ── VOLUME ROW ────────────────────────────────────────────
+            // -- VOLUME ROW -----------------------------------------------------
             RowLayout {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 20
@@ -510,7 +508,6 @@ Item {
                 Item { Layout.fillWidth: true }
             }
 
-            // Bottom flexible gap (1 share — same as top, keeps content centred)
             Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true

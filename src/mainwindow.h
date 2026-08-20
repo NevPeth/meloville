@@ -24,9 +24,9 @@ class PlaylistManager;
 class MainWindow : public QObject
 {
     Q_OBJECT
-    // QML connecting is a bit dumb but basically when calling backend.progress, for example
-    // I'm saying it's going to run the "getProgress" to return that value and I will force
-    // Refresh if the "progressChanged" signal is emitted
+    // QML connecting is a bit dumb but basically when calling backend.progress, for example,
+    // it's basically saying it's going to run the "getProgress" to return that value and it will force
+    // call the getter to reload the value once the "progressChanged" signal is emitted
     Q_PROPERTY(SongModel* songModel READ getSongModel CONSTANT)
     Q_PROPERTY(double progress READ getProgress NOTIFY progressChanged)
     Q_PROPERTY(QString statusMessage READ getStatusMessage NOTIFY statusMessageChanged)
@@ -210,7 +210,7 @@ signals:
     void listenAlongStopped();
     void listenAlongListenerCountChanged(int count);
     void musicFolderChanged(const QString &path);
-    void delegateHeightChanged(qreal height);
+    void delegateHeightChanged();
     void isCompactChanged();
     void playlistRenewalChanged();
     void closeToTrayChanged();

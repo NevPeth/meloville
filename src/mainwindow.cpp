@@ -59,6 +59,16 @@ MainWindow::MainWindow(QObject *parent)
     connect(playbackController, &PlaybackController::volumeChanged,
         this, &MainWindow::volumeChanged);
 
+    connect(
+        playbackController,
+        &PlaybackController::audioOutputDeviceChanged,
+        this,
+        [this]() {
+            songModel->setPausedState(true);
+            setPlaying(false);
+        }
+    );
+
     //Sets up bluetooth headphone media controls and gives the system knowledge of currently playing song
     MprisAdapter *mpris = new MprisAdapter(this);
     connect(mpris->getPlayer(), &MprisPlayerAdaptor::nextRequested, this, &MainWindow::playNextSong);
@@ -1404,7 +1414,7 @@ void MainWindow::loadSessionState()
 void MainWindow::startListenAlongServer(int port)
 {
     if (!listenAlongServer->start(static_cast<quint16>(port))) {
-        emit listenAlongUrlsReady({});   // empty list signals failure to QML
+        emit listenAlongUrlsReady({}); // empty list signals failure to QML
         return;
     }
 
@@ -1522,7 +1532,7 @@ void MainWindow::selectMusicFolder()
 }
 
 // Setters for settings options, called in Settings.qml
-void MainWindow::setDelegateHeight(qreal h){ delegateHeight = h; emit delegateHeightChanged(h); }
+void MainWindow::setDelegateHeight(qreal h){ delegateHeight = h; emit delegateHeightChanged(); }
 void MainWindow::setCompactMode(bool compact){ isCompact = compact; emit isCompactChanged(); }
 void MainWindow::setPlaylistRenewalMode(bool renewal){ playlistRenewal = renewal; emit playlistRenewalChanged(); }
 void MainWindow::setCloseToTray(bool close){ closeToTray = close; emit closeToTrayChanged(); }

@@ -806,9 +806,9 @@ ApplicationWindow {
                             }
                         }
 
-                        // ── Sticky playlist bar (overlays the top of listViewSongs) ────────────
+                        // ── Sticky bar (overlays the top of listViewSongs) ────────────
                         Rectangle {
-                            id: stickyPlaylistBar
+                            id: stickyBar
 
                             // Only relevant when in playlist view
                             visible: (backend.isInPlaylistView || backend.isInAlbumView)
@@ -820,7 +820,7 @@ ApplicationWindow {
                             height: 50
 
                             opacity: Math.min(1.0, Math.max(0.0,
-                                -listViewSongs.heroBottomY / 150
+                                (-listViewSongs.heroBottomY-100) / 100
                             ))
 
                             color: "#111111"
