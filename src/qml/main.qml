@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
 import QtQml.Models
 import QtQuick.Effects
+import Qt.labs.platform
 
 ApplicationWindow {
     id: appWindow
@@ -11,6 +12,123 @@ ApplicationWindow {
     title: "Meloville"
     color: "#121212"
     flags: Qt.FramelessWindowHint
+    
+    property bool reallyQuit: false
+
+    SystemTrayIcon {
+        id: trayIcon
+
+        visible: true
+        icon.source: "qrc:/icons/meloville.svg"
+
+        tooltip: backend.currentSongTitle !== ""
+                 ? backend.currentSongTitle + " — " + backend.currentSongArtist
+                 : "Meloville"
+
+        menu: Menu {
+            MenuItem {
+                text: backend.currentSongTitle !== ""
+                      ? backend.currentSongTitle
+                      : "Nothing Playing"
+                enabled: false
+            }
+
+            MenuItem {
+                text: backend.currentSongArtist !== ""
+                      ? backend.currentSongArtist
+                      : ""
+                enabled: false
+            }
+
+            MenuSeparator {}
+
+            MenuItem {
+                text: "Previous"
+                enabled: backend.currentSongTitle !== ""
+
+                onTriggered: {
+                    backend.playPreviousSong()
+                }
+            }
+
+            MenuItem {
+                text: backend.playing ? "Pause" : "Play"
+                enabled: backend.currentSongTitle !== ""
+
+                onTriggered: {
+                    backend.playAndPause()
+                }
+            }
+
+            MenuItem {
+                text: "Next"
+                enabled: backend.currentSongTitle !== ""
+
+                onTriggered: {
+                    backend.playNextSong()
+                }
+            }
+
+            MenuSeparator {}
+
+            MenuItem {
+                text: appWindow.visible
+                      ? "Hide Meloville"
+                      : "Show Meloville"
+
+                onTriggered: {
+                    if (appWindow.visible) {
+                        appWindow.hide()
+                    } else {
+                        appWindow.show()
+                        appWindow.raise()
+                        appWindow.requestActivate()
+                    }
+                }
+            }
+
+            MenuSeparator {}
+
+            MenuItem {
+                text: "Quit"
+
+                onTriggered: {
+                    appWindow.reallyQuit = true
+                    Qt.quit()
+                }
+            }
+        }
+
+        onActivated: function(reason) {
+            if (reason === SystemTrayIcon.Trigger ||
+                reason === SystemTrayIcon.DoubleClick) {
+
+                if (appWindow.visible) {
+                    appWindow.hide()
+                } else {
+                    appWindow.show()
+                    appWindow.raise()
+                    appWindow.requestActivate()
+                }
+            }
+        }
+    }
+
+    // Ctrl+Q completely quits Meloville. So people without a in-built
+    // Alt-F4 can still close the app as it doesn't have a app close button
+    Shortcut {
+        sequence: "Ctrl+Q"
+        context: Qt.ApplicationShortcut
+
+        onActivated: {
+            backend.saveSessionAndWindow(
+                appWindow.x, appWindow.y,
+                appWindow.width, appWindow.height
+            )
+            appWindow.reallyQuit = true
+            Qt.quit()
+        }
+    }
 
     Component.onCompleted: {
         var geo = backend.loadWindowGeometry()
@@ -20,11 +138,32 @@ ApplicationWindow {
         appWindow.height = geo.height
     }
 
+    // Clicking the normal window close button hides to tray.
+    // Ctrl+Q and Tray -> Quit bypass this.
     onClosing: function(close) {
         backend.saveSessionAndWindow(
             appWindow.x, appWindow.y,
             appWindow.width, appWindow.height
         )
+
+        if (appWindow.reallyQuit || !backend.closeToTray) {
+            close.accepted = true
+        } else {
+            close.accepted = false
+            appWindow.hide()
+        }
+    }
+
+    // Keep the tray tooltip synchronized with the current song.
+    Connections {
+        target: backend
+
+        function onCurrentSongChanged() {
+            trayIcon.tooltip =
+                backend.currentSongTitle !== ""
+                ? backend.currentSongTitle + " — " + backend.currentSongArtist
+                : "Meloville"
+        }
     }
 
     Shortcut {

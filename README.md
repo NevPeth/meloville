@@ -86,7 +86,7 @@ cmake ../src && cmake --build .
 ### Run
 
 ```bash
-./Meloville
+./meloville
 ```
 
 ## Contributing
