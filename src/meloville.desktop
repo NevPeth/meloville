@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=Meloville
 Comment=A music player built for people who just want to listen to their music
-Exec=Meloville
+Exec=meloville
 Icon=meloville
 Terminal=false
 Type=Application
