@@ -148,6 +148,7 @@ ApplicationWindow {
 
         if (appWindow.reallyQuit || !backend.closeToTray) {
             close.accepted = true
+            Qt.quit()
         } else {
             close.accepted = false
             appWindow.hide()
