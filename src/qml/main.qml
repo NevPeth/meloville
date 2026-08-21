@@ -11,7 +11,7 @@ ApplicationWindow {
     visible: true
     title: "Meloville"
     color: "#121212"
-    flags: backend.nativeResizing ? Qt.Window : Qt.FramelessWindowHint//Qt.FramelessWindowHint
+    flags: backend.nativeResizing ? Qt.Window : Qt.FramelessWindowHint
     
     property bool reallyQuit: false
 

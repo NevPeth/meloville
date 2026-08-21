@@ -49,7 +49,7 @@ void LibraryScanner::start()
         const QFileInfo &fileInfo = files.at(i);
         SongData song = MetadataReader::readSong(fileInfo.absoluteFilePath());
         song.coverPath = MetadataReader::cacheCoverArt(
-            song.filePath, cacheDir, fileInfo.baseName()
+            song.filePath, cacheDir, MetadataReader::cacheKeyForPath(song.filePath)
         );
         song.lyricsPath = MetadataReader::findLrcFile(fileInfo.absolutePath(), fileInfo.completeBaseName(), folderPath);
         library.append(song);
