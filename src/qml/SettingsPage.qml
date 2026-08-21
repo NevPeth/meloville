@@ -477,6 +477,26 @@ Item {
                                 color: "#1a1a1a"
                             }
 
+                            ToggleRow {
+                                label: "Custom window positioning and resizing"
+                                description: "While active the window will move by dragging the library/album header or playlist/album descriptors. In big picture mode, dragging the cover art will move the window."
+                                toggled: backend.customResizing
+                                onToggledChanged2: function(val) { backend.setCustomResizing(val) }
+                            }
+
+                            ToggleRow {
+                                label: "Native window decorations"
+                                description: "Shows all the window decorations your native environment provides"
+                                toggled: backend.nativeResizing
+                                onToggledChanged2: function(val) { backend.setNativeResizing(val) }
+                            }
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                height: 1
+                                color: "#1a1a1a"
+                            }
+
                             // Music folder
                             RowLayout {
                                 Layout.fillWidth: true
@@ -594,7 +614,7 @@ Item {
                                     }
                                 }
                             }
-                            Item { height: 60 }
+                            Item { height: 20 }
                         }
                     }
 

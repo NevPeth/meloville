@@ -1285,6 +1285,8 @@ void MainWindow::saveSessionState()
     settings.setValue("ui/isCompact", isCompact);
     settings.setValue("ui/playlistRenewal", playlistRenewal);
     settings.setValue("ui/closeToTray", closeToTray);
+    settings.setValue("ui/customResizing", customResizing);
+    settings.setValue("ui/nativeResizing", nativeResizing);
 
     QJsonArray playbackArr;
     for (int idx : currentPlaybackSongs) {
@@ -1329,6 +1331,8 @@ void MainWindow::loadSessionState()
     isCompact = settings.value("ui/isCompact", false).toBool();
     playlistRenewal = settings.value("ui/playlistRenewal", true).toBool();
     closeToTray = settings.value("ui/closeToTray", false).toBool();
+    customResizing = settings.value("ui/customResizing", true).toBool();
+    nativeResizing = settings.value("ui/nativeResizing", false).toBool();
 
     QString savedTitle  = settings.value("session/title",  QString()).toString();
     QString savedArtist = settings.value("session/artist", QString()).toString();
@@ -1536,3 +1540,5 @@ void MainWindow::setDelegateHeight(qreal h){ delegateHeight = h; emit delegateHe
 void MainWindow::setCompactMode(bool compact){ isCompact = compact; emit isCompactChanged(); }
 void MainWindow::setPlaylistRenewalMode(bool renewal){ playlistRenewal = renewal; emit playlistRenewalChanged(); }
 void MainWindow::setCloseToTray(bool close){ closeToTray = close; emit closeToTrayChanged(); }
+void MainWindow::setCustomResizing(bool custom){ customResizing = custom; emit customResizingChanged(); }
+void MainWindow::setNativeResizing(bool native){ nativeResizing = native; emit nativeResizingChanged(); }

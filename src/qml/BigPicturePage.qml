@@ -134,6 +134,12 @@ Item {
                 Layout.preferredHeight: root.coverSize
                 Layout.leftMargin: root.hasLyrics ? root.layoutShift : 0
 
+                DragHandler {
+                    target: null
+                    grabPermissions: PointerHandler.TakeOverForbidden
+                    onActiveChanged: if (active && backend.customResizing) appWindow.startSystemMove()
+                }
+
                 // Placeholder background so nothing shows when no song
                 Rectangle {
                     id: coverPlaceholder

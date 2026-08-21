@@ -64,6 +64,8 @@ class MainWindow : public QObject
     Q_PROPERTY(bool isCompact READ getIsCompact WRITE setCompactMode NOTIFY isCompactChanged)
     Q_PROPERTY(bool playlistRenewal READ getPlaylistRenewal WRITE setPlaylistRenewalMode NOTIFY playlistRenewalChanged)
     Q_PROPERTY(bool closeToTray READ getCloseToTray WRITE setCloseToTray NOTIFY closeToTrayChanged)
+    Q_PROPERTY(bool customResizing READ getCustomResizing WRITE setCustomResizing NOTIFY customResizingChanged)
+    Q_PROPERTY(bool nativeResizing READ getNativeResizing WRITE setNativeResizing NOTIFY nativeResizingChanged)
 
 public:
     explicit MainWindow(QObject *parent = nullptr);
@@ -107,6 +109,8 @@ public:
     Q_INVOKABLE void setCompactMode(bool compact);
     Q_INVOKABLE void setPlaylistRenewalMode(bool renewal);
     Q_INVOKABLE void setCloseToTray(bool close);
+    Q_INVOKABLE void setCustomResizing(bool custom);
+    Q_INVOKABLE void setNativeResizing(bool native);
 
     double getProgress() const { return progress; }
     PlaylistModel* getPlaylistModel() const { return playlistModel; }
@@ -160,6 +164,8 @@ public:
     bool getIsCompact() const { return isCompact; }
     bool getPlaylistRenewal() const { return playlistRenewal; }
     bool getCloseToTray() const { return closeToTray; }
+    bool getCustomResizing() const { return customResizing; }
+    bool getNativeResizing() const { return nativeResizing; }
 
 public slots:
     void onScanProgress(int current, int total);
@@ -214,6 +220,8 @@ signals:
     void isCompactChanged();
     void playlistRenewalChanged();
     void closeToTrayChanged();
+    void customResizingChanged();
+    void nativeResizingChanged();
 
 private:
     QVector<SongData> library;
@@ -269,6 +277,8 @@ private:
     bool isCompact = false;
     bool playlistRenewal = true;
     bool closeToTray = false;
+    bool customResizing = true;
+    bool nativeResizing = false;
 };
 
 #endif // MAINWINDOW_H

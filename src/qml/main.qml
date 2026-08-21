@@ -11,7 +11,7 @@ ApplicationWindow {
     visible: true
     title: "Meloville"
     color: "#121212"
-    flags: Qt.FramelessWindowHint
+    flags: backend.nativeResizing ? Qt.Window : Qt.FramelessWindowHint//Qt.FramelessWindowHint
     
     property bool reallyQuit: false
 
@@ -347,9 +347,9 @@ ApplicationWindow {
                         height: backend.isCompact ? delegateHeight/2 : delegateHeight
                         color: "transparent"
 
-                        // Lift the row visually while dragging
+                        // Lifts the row visually while dragging
                         Drag.active: dragArea.held
-                        Drag.source: delegateRoot   // expose DelegateModel.itemsIndex to DropArea.onEntered
+                        Drag.source: delegateRoot
                         Drag.hotSpot.x: width  / 2
                         Drag.hotSpot.y: height / 2
 
@@ -357,7 +357,8 @@ ApplicationWindow {
                             when: dragArea.held
                             ParentChange {
                                 target: songRow
-                                parent: listViewSongs   // reparent so it floats above everything
+                                parent: listViewSongs // reparented so it floats above 
+                                // everything which is important while dragging
                             }
                             AnchorChanges {
                                 target: songRow
@@ -365,7 +366,7 @@ ApplicationWindow {
                             }
                         }
 
-                        // Background color
+                        // Background color of delegate (so basically song row background color)
                         Rectangle {
                             anchors.fill: parent
                             color: isPlaying ? "#2a2a2a"
@@ -384,7 +385,6 @@ ApplicationWindow {
                             drag.threshold: 10
                             property bool held: false
                             property int startIndex: -1
-                            property int currentIndex: -1
 
                             // ── Auto-scroll state ────────────────────────────────────────────────
                             property real scrollSpeed: 0   // px per timer tick; negative = up
@@ -404,7 +404,7 @@ ApplicationWindow {
 
                             onPositionChanged: {
                                 if (!held) return
-                                // -- Auto-scroll Threshold -----
+                                // Auto-scroll threshold
                                 var threshold = 120
 
                                 // Map through the window instead — survives the ParentChange reparent
@@ -422,7 +422,6 @@ ApplicationWindow {
 
                             onPressed: {
                                 startIndex = delegateRoot.DelegateModel.itemsIndex
-                                currentIndex = startIndex
                                 held = true
                                 listViewSongs.interactive = false
                             }
@@ -435,8 +434,7 @@ ApplicationWindow {
                                     scrollSpeed = 0
                                     listViewSongs.interactive = true
 
-                                    startIndex   = -1
-                                    currentIndex = -1
+                                    startIndex = -1
                                 }
                             }
 
@@ -444,8 +442,7 @@ ApplicationWindow {
                                 held = false
                                 scrollSpeed = 0
                                 listViewSongs.interactive = true
-                                startIndex   = -1
-                                currentIndex = -1
+                                startIndex = -1
                             }
                         }
 
@@ -754,6 +751,12 @@ ApplicationWindow {
                             visible: !backend.isInPlaylistView && !backend.isInAlbumView
                             color: "transparent"
 
+                            DragHandler {
+                                target: null
+                                grabPermissions: PointerHandler.TakeOverForbidden
+                                onActiveChanged: if (active && backend.customResizing) appWindow.startSystemMove()
+                            }
+
                             RowLayout {
                                 id: currentLibraryHeader
                                 anchors.fill: parent
@@ -971,6 +974,12 @@ ApplicationWindow {
                                     width:  ListView.view.width
                                     height: 270
 
+                                    DragHandler {
+                                        target: null
+                                        grabPermissions: PointerHandler.TakeOverForbidden
+                                        onActiveChanged: if (active && backend.customResizing) appWindow.startSystemMove()
+                                    }
+
                                     // Resolve cover/title/subtitle from whichever context is active
                                     readonly property bool inPlaylist: backend.isInPlaylistView
                                     readonly property string heroCoverSource: {
@@ -1174,8 +1183,7 @@ ApplicationWindow {
 
                             model: backend.albumModel
 
-                            // Mirror AlbumGridView::recalculateGrid() maths:
-                            // fit as many columns as possible at >= 184 px each,
+                            // Fits as many columns as possible at >= 184 px each,
                             // then stretch them evenly so there's no dead gap.
                             readonly property int minTileWidth: 184
                             readonly property int pad:          12   // kCellPadding
@@ -1238,8 +1246,8 @@ ApplicationWindow {
                                 // ── Title ─────────────────────────────────────────────
                                 Text {
                                     id: tileTitle
-                                    x:     albumGrid.pad / 2
-                                    y:     coverItem.y + coverItem.height + 8
+                                    x: albumGrid.pad / 2
+                                    y: coverItem.y + coverItem.height + 8
                                     width: parent.width - albumGrid.pad
                                     text:  model.title
                                     color: "white"
@@ -1251,8 +1259,8 @@ ApplicationWindow {
 
                                 // ── Artist ────────────────────────────────────────────
                                 Text {
-                                    x:     albumGrid.pad / 2
-                                    y:     tileTitle.y + 18
+                                    x: albumGrid.pad / 2
+                                    y: tileTitle.y + 18
                                     width: parent.width - albumGrid.pad
                                     text:  model.artist
                                     color: "#b3b3b3"
@@ -1801,6 +1809,37 @@ ApplicationWindow {
         function onLibraryLoaded() {
             stackView.push(loadedSongsPageComponent)
             heroSharedSearchText = ""
+        }
+    }
+
+    // // ── Resize handles (frameless window) ──────────────────────────
+    Repeater {
+        model: [
+            // edges
+            { edge: Qt.LeftEdge,   cursor: Qt.SizeHorCursor,  x: 0,                    y: 4,                    w: 4,                h: appWindow.height - 8 },
+            { edge: Qt.RightEdge,  cursor: Qt.SizeHorCursor,  x: appWindow.width - 4,  y: 4,                    w: 4,                h: appWindow.height - 8 },
+            { edge: Qt.TopEdge,    cursor: Qt.SizeVerCursor,  x: 4,                    y: 0,                    w: appWindow.width - 8, h: 4 },
+            { edge: Qt.BottomEdge, cursor: Qt.SizeVerCursor,  x: 4,                    y: appWindow.height - 4, w: appWindow.width - 8, h: 4 },
+            // corners
+            { edge: Qt.TopEdge | Qt.LeftEdge,     cursor: Qt.SizeFDiagCursor, x: 0,                     y: 0,                    w: 8, h: 8 },
+            { edge: Qt.TopEdge | Qt.RightEdge,    cursor: Qt.SizeBDiagCursor, x: appWindow.width - 8,   y: 0,                    w: 8, h: 8 },
+            { edge: Qt.BottomEdge | Qt.LeftEdge,  cursor: Qt.SizeBDiagCursor, x: 0,                     y: appWindow.height - 8, w: 8, h: 8 },
+            { edge: Qt.BottomEdge | Qt.RightEdge, cursor: Qt.SizeFDiagCursor, x: appWindow.width - 8,   y: appWindow.height - 8, w: 8, h: 8 }
+        ]
+
+        Item {
+            parent: appWindow.contentItem
+            x: modelData.x
+            y: modelData.y
+            width: modelData.w
+            height: modelData.h
+
+            HoverHandler { cursorShape: if(backend.customResizing && appWindow.visibility != Window.Maximized && !backend.nativeResizing) modelData.cursor }
+
+            DragHandler {
+                grabPermissions: TapHandler.CanTakeOverFromAnything
+                onActiveChanged: if (active && backend.customResizing && !backend.nativeResizing) appWindow.startSystemResize(modelData.edge)
+            }
         }
     }
 }
