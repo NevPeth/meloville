@@ -9,6 +9,7 @@
 #include "playlistmodel.h"
 #include "albuminfo.h"
 #include "albumlistmodel.h"
+#include "mprisadapter.h"
 #include "listenalongserver.h"
 #include <pulse/pulseaudio.h>
 #include <QMainWindow>
@@ -242,6 +243,7 @@ private:
     bool libraryPresent = false;
 
     PlaybackController *playbackController = nullptr;
+    MprisAdapter *mpris = nullptr;
     int currentLibraryIndex = -1;
     int currentVisibleIndex = -1;
     int currentPlaybackIndex = -1;

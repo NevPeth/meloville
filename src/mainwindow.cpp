@@ -70,12 +70,12 @@ MainWindow::MainWindow(QObject *parent)
     );
 
     //Sets up bluetooth headphone media controls and gives the system knowledge of currently playing song
-    MprisAdapter *mpris = new MprisAdapter(this);
+    mpris = new MprisAdapter(this);
     connect(mpris->getPlayer(), &MprisPlayerAdaptor::nextRequested, this, &MainWindow::playNextSong);
     connect(mpris->getPlayer(), &MprisPlayerAdaptor::previousRequested, this, &MainWindow::playPreviousSong);
     connect(mpris->getPlayer(), &MprisPlayerAdaptor::playPauseRequested, this, &MainWindow::playAndPause);
 
-    connect(this, &MainWindow::currentSongChanged, this, [this, mpris]() {
+    connect(this, &MainWindow::currentSongChanged, this, [this]() {
         if (currentLibraryIndex < 0 || currentLibraryIndex >= library.size())
             return;
 
@@ -95,11 +95,41 @@ MainWindow::MainWindow(QObject *parent)
         mpris->getPlayer()->setMetadata(md);
     });
 
-    connect(this, &MainWindow::playingChanged, this, [this, mpris](bool isPlaying) {
+    connect(playbackController, &PlaybackController::positionChanged,
+        this, [this](qint64 pos) {
+            mpris->getPlayer()->setPosition(pos);
+        });
+
+    connect(mpris->getPlayer(), &MprisPlayerAdaptor::seekRequested,
+        this, [this](qint64 positionMs) {
+            seekTo(positionMs);
+        });
+
+    connect(this, &MainWindow::playingChanged, this, [this](bool isPlaying) {
         mpris->getPlayer()->setPlaybackStatus(isPlaying ? "Playing" : "Paused");
     });
+
+    connect(mpris->getPlayer(), &MprisPlayerAdaptor::shuffleRequested,
+        this, [this](bool enabled) {
+            if (enabled != shuffleMode)
+                toggleShuffle();
+        });
+
+    connect(mpris->getPlayer(), &MprisPlayerAdaptor::repeatRequested,
+            this, [this](bool enabled) {
+                if (enabled != repeatMode)
+                    toggleRepeat();
+            });
+
+    connect(this, &MainWindow::shuffleModeChanged, this, [this]() {
+        mpris->getPlayer()->updateShuffle(shuffleMode);
+    });
+
+    connect(this, &MainWindow::repeatModeChanged, this, [this]() {
+        mpris->getPlayer()->updateLoopStatus(repeatMode);
+    });
     
-    // makes folder in .local/share/Meloville (on Linux)
+    // makes cache folder in .local/share/Meloville (on Linux)
     QDir().mkpath(appDataPath + "/cache");
     
     loadLibrary();
@@ -462,7 +492,7 @@ void MainWindow::playSong(int libraryIndex)
         listenAlongServer->syncPlaybackPosition(0);
         listenAlongServer->setPaused(false);
     }
-
+    mpris->getPlayer()->emitSeeked(0);
     emit currentLibraryIndexChanged();
     emit currentSongChanged();
 }
@@ -576,7 +606,11 @@ void MainWindow::playAndPause()
 
 int MainWindow::getVolume() const{ return playbackController->volume(); }
 void MainWindow::setVolume(int vol){ playbackController->setVolume(vol); }
-void MainWindow::seekTo(qint64 positionMs){ playbackController->player()->setPosition(positionMs); }
+
+void MainWindow::seekTo(qint64 positionMs){
+    playbackController->player()->setPosition(positionMs); 
+    mpris->getPlayer()->emitSeeked(positionMs);
+}
 
 void MainWindow::rebuildShufflePool()
 {
@@ -1365,6 +1399,8 @@ void MainWindow::loadSessionState()
 
     shuffleMode = settings.value("session/shuffleMode", false).toBool();
     repeatMode  = settings.value("session/repeatMode",  false).toBool();
+    mpris->getPlayer()->updateShuffle(shuffleMode);
+    mpris->getPlayer()->updateLoopStatus(repeatMode);
 
     currentlyPlayingPlaylist = settings.value("session/currentlyPlayingPlaylist", QString()).toString();
     currentlyPlayingAlbum = settings.value("session/currentlyPlayingAlbum", QString()).toString();

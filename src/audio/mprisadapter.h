@@ -44,6 +44,9 @@ class MprisPlayerAdaptor : public QDBusAbstractAdaptor
     Q_PROPERTY(bool        CanControl     READ getCanControl)
     Q_PROPERTY(QString     PlaybackStatus READ getPlaybackStatus)
     Q_PROPERTY(QVariantMap Metadata       READ getMetadata)
+    Q_PROPERTY(qlonglong   Position       READ getPosition)
+    Q_PROPERTY(bool        Shuffle        READ getShuffle    WRITE setShuffle)
+    Q_PROPERTY(QString     LoopStatus     READ getLoopStatus WRITE setLoopStatus)
 
 public:
     explicit MprisPlayerAdaptor(QObject *parent)
@@ -53,10 +56,13 @@ public:
     bool        getCanPause()       const { return true; }
     bool        getCanGoNext()      const { return true; }
     bool        getCanGoPrevious()  const { return true; }
-    bool        getCanSeek()        const { return false; }
+    bool        getCanSeek()        const { return true; }
     bool        getCanControl()     const { return true; }
     QString     getPlaybackStatus() const { return playbackStatus; }
     QVariantMap getMetadata()       const { return metadata; }
+    qlonglong   getPosition()       const { return positionUs; }
+    bool        getShuffle()        const { return shuffle; }
+    QString     getLoopStatus()     const { return loopStatus; }
 
     void setMetadata(const QVariantMap &map)
     {
@@ -96,6 +102,52 @@ public:
         QDBusConnection::sessionBus().send(signal);
     }
 
+    void setPosition(qint64 positionMs){
+        positionUs = positionMs * 1000LL;
+    }
+
+    void emitSeeked(qint64 positionMs){
+        emit Seeked(positionMs * 1000LL);
+    }
+
+    void setShuffle(bool value){
+        shuffle = value;
+        emitPropertyChanged("Shuffle", shuffle);
+        emit shuffleRequested(value);
+    }
+
+    void setLoopStatus(const QString &value){
+        loopStatus = value;
+        emitPropertyChanged("LoopStatus", loopStatus);
+        emit repeatRequested(value != "None");
+    }
+
+    void updateShuffle(bool value){
+        shuffle = value;
+        emitPropertyChanged("Shuffle", shuffle);
+    }
+
+    void updateLoopStatus(bool value){
+        loopStatus = value ? "Playlist" : "None";
+        emitPropertyChanged("LoopStatus", loopStatus);
+    }
+
+    void emitPropertyChanged(const QString &name, const QVariant &value){
+        QVariantMap changed;
+        changed[name] = value;
+
+        QDBusMessage signal = QDBusMessage::createSignal(
+            "/org/mpris/MediaPlayer2",
+            "org.freedesktop.DBus.Properties",
+            "PropertiesChanged"
+        );
+        signal << "org.mpris.MediaPlayer2.Player"
+            << changed
+            << QStringList{};
+
+        QDBusConnection::sessionBus().send(signal);
+    }
+
 public slots:
     void Next()      { emit nextRequested(); }
     void Previous()  { emit previousRequested(); }
@@ -103,15 +155,28 @@ public slots:
     void Play()      { emit playPauseRequested(); }
     void Pause()     { emit playPauseRequested(); }
     void Stop()      {}
+    void Seek(qlonglong offsetUs){ emit seekRequested((positionUs + offsetUs) / 1000LL); }
+    void SetPosition(const QDBusObjectPath &trackId, qlonglong positionUs)
+    {
+        Q_UNUSED(trackId)
+        emit seekRequested(positionUs / 1000LL);
+    }
 
 signals:
     void nextRequested();
     void previousRequested();
     void playPauseRequested();
+    void seekRequested(qint64 positionMs);
+    void Seeked(qlonglong positionUs);
+    void shuffleRequested(bool enabled);
+    void repeatRequested(bool enabled);
 
 private:
-    QString     playbackStatus = "Stopped";
+    QString playbackStatus = "Stopped";
     QVariantMap metadata;
+    qlonglong positionUs = 0;
+    bool shuffle = false;
+    QString loopStatus = "None";
 };
 
 class MprisAdapter : public QObject
@@ -122,6 +187,6 @@ public:
     MprisPlayerAdaptor *getPlayer() const { return player; }
 
 private:
-    MprisRootAdaptor   *root   = nullptr;
+    MprisRootAdaptor *root = nullptr;
     MprisPlayerAdaptor *player = nullptr;
 };
