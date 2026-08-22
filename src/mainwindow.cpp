@@ -28,7 +28,7 @@ MainWindow::MainWindow(QObject *parent)
     // Manages all playlist logic that can be abstracted away from the mainwindow (although a lot of calls
     // are directly tied into mainwindow, it can be helped but it's a pain and the existing architecture works
     // well enough. But if you just want low hanging fruit you can go do that. It's just busy work.)
-    playlistManager = new PlaylistManager(this); 
+    playlistManager = new PlaylistManager(this);
     albumModel = new AlbumListModel(this);
 
     connect(playlistManager, &PlaylistManager::playlistChanged,
@@ -74,6 +74,8 @@ MainWindow::MainWindow(QObject *parent)
     connect(mpris->getPlayer(), &MprisPlayerAdaptor::nextRequested, this, &MainWindow::playNextSong);
     connect(mpris->getPlayer(), &MprisPlayerAdaptor::previousRequested, this, &MainWindow::playPreviousSong);
     connect(mpris->getPlayer(), &MprisPlayerAdaptor::playPauseRequested, this, &MainWindow::playAndPause);
+    connect(mpris->getPlayer(), &MprisPlayerAdaptor::loopStatusChanged, this, &MainWindow::setRepeatMode);
+    connect(mpris->getPlayer(), &MprisPlayerAdaptor::shuffleChanged, this, &MainWindow::setShuffleMode);
 
     connect(this, &MainWindow::currentSongChanged, this, [this, mpris]() {
         if (currentLibraryIndex < 0 || currentLibraryIndex >= library.size())
@@ -98,10 +100,18 @@ MainWindow::MainWindow(QObject *parent)
     connect(this, &MainWindow::playingChanged, this, [this, mpris](bool isPlaying) {
         mpris->getPlayer()->setPlaybackStatus(isPlaying ? "Playing" : "Paused");
     });
-    
+
+    connect(this, &MainWindow::shuffleModeChanged, this, [this, mpris](bool shuffle) {
+        mpris->getPlayer()->setShuffle(shuffle);
+    });
+
+    connect(this, &MainWindow::repeatModeChanged, this, [this, mpris](bool repeat) {
+        mpris->getPlayer()->setLoopStatus(repeat ? "Track" : "None");
+    });
+
     // makes folder in .local/share/Meloville (on Linux)
     QDir().mkpath(appDataPath + "/cache");
-    
+
     loadLibrary();
     playlistManager->setPath(appDataPath);
     playlistManager->loadPlaylists(library, true);
@@ -275,7 +285,7 @@ Loads library but there are a lot of things to consider.
         - Did you remove it from the library put the rest of the songs back?
     - Did the user add new lyrics files?
     - Did the user remove lyrics files?
-*/ 
+*/
 void MainWindow::loadLibrary()
 {
     QFile file(appDataPath + "/library.json");
@@ -284,7 +294,7 @@ void MainWindow::loadLibrary()
 
     libraryPresent = true;
     emit libraryPresentChanged();
-    
+
     QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
     file.close();
 
@@ -311,7 +321,7 @@ void MainWindow::loadLibrary()
     // Rescan-on-load logic
     bool addedAny = false;
     bool removedAny = false;
-    
+
     if (!currentMusicFolder.isEmpty()) {
         QDir dir(currentMusicFolder);
         static const QStringList filters = {"*.mp3", "*.flac", "*.wav", "*.m4a", "*.aac", "*.ogg"};
@@ -347,7 +357,7 @@ void MainWindow::loadLibrary()
             SongData song = MetadataReader::readSong(absPath);
             song.coverPath = MetadataReader::cacheCoverArt(song.filePath, appDataPath + "/cache", MetadataReader::cacheKeyForPath(song.filePath));
             song.lyricsPath = MetadataReader::findLrcFile(fileInfo.absolutePath(), fileInfo.completeBaseName(), currentMusicFolder);
-            
+
             auto pos = std::lower_bound(library.begin(), library.end(), song, songTitleLess);
             library.insert(pos, song);
             addedAny = true;
@@ -365,7 +375,7 @@ void MainWindow::loadLibrary()
                 removedAny = true;
             }
         }
-        
+
         if (removedAny) {
             library = std::move(keptSongs);
         }
@@ -386,7 +396,7 @@ void MainWindow::loadLibrary()
     for (int i = 0; i < library.size(); i++) {
         currentViewSongs.push_back(i);
     }
-    
+
     visibleSongs = currentViewSongs;
     currentPlaybackSongs = currentViewSongs;
     rebuildPlaybackMap();
@@ -427,7 +437,7 @@ void MainWindow::playSongAtVisibleIndex(int visibleIndex)
         currentlyPlayingAlbumArtist.clear();
         currentlyPlayingAlbumCoverPath.clear();
     }
-    
+
     while (!playHistory.isEmpty())
         playHistory.pop_back();
 
@@ -447,7 +457,7 @@ void MainWindow::playSong(int libraryIndex)
     playbackController->player()->play();
     setPlaying(true);
     currentPlaybackIndex = libraryIndexToPlaybackPos.value(libraryIndex, -1);
-    songModel->setPlayingIndex(libraryIndex); 
+    songModel->setPlayingIndex(libraryIndex);
     currentLibraryIndex = libraryIndex;
 
     //Server is running, set the playing info
@@ -595,9 +605,12 @@ void MainWindow::rebuildShufflePool()
     }
 }
 
-void MainWindow::toggleShuffle(){
-    shuffleMode = !shuffleMode;
-    emit shuffleModeChanged();
+void MainWindow::setShuffleMode(bool shuffle){
+    if (shuffleMode == shuffle)
+        return;
+
+    shuffleMode = shuffle;
+    emit shuffleModeChanged(shuffleMode);
 
     while (!nextUp.isEmpty())
         nextUp.pop();
@@ -606,9 +619,27 @@ void MainWindow::toggleShuffle(){
         rebuildShufflePool();
 }
 
+void MainWindow::toggleShuffle(){
+    shuffleMode = !shuffleMode;
+    emit shuffleModeChanged(shuffleMode);
+
+    while (!nextUp.isEmpty())
+        nextUp.pop();
+
+    if (shuffleMode)
+        rebuildShufflePool();
+}
+
+void MainWindow::setRepeatMode(bool repeat){
+    if (repeatMode != repeat) {
+        repeatMode = repeat;
+        emit repeatModeChanged(repeatMode);
+    }
+}
+
 void MainWindow::toggleRepeat(){
     repeatMode = !repeatMode;
-    emit repeatModeChanged();
+    emit repeatModeChanged(repeatMode);
 }
 
 void MainWindow::setPlaying(bool p){
@@ -673,12 +704,12 @@ void MainWindow::loadPlaylistView(const QString& playlistName)
     isInAlbumsGridView = false;
     leaveAlbumView();
     emit albumViewStateChanged();
-    
+
     filterText.clear();
     emit dragReorderAllowedChanged();
-    
 
-    QString coverPath = appDataPath + 
+
+    QString coverPath = appDataPath +
         playlistManager->playlistImage(
             playlistName
         );
@@ -732,9 +763,9 @@ void MainWindow::openSongContextMenu(int visibleIndex, int x, int y)
 {
     if (visibleIndex < 0 || visibleIndex >= visibleSongs.size())
         return;
-    
+
     updatePlaylistNames();
-    
+
     // Ask QML to open the popup with the visible index and position
     emit openContextMenuRequested(visibleIndex, x, y);
 }
@@ -743,12 +774,12 @@ void MainWindow::addToPlaylist(int visibleIndex, const QString& playlistName)
 {
     if (visibleIndex < 0 || visibleIndex >= visibleSongs.size())
         return;
-    
+
     int libraryIndex = visibleSongs[visibleIndex];
     const SongData& song = library[libraryIndex];
-    
+
     playlistManager->addSongToPlaylist(playlistName, libraryIndex, song);
-    
+
     if (playlistName == currentlyPlayingPlaylist)
         currentPlaybackSongs.push_back(libraryIndex);
     if (shuffleMode)
@@ -972,7 +1003,7 @@ void MainWindow::removeFromCurrentPlaylist(int visibleIndex)
 {
     if (!isInPlaylistView) return;
     if (visibleIndex < 0 || visibleIndex >= visibleSongs.size()) return;
-    
+
     int libraryIndex = visibleSongs[visibleIndex];
     QTimer::singleShot(0, this, [this, visibleIndex, libraryIndex]() {
         playlistManager->removeSongFromPlaylist(viewingPlaylist, libraryIndex);

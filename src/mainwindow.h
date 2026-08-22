@@ -40,12 +40,12 @@ class MainWindow : public QObject
     Q_PROPERTY(int currentSongDuration READ getCurrentSongDuration NOTIFY currentSongChanged)
     Q_PROPERTY(qint64 playerPosition READ getPlayerPosition NOTIFY playerPositionChanged)
     Q_PROPERTY(qint64 playerDuration READ getPlayerDuration NOTIFY playerDurationChanged)
-    Q_PROPERTY(bool repeatMode READ getRepeatMode NOTIFY repeatModeChanged)
-    Q_PROPERTY(bool shuffleMode READ getShuffleMode NOTIFY shuffleModeChanged)
+    Q_PROPERTY(bool repeatMode READ getRepeatMode WRITE setRepeatMode NOTIFY repeatModeChanged)
+    Q_PROPERTY(bool shuffleMode READ getShuffleMode WRITE setShuffleMode NOTIFY shuffleModeChanged)
     Q_PROPERTY(int volume READ getVolume WRITE setVolume NOTIFY volumeChanged)
     Q_PROPERTY(bool playing READ getPlaying NOTIFY playingChanged)
     Q_PROPERTY(qreal delegateHeight READ getDelegateHeight WRITE setDelegateHeight NOTIFY delegateHeightChanged)
-    
+
     Q_PROPERTY(QString viewingPlaylist READ getViewingPlaylist NOTIFY viewingPlaylistChanged)
     Q_PROPERTY(PlaylistManager* playlistManager READ getPlaylistManager CONSTANT)
     Q_PROPERTY(PlaylistModel* playlistModel READ getPlaylistModel CONSTANT)
@@ -135,7 +135,9 @@ public:
         return library[currentLibraryIndex].coverPath;
     }
     bool getRepeatMode() const { return repeatMode; }
+    void setRepeatMode(bool shuffle);
     bool getShuffleMode() const { return shuffleMode; }
+    void setShuffleMode(bool shuffle);
     int getCurrentSongDuration() const {
         if (currentLibraryIndex < 0 || currentLibraryIndex >= library.size()) return 0;
         return library[currentLibraryIndex].duration;
@@ -196,8 +198,8 @@ signals:
     void playerPositionChanged(qint64 position);
     void playerDurationChanged(qint64 duration);
     void playbackStateChanged(int state);
-    void repeatModeChanged();
-    void shuffleModeChanged();
+    void repeatModeChanged(bool repeat);
+    void shuffleModeChanged(bool shuffle);
     void volumeChanged(int vol);
     void playingChanged(bool playing);
     void viewingPlaylistChanged();

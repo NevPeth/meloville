@@ -42,6 +42,8 @@ class MprisPlayerAdaptor : public QDBusAbstractAdaptor
     Q_PROPERTY(bool        CanGoPrevious  READ getCanGoPrevious)
     Q_PROPERTY(bool        CanSeek        READ getCanSeek)
     Q_PROPERTY(bool        CanControl     READ getCanControl)
+    Q_PROPERTY(bool        Shuffle        READ getShuffle WRITE setShuffle NOTIFY shuffleChanged)
+    Q_PROPERTY(QString     LoopStatus     READ getLoopStatus WRITE setLoopStatus)
     Q_PROPERTY(QString     PlaybackStatus READ getPlaybackStatus)
     Q_PROPERTY(QVariantMap Metadata       READ getMetadata)
 
@@ -55,6 +57,8 @@ public:
     bool        getCanGoPrevious()  const { return true; }
     bool        getCanSeek()        const { return false; }
     bool        getCanControl()     const { return true; }
+    bool        getShuffle()        const { return shuffle; }
+    QString     getLoopStatus()     const { return loopStatus; }
     QString     getPlaybackStatus() const { return playbackStatus; }
     QVariantMap getMetadata()       const { return metadata; }
 
@@ -96,6 +100,46 @@ public:
         QDBusConnection::sessionBus().send(signal);
     }
 
+    void setLoopStatus(const QString &status)
+    {
+        loopStatus = status;
+
+        QVariantMap changed;
+        changed["LoopStatus"] = loopStatus;
+        emit loopStatusChanged(loopStatus != "None");
+
+        QDBusMessage signal = QDBusMessage::createSignal(
+            "/org/mpris/MediaPlayer2",
+            "org.freedesktop.DBus.Properties",
+            "PropertiesChanged"
+        );
+        signal << "org.mpris.MediaPlayer2.Player"
+            << changed
+            << QStringList{};
+
+        QDBusConnection::sessionBus().send(signal);
+    }
+
+    void setShuffle(bool newShuffle)
+    {
+        shuffle = newShuffle;
+        emit shuffleChanged(shuffle);
+
+        QVariantMap changed;
+        changed["Shuffle"] = shuffle;
+
+        QDBusMessage signal = QDBusMessage::createSignal(
+            "/org/mpris/MediaPlayer2",
+            "org.freedesktop.DBus.Properties",
+            "PropertiesChanged"
+        );
+        signal << "org.mpris.MediaPlayer2.Player"
+            << changed
+            << QStringList{};
+
+        QDBusConnection::sessionBus().send(signal);
+    }
+
 public slots:
     void Next()      { emit nextRequested(); }
     void Previous()  { emit previousRequested(); }
@@ -106,11 +150,17 @@ public slots:
 
 signals:
     void nextRequested();
+    void shuffleChanged(bool shuffle);
+    // NOTE: Technically in Mpris there's Track and Playing status, but we only support Track.
+    // As a hacky fallback if you set any of them consider it as loop enabled.
+    void loopStatusChanged(bool newStatus);
     void previousRequested();
     void playPauseRequested();
 
 private:
     QString     playbackStatus = "Stopped";
+    QString     loopStatus     = "None";
+    bool        shuffle        = false;
     QVariantMap metadata;
 };
 
