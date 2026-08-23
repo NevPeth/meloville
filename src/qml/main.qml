@@ -1459,7 +1459,7 @@ ApplicationWindow {
 
                                             Timer {
                                                 id: titleStartTimer
-                                                interval: 300
+                                                interval: 200
                                                 onTriggered: if (titleText.overflows) titleScrollAnim.restart()
                                             }
                                         }
