@@ -9,9 +9,11 @@ Item {
     visible: !root.closing
 
     property string lyricsPath: backend.currentSongLyricsPath ?? ""
-    property bool hasLyrics: lyricsPath !== ""
-    property int layoutShift: 70
-    readonly property int coverSize: Math.min(root.hasLyrics ? 380 : 440, root.hasLyrics ? root.width-50 : root.width-90, 12*root.height/24)
+    property bool hasLyrics: lyricsPath !== "" && root.width >= 700
+    property int layoutShift: Math.min(70, root.width/32)
+    readonly property int coverSize: Math.min(root.hasLyrics ? 380 : 440, root.hasLyrics ? root.width/4 : root.width-90, 12*root.height/24)
+    readonly property real normalWidth: 1280
+    readonly property real normalHeight: 720
 
     signal exitBigPicture()
 
@@ -518,9 +520,20 @@ Item {
                 Item { Layout.fillWidth: true }
             }
 
+            // When default it should be 105, when height is decreasing, the spacer should decrease
+            // but if width is decreasing and height is the same, the spacer should increase it to
+            // make the content look centered.
             Item {
                 Layout.fillWidth: true
-                Layout.preferredHeight: Math.min(105, root.height/7)
+                Layout.preferredHeight: {
+                    if (root.height < root.normalHeight) {
+                        return Math.min(105, root.height / 7)
+                    } else if (root.width < root.normalWidth) {
+                        return root.hasLyrics ? 105 * (root.normalWidth / root.width) : 105 * (root.normalWidth / root.width)/2
+                    } else {
+                        return 105
+                    }
+                }
                 Layout.minimumHeight: 0
             }
         }

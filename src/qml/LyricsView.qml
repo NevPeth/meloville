@@ -16,7 +16,7 @@ Item {
 
     // Must match the visible Text.
     readonly property real textSidePadding: 32
-    readonly property real lyricFontSize: 40
+    readonly property real lyricFontSize: Math.min(40, lyricsRoot.width/12, lyricsRoot.height/10)
     readonly property bool lyricFontBold: true
 
     // Active lyric is centered around this percentage of the viewport. So 35%
