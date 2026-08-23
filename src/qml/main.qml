@@ -1349,9 +1349,9 @@ ApplicationWindow {
                         // LEFT — cover art + song info
                         Item {
                             id: leftSection
-                            Layout.preferredWidth: 100
-                            Layout.minimumWidth: 100
-                            Layout.maximumWidth: 100
+                            Layout.preferredWidth: 450
+                            Layout.minimumWidth: 300
+                            Layout.maximumWidth: 450
                             Layout.fillHeight: true
 
                             RowLayout {
@@ -1383,21 +1383,156 @@ ApplicationWindow {
                                     }
                                 }
 
-                                Text {
-                                    id: labelSongInfo
-                                    text: backend.currentLibraryIndex >= 0
-                                          ? backend.currentSongTitle + "<br><span style='color:#b3b3b3; font-size:11px;'>"
-                                            + backend.currentSongArtist + "</span>"
-                                          : "Nothing Playing<br><span style='color:#b3b3b3; font-size:11px;'>Unknown Artist</span>"
-                                    textFormat: Text.RichText
-                                    color: "white"
-                                    font.pixelSize: 14
-                                    font.weight: Font.DemiBold
-                                    wrapMode: Text.NoWrap
-                                    elide: Text.ElideRight
-                                    Layout.alignment: Qt.AlignLeft
+                                ColumnLayout {
                                     Layout.fillWidth: true
+                                    Layout.fillHeight: true
                                     Layout.leftMargin: 8
+                                    spacing: 2
+
+                                    // ── TITLE ROW ──────────────────────────────────────────────
+                                    Item {
+                                        id: titleClip
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: titleText.implicitHeight
+                                        clip: true
+
+                                        // Gap between the two copies when looping (px)
+                                        readonly property int loopGap: 48
+
+                                        Text {
+                                            id: titleText
+                                            text: backend.currentLibraryIndex >= 0
+                                                ? backend.currentSongTitle
+                                                : "Nothing Playing"
+                                            color: "white"
+                                            font.pixelSize: 14
+                                            font.weight: Font.DemiBold
+                                            wrapMode: Text.NoWrap
+
+                                            property bool overflows: contentWidth > titleClip.width
+
+                                            // The scroll distance is one "unit" = text width + gap
+                                            property real loopUnit: contentWidth + titleClip.loopGap
+
+                                            onTextChanged: {
+                                                x = 0
+                                                titleScrollAnim.stop()
+                                                titleStartTimer.restart()
+                                            }
+
+                                            onOverflowsChanged: {
+                                                if (!overflows) {
+                                                    titleScrollAnim.stop()
+                                                    x = 0
+                                                }
+                                            }
+
+                                            // Second copy — sits exactly one loopUnit to the right
+                                            Text {
+                                                x: titleText.loopUnit
+                                                text: titleText.text
+                                                color: titleText.color
+                                                font: titleText.font
+                                                wrapMode: Text.NoWrap
+                                                visible: titleText.overflows
+                                            }
+
+                                            SequentialAnimation {
+                                                id: titleScrollAnim
+                                                loops: Animation.Infinite
+
+                                                PauseAnimation { duration: 1500 }
+
+                                                NumberAnimation {
+                                                    target: titleText
+                                                    property: "x"
+                                                    from: 0
+                                                    to: -titleText.loopUnit
+                                                    // ~22ms per pixel so longer titles scroll a touch slower
+                                                    duration: Math.max(3000, titleText.loopUnit * 22)
+                                                    easing.type: Easing.Linear
+                                                }
+                                                // Silent reset — x jumps back to 0, which looks identical
+                                                // because the second copy was pixel-perfect at that position
+                                                ScriptAction { script: titleText.x = 0 }
+                                            }
+
+                                            Timer {
+                                                id: titleStartTimer
+                                                interval: 300
+                                                onTriggered: if (titleText.overflows) titleScrollAnim.restart()
+                                            }
+                                        }
+                                    }
+
+                                    // ── ARTIST ROW ─────────────────────────────────────────────
+                                    Item {
+                                        id: artistClip
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: artistText.implicitHeight
+                                        clip: true
+
+                                        readonly property int loopGap: 48
+
+                                        Text {
+                                            id: artistText
+                                            text: backend.currentLibraryIndex >= 0
+                                                ? backend.currentSongArtist
+                                                : "Unknown Artist"
+                                            color: "#b3b3b3"
+                                            font.pixelSize: 11
+                                            wrapMode: Text.NoWrap
+
+                                            property bool overflows: contentWidth > artistClip.width
+                                            property real loopUnit: contentWidth + artistClip.loopGap
+
+                                            onTextChanged: {
+                                                x = 0
+                                                artistScrollAnim.stop()
+                                                artistStartTimer.restart()
+                                            }
+
+                                            onOverflowsChanged: {
+                                                if (!overflows) {
+                                                    artistScrollAnim.stop()
+                                                    x = 0
+                                                }
+                                            }
+
+                                            Text {
+                                                x: artistText.loopUnit
+                                                text: artistText.text
+                                                color: artistText.color
+                                                font: artistText.font
+                                                wrapMode: Text.NoWrap
+                                                visible: artistText.overflows
+                                            }
+
+                                            SequentialAnimation {
+                                                id: artistScrollAnim
+                                                loops: Animation.Infinite
+
+                                                PauseAnimation { duration: 1500 }
+
+                                                NumberAnimation {
+                                                    target: artistText
+                                                    property: "x"
+                                                    from: 0
+                                                    to: -artistText.loopUnit
+                                                    duration: Math.max(3000, artistText.loopUnit * 22)
+                                                    easing.type: Easing.Linear
+                                                }
+
+                                                ScriptAction { script: artistText.x = 0 }
+                                            }
+
+                                            Timer {
+                                                id: artistStartTimer
+                                                interval: 200
+                                                onTriggered: if (artistText.overflows) artistScrollAnim.restart()
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
