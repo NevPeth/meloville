@@ -12,6 +12,8 @@ ApplicationWindow {
     title: "Meloville"
     color: "#121212"
     flags: backend.nativeResizing ? Qt.Window : Qt.FramelessWindowHint
+    minimumHeight: 300
+    minimumWidth: 300
     
     property bool reallyQuit: false
 

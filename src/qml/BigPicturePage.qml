@@ -11,9 +11,7 @@ Item {
     property string lyricsPath: backend.currentSongLyricsPath ?? ""
     property bool hasLyrics: lyricsPath !== ""
     property int layoutShift: 70
-    readonly property real coverSize: root.hasLyrics
-        ? Math.min(root.width * 0.38, 380)
-        : Math.min(root.width * 0.45, 420)
+    readonly property int coverSize: Math.min(root.hasLyrics ? 380 : 440, root.hasLyrics ? root.width-50 : root.width-90, 12*root.height/24)
 
     signal exitBigPicture()
 
@@ -38,7 +36,7 @@ Item {
         }
     }
 
-    // Three heavy blur passes othwerwise it still looks too crsip
+    // Three heavy blur passes otherwise it still looks too crsip
     // I know it's hella graphic intensive but like, I need it to look good to, y'know?
     GaussianBlur {
         id: pass1
@@ -79,31 +77,30 @@ Item {
     
     RowLayout {
         anchors.fill: parent
-        anchors.leftMargin:   5
-        anchors.rightMargin:  5
-        anchors.topMargin:    5
-        anchors.bottomMargin: 0
+        anchors.leftMargin: Math.min(5, root.height/200)
+        anchors.rightMargin: Math.min(5, root.height/200)
+        anchors.topMargin: Math.min(5, root.height/200)
+        anchors.bottomMargin: Math.min(5, root.height/200)
         spacing: 0
 
         ColumnLayout {
             Layout.fillHeight: true
             Layout.fillWidth: !root.hasLyrics
             Layout.preferredWidth: root.hasLyrics ? root.width * 0.45 : root.width
-            Layout.bottomMargin: 70
             spacing: 0
 
             // ---- TOP BAR ----------------------------------------------------------------------------------------------
             RowLayout {
                 Layout.fillWidth: false
-                Layout.preferredHeight: 30
-                Layout.minimumHeight: 30
-                Layout.maximumHeight: 30
+                Layout.preferredHeight: Math.min(30, root.height/20)
+                Layout.minimumHeight: 0
+                Layout.maximumHeight: Math.min(30, root.height/20)
                 spacing: 0
 
                 Button {
                     id: btnExitBigPicture
-                    Layout.preferredWidth:  50
-                    Layout.preferredHeight: 50
+                    Layout.preferredWidth: Math.min(50, root.height/10)
+                    Layout.preferredHeight: Math.min(50, root.height/10)
                     background: Item {}
                     contentItem: Image {
                         source: btnExitBigPicture.hovered
@@ -129,9 +126,12 @@ Item {
             // -- ALBUM ART -----------------------
             // Sized to fit the available height proportionally — never overflows
             Item {
+                id: albumCover
                 Layout.alignment: Qt.AlignHCenter
-                Layout.preferredWidth:  root.coverSize
+                Layout.preferredWidth: root.coverSize
                 Layout.preferredHeight: root.coverSize
+                Layout.minimumHeight: 20
+                Layout.minimumWidth: 20
                 Layout.leftMargin: root.hasLyrics ? root.layoutShift : 0
 
                 DragHandler {
@@ -169,7 +169,7 @@ Item {
 
                     onSourceChanged: {
                         coverReveal.opacity = 0
-                        coverReveal.scale   = 0.92
+                        coverReveal.scale = 0.92
                         coverAppearAnim.restart()
                     }
                 }
@@ -210,7 +210,7 @@ Item {
             Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                Layout.minimumHeight: 6
+                Layout.minimumHeight: 8
                 Layout.maximumHeight: 24
             }
 
@@ -225,7 +225,7 @@ Item {
                     horizontalAlignment: Text.AlignHCenter
                     text: backend.currentLibraryIndex >= 0 ? backend.currentSongTitle : "Nothing Playing"
                     color: "#E6FFFFFF"
-                    font.pixelSize: 32
+                    font.pixelSize: Math.min(32, root.height/20)
                     font.bold: true
                     elide: Text.ElideRight
                 }
@@ -234,7 +234,7 @@ Item {
                     horizontalAlignment: Text.AlignHCenter
                     text: backend.currentLibraryIndex >= 0 ? backend.currentSongArtist : "Unknown Artist"
                     color: "#96FFFFFF"
-                    font.pixelSize: 20
+                    font.pixelSize: Math.min(20, root.height/32)
                     elide: Text.ElideRight
                 }
             }
@@ -243,7 +243,7 @@ Item {
             Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                Layout.minimumHeight: root.hasLyrics ? 20 : 6
+                Layout.minimumHeight: root.hasLyrics ? 3 : 2
                 Layout.maximumHeight: root.hasLyrics ? 30 : 20
             }
 
@@ -260,7 +260,7 @@ Item {
                     id: labelCurrentTimeBig
                     text: formatTime(backend.playerPosition)
                     color: Qt.rgba(1, 1, 1, 150 / 255.0)
-                    font.pixelSize: 13
+                    font.pixelSize: Math.min(13, root.height/56)
                     Layout.minimumWidth: 38
                     horizontalAlignment: Text.AlignRight
 
@@ -274,8 +274,8 @@ Item {
 
                 Slider {
                     id: sliderPositionBig
-                    Layout.preferredWidth: root.hasLyrics ? root.coverSize + 96 : Math.min(root.width * 0.65, 900)
-                    Layout.preferredHeight: 20
+                    Layout.preferredWidth: root.hasLyrics ? albumCover.width + 96 : Math.min(root.width * 0.65, 900)
+                    Layout.preferredHeight: Math.min(20, root.height/32)
                     from: 0
                     to: Math.max(1, backend.playerDuration)
                     value: sliderPositionBig.pressed ? sliderPositionBig.value : backend.playerPosition
@@ -321,7 +321,7 @@ Item {
                     id: labelTotalTimeBig
                     text: formatTime(backend.playerDuration)
                     color: Qt.rgba(1, 1, 1, 150 / 255.0)
-                    font.pixelSize: 13
+                    font.pixelSize: Math.min(13, root.height/56)
                     Layout.minimumWidth: 38
                     horizontalAlignment: Text.AlignLeft
 
@@ -336,10 +336,11 @@ Item {
                 Item { Layout.fillWidth: true }
             }
 
-            // This is just a small fixed gap
+            // Small fixed gap
             Item {
                 Layout.fillWidth: true
-                Layout.minimumHeight: root.hasLyrics ? 20 : 12
+                Layout.preferredHeight: root.hasLyrics ? Math.min(40, root.height/16) : Math.min(32, root.height/20)
+                Layout.minimumHeight: 0
             }
 
             // -- PLAYBACK BUTTONS -----------------------------------
@@ -347,14 +348,15 @@ Item {
                 Layout.alignment: Qt.AlignHCenter
                 Layout.fillWidth: true
                 Layout.leftMargin: root.hasLyrics ? root.layoutShift : 0
-                spacing: 20
+                Layout.topMargin: -15
+                spacing: Math.min(20, root.width/100)
 
                 Item { Layout.fillWidth: true }
 
                 Button {
                     id: btnShuffleBig
-                    Layout.preferredWidth:  40
-                    Layout.preferredHeight: 40
+                    Layout.preferredWidth: Math.min(40, root.height/10)
+                    Layout.preferredHeight: Math.min(40, root.height/10)
                     background: Item {}
                     contentItem: Image {
                         source: (btnShuffleBig.hovered || backend.shuffleMode)
@@ -367,8 +369,8 @@ Item {
 
                 Button {
                     id: btnReverseBig
-                    Layout.preferredWidth:  60
-                    Layout.preferredHeight: 60
+                    Layout.preferredWidth: Math.min(60, root.height/8)
+                    Layout.preferredHeight: Math.min(60, root.height/8)
                     background: Item {}
                     contentItem: Image {
                         source: "image://svgicons/reverseIconBig"
@@ -382,8 +384,8 @@ Item {
 
                 Button {
                     id: btnPlayBig
-                    Layout.preferredWidth:  70
-                    Layout.preferredHeight: 70
+                    Layout.preferredWidth: Math.min(70, root.height/7)
+                    Layout.preferredHeight: Math.min(70, root.height/7)
                     background: Item {}
                     contentItem: Image {
                         source: backend.playing
@@ -396,8 +398,8 @@ Item {
 
                 Button {
                     id: btnSkipBig
-                    Layout.preferredWidth:  60
-                    Layout.preferredHeight: 60
+                    Layout.preferredWidth: Math.min(60, root.height/8)
+                    Layout.preferredHeight: Math.min(60, root.height/8)
                     background: Item {}
                     contentItem: Image {
                         source: "image://svgicons/skipIconBig"
@@ -411,8 +413,8 @@ Item {
 
                 Button {
                     id: btnRepeatBig
-                    Layout.preferredWidth:  40
-                    Layout.preferredHeight: 40
+                    Layout.preferredWidth: Math.min(40, root.height/10)
+                    Layout.preferredHeight: Math.min(40, root.height/10)
                     background: Item {}
                     contentItem: Image {
                         source: (btnRepeatBig.hovered || backend.repeatMode)
@@ -429,7 +431,8 @@ Item {
             // Small fixed gap
             Item {
                 Layout.fillWidth: true
-                Layout.minimumHeight: root.hasLyrics ? 20 : 12
+                Layout.preferredHeight: root.hasLyrics ? Math.min(40, root.height/16) : Math.min(32, root.height/20)
+                Layout.minimumHeight: 0
             }
 
             // -- VOLUME ROW -----------------------------------------------------
@@ -437,14 +440,15 @@ Item {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 20
                 Layout.leftMargin: root.hasLyrics ? root.layoutShift : 0
+                Layout.topMargin: -20
                 spacing: 0
 
                 Item { Layout.fillWidth: true }
 
                 Button {
                     id: speakerLeftBigIcon
-                    Layout.preferredWidth:  40
-                    Layout.preferredHeight: 40
+                    Layout.preferredWidth: Math.min(40, root.height/12)
+                    Layout.preferredHeight: Math.min(40, root.height/12)
                     Layout.rightMargin: -10
                     enabled: false
                     background: Item {}
@@ -458,18 +462,18 @@ Item {
 
                 Slider {
                     id: sliderVolumeBig
-                    Layout.preferredWidth: root.hasLyrics ? Math.min(root.coverSize, 340) : Math.min(root.width * 0.45, 500)
-                    Layout.minimumWidth:   200
-                    Layout.preferredHeight: 20
+                    Layout.preferredWidth: root.hasLyrics ? Math.min(albumCover.width, 340) : Math.min(root.width * 0.45, 500)
+                    Layout.minimumWidth: 50
+                    Layout.preferredHeight: Math.min(20, root.height/32)
                     from: 0
-                    to:   100
+                    to: 100
                     value: backend.volume
                     onMoved: backend.volume = value
                     hoverEnabled: true
 
                     handle: Rectangle {
                         implicitWidth:  12
-                        implicitHeight: 12
+                        implicitHeight: Math.min(12, root.height/40)
                         x: sliderVolumeBig.leftPadding +
                         sliderVolumeBig.visualPosition * (sliderVolumeBig.availableWidth - width)
                         y: sliderVolumeBig.topPadding +
@@ -498,8 +502,8 @@ Item {
 
                 Button {
                     id: speakerRightBigIcon
-                    Layout.preferredWidth:  40
-                    Layout.preferredHeight: 40
+                    Layout.preferredWidth: Math.min(40, root.height/12)
+                    Layout.preferredHeight: Math.min(40, root.height/12)
                     Layout.leftMargin: -10
                     enabled: false
                     background: Item {}
@@ -516,8 +520,8 @@ Item {
 
             Item {
                 Layout.fillWidth: true
-                Layout.fillHeight: true
-                Layout.minimumHeight: 8
+                Layout.preferredHeight: Math.min(105, root.height/7)
+                Layout.minimumHeight: 0
             }
         }
         Item {
