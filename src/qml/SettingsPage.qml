@@ -62,8 +62,8 @@ Item {
     Rectangle {
         id: settingsPanel
         anchors.centerIn: parent
-        width: 860
-        height: 560
+        width: Math.min(860, root.width-50)
+        height: Math.min(560, root.height-50)
         radius: 12
         color: "#111111"
         clip: true
@@ -74,7 +74,7 @@ Item {
 
             // ── LEFT SIDEBAR ─────────────────────────────────────────────────
             Rectangle {
-                Layout.preferredWidth: 220
+                Layout.preferredWidth: Math.min(220, root.width/4)
                 Layout.fillHeight: true
                 color: "#0d0d0d"
                 radius: 12
@@ -172,6 +172,8 @@ Item {
                 contentHeight: contentCol.implicitHeight + 80
                 boundsBehavior: Flickable.StopAtBounds
 
+                contentWidth: width
+
                 ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
                 // Track active section by scroll position
@@ -219,6 +221,7 @@ Item {
                             font.pixelSize: 12
                             wrapMode: Text.WordWrap
                             Layout.fillWidth: true
+                            Layout.maximumWidth: root.width/2
                             visible: text !== ""
                         }
                         Rectangle {
@@ -250,6 +253,7 @@ Item {
                                 color: "white"
                                 font.pixelSize: 13
                                 font.bold: true
+                                Layout.maximumWidth: root.width/3
                             }
                             Text {
                                 text: parent.parent.description
@@ -257,6 +261,7 @@ Item {
                                 font.pixelSize: 12
                                 wrapMode: Text.WordWrap
                                 Layout.fillWidth: true
+                                Layout.maximumWidth: root.width/3
                                 visible: text !== ""
                             }
                         }
@@ -328,6 +333,7 @@ Item {
 
                         id: animSliderRoot
                         Layout.fillWidth: true
+                        Layout.maximumWidth: root.width/2
                         spacing: 8
 
                         RowLayout {

@@ -13,7 +13,7 @@ ApplicationWindow {
     color: "#121212"
     flags: backend.nativeResizing ? Qt.Window : Qt.FramelessWindowHint
     minimumHeight: 300
-    minimumWidth: 300
+    minimumWidth: 500
     
     property bool reallyQuit: false
 
@@ -779,7 +779,7 @@ ApplicationWindow {
 
                                 // searchField
                                 Rectangle {
-                                    Layout.preferredWidth: 500
+                                    Layout.preferredWidth: Math.min(500, libraryHeader.width-150)
                                     Layout.preferredHeight: 32
                                     radius: 16
                                     color: "#222222"
@@ -847,7 +847,7 @@ ApplicationWindow {
                                 }
 
                                 Rectangle {
-                                    Layout.preferredWidth: 500
+                                    Layout.preferredWidth: Math.min(500, libraryHeader.width-150)
                                     Layout.preferredHeight: 32
                                     radius: 16
                                     color: "#222222"
@@ -1121,8 +1121,7 @@ ApplicationWindow {
                                     }
                                     Rectangle {
                                         id: heroSearchContainer
-
-                                        width: 400
+                                        width: Math.min(400, appWindow.width/3)
                                         height: 32
                                         radius: 16
                                         color: "#222222"
@@ -1350,8 +1349,9 @@ ApplicationWindow {
                         Item {
                             id: leftSection
                             Layout.preferredWidth: 450
-                            Layout.minimumWidth: 300
-                            Layout.maximumWidth: 450
+                            Layout.minimumWidth: 170
+                            Layout.maximumWidth: Math.min(450, parent.width/3)
+                            Layout.fillWidth: true
                             Layout.fillHeight: true
 
                             RowLayout {
@@ -1543,6 +1543,9 @@ ApplicationWindow {
                             anchors.centerIn: parent
                             Layout.fillWidth: true
                             Layout.fillHeight: true
+                            Layout.leftMargin: -10 - ((1280 - bottomBar.width) / 200) * 30
+
+                            readonly property real btnScale: Math.min(1.0, Math.max(0.8, parent.width / 700))
 
                             ColumnLayout {
                                 id: layoutCenter
@@ -1556,8 +1559,8 @@ ApplicationWindow {
 
                                     Button {
                                         id: btnShuffle
-                                        Layout.preferredWidth: 40
-                                        Layout.preferredHeight: 28
+                                        Layout.preferredWidth: 40 * centerSection.btnScale
+                                        Layout.preferredHeight: 28 * centerSection.btnScale
                                         Layout.rightMargin: -5
                                         background: Item {}
                                         contentItem: Image {
@@ -1571,8 +1574,8 @@ ApplicationWindow {
 
                                     Button {
                                         id: btnReverse
-                                        Layout.preferredWidth: 48
-                                        Layout.preferredHeight: 48
+                                        Layout.preferredWidth: 48 * centerSection.btnScale
+                                        Layout.preferredHeight: 48 * centerSection.btnScale
                                         Layout.rightMargin: -8
                                         background: Item {}
                                         contentItem: Image {
@@ -1586,8 +1589,8 @@ ApplicationWindow {
 
                                     Button {
                                         id: btnPlay
-                                        Layout.preferredWidth: 60
-                                        Layout.preferredHeight: 60
+                                        Layout.preferredWidth: 60 * centerSection.btnScale
+                                        Layout.preferredHeight: 60 * centerSection.btnScale
                                         background: Item {}
 
                                         contentItem: Image {
@@ -1602,8 +1605,8 @@ ApplicationWindow {
 
                                     Button {
                                         id: btnSkip
-                                        Layout.preferredWidth: 48
-                                        Layout.preferredHeight: 48
+                                        Layout.preferredWidth: 48 * centerSection.btnScale
+                                        Layout.preferredHeight: 48 * centerSection.btnScale
                                         Layout.leftMargin: -8
                                         background: Item {}
                                         contentItem: Image {
@@ -1618,8 +1621,8 @@ ApplicationWindow {
 
                                     Button {
                                         id: btnRepeat
-                                        Layout.preferredWidth: 40
-                                        Layout.preferredHeight: 40
+                                        Layout.preferredWidth: 40 * centerSection.btnScale
+                                        Layout.preferredHeight: 40 * centerSection.btnScale
                                         Layout.topMargin: 2
                                         Layout.leftMargin: -5
                                         background: Item {}
@@ -1658,7 +1661,7 @@ ApplicationWindow {
                                     Slider {
                                         id: sliderPosition
                                         Layout.minimumWidth: 320
-                                        Layout.maximumWidth: 420
+                                        Layout.maximumWidth: Math.min(480, bottomBar.width/4)
                                         Layout.preferredHeight: 20
                                         from: 0
                                         to: Math.max(1, backend.playerDuration)
@@ -1727,159 +1730,256 @@ ApplicationWindow {
                             }
                         }
 
-                        // Extra buttons + volume controls
                         Item {
                             id: rightSection
-                            Layout.preferredWidth: 300
-                            Layout.minimumWidth: 300
+                            Layout.preferredWidth: 260
+                            Layout.minimumWidth: 200
                             Layout.maximumWidth: 300
                             Layout.fillHeight: true
 
-                            RowLayout {
-                                id: layoutRight
-                                anchors.fill: parent
-                                spacing: 0
-                                layoutDirection: Qt.RightToLeft
+                            readonly property real btnScale: Math.min(1.0, Math.max(0.8, parent.width / 700))
+
+                            GridLayout {
+                                id: rightGrid
+                                anchors.right: parent.right
                                 anchors.verticalCenter: parent.verticalCenter
 
-                                Slider {
-                                    id: sliderVolume
+                                columns: 2
+                                rows: 2
+                                rowSpacing: 0
+                                columnSpacing: 0
 
-                                    Layout.preferredWidth: 120
-                                    Layout.maximumWidth: 120
-                                    Layout.preferredHeight: 20
-
-                                    from: 0
-                                    to: 100
-                                    value: backend.volume
-                                    onMoved: backend.volume = value
-
-                                    hoverEnabled: true
-
-                                    handle: Rectangle {
-                                        implicitWidth: 10
-                                        implicitHeight: 10
-
-                                        x: sliderVolume.leftPadding +
-                                        sliderVolume.visualPosition * (sliderVolume.availableWidth - width)
-
-                                        y: sliderVolume.topPadding +
-                                        sliderVolume.availableHeight / 2 - height / 2
-
-                                        radius: width / 2
-                                        color: "white"
-
-                                        visible: sliderVolume.hovered
-
-                                        opacity: sliderVolume.hovered ? 1 : 0
-                                    }
-
-                                    background: Rectangle {
-                                        x: sliderVolume.leftPadding
-                                        y: sliderVolume.topPadding + sliderVolume.availableHeight / 2 - height / 2
-
-                                        width: sliderVolume.availableWidth
-                                        height: 4
-
-                                        radius: 2
-                                        color: "#555555"
-
-                                        Rectangle {
-                                            width: sliderVolume.visualPosition * parent.width
-                                            height: parent.height
-                                            radius: 2
-                                            color: "white"
-                                        }
-                                    }
-                                }
-
-                                Button {
-                                    id: speakerIcon
-                                    enabled: false
-                                    Layout.preferredWidth: 40
-                                    Layout.preferredHeight: 40
-                                    Layout.rightMargin: -14
-                                    background: Item {}
-                                    contentItem: Image {
-                                        source: speakerIcon.hovered
-                                                ? "image://svgicons/speakerIconHovered"
-                                                : "image://svgicons/speakerIconNormal"
-                                        fillMode: Image.PreserveAspectFit
-                                    }
-                                }
-
-                                // Extra buttons row
+                                // ------------------------------------------------------------
+                                // Volume + speaker
+                                // ------------------------------------------------------------
                                 RowLayout {
-                                    id: layoutBottomButtons
-                                    spacing: 3
-                                    Layout.rightMargin: 20
+                                    id: audioControls
+
+                                    Layout.column: 1
+                                    Layout.row: 0
                                     Layout.alignment: Qt.AlignVCenter
 
-                                    Button {
-                                        id: btnJumpToCurrentSong
-                                        Layout.preferredWidth: 48
-                                        Layout.preferredHeight: 32
-                                        Layout.rightMargin: -10
-                                        background: Item {}
-                                        contentItem: Image {
-                                            source: btnJumpToCurrentSong.hovered
-                                                ? "image://svgicons/jumpToCurrentSongIconHovered"
-                                                : "image://svgicons/jumpToCurrentSongIconNormal"
-                                            fillMode: Image.PreserveAspectFit
+                                    spacing: 0
+                                    layoutDirection: Qt.RightToLeft
+
+                                    Slider {
+                                        id: sliderVolume
+
+                                        Layout.preferredWidth: 120
+                                        Layout.maximumWidth: 120
+                                        Layout.preferredHeight: 20
+
+                                        from: 0
+                                        to: 100
+                                        value: backend.volume
+                                        onMoved: backend.volume = value
+
+                                        hoverEnabled: true
+
+                                        handle: Rectangle {
+                                            implicitWidth: 10
+                                            implicitHeight: 10
+
+                                            x: sliderVolume.leftPadding +
+                                            sliderVolume.visualPosition *
+                                            (sliderVolume.availableWidth - width)
+
+                                            y: sliderVolume.topPadding +
+                                            sliderVolume.availableHeight / 2 -
+                                            height / 2
+
+                                            radius: width / 2
+                                            color: "white"
+
+                                            visible: sliderVolume.hovered
+                                            opacity: sliderVolume.hovered ? 1 : 0
                                         }
-                                        onClicked: backend.jumpToCurrentSong()
+
+                                        background: Rectangle {
+                                            x: sliderVolume.leftPadding
+                                            y: sliderVolume.topPadding +
+                                            sliderVolume.availableHeight / 2 -
+                                            height / 2
+
+                                            width: sliderVolume.availableWidth
+                                            height: 4
+
+                                            radius: 2
+                                            color: "#555555"
+
+                                            Rectangle {
+                                                width: sliderVolume.visualPosition *
+                                                    parent.width
+                                                height: parent.height
+                                                radius: 2
+                                                color: "white"
+                                            }
+                                        }
                                     }
 
                                     Button {
-                                        id: btnGoToAlbums
-                                        Layout.preferredWidth: 47
-                                        Layout.preferredHeight: 47
-                                        Layout.rightMargin: -10
+                                        id: speakerIcon
+
+                                        enabled: false
+
+                                        Layout.preferredWidth: 40 * rightSection.btnScale
+                                        Layout.preferredHeight: 40 * rightSection.btnScale
+                                        Layout.rightMargin: -14
+
                                         background: Item {}
+
                                         contentItem: Image {
-                                            source: btnGoToAlbums.hovered
-                                                ? "image://svgicons/goToAlbumsIconHovered"
-                                                : "image://svgicons/goToAlbumsIconNormal"
+                                            source: speakerIcon.hovered
+                                                    ? "image://svgicons/speakerIconHovered"
+                                                    : "image://svgicons/speakerIconNormal"
+
                                             fillMode: Image.PreserveAspectFit
                                         }
-                                        onClicked: backend.goToAlbums()
+                                    }
+                                }
+
+                                RowLayout {
+                                    id: layoutBottomButtons
+
+                                    Layout.column: 0
+                                    Layout.row: 0
+                                    Layout.alignment: Qt.AlignVCenter
+
+                                    spacing: 3
+                                    layoutDirection: Qt.RightToLeft
+
+                                    Button {
+                                        id: btnSettings
+
+                                        Layout.preferredWidth: 37 * rightSection.btnScale
+                                        Layout.preferredHeight: 37 * rightSection.btnScale
+                                        Layout.rightMargin: 0
+
+                                        background: Item {}
+
+                                        contentItem: Image {
+                                            source: btnSettings.hovered
+                                                    ? "image://svgicons/settingsIconHovered"
+                                                    : "image://svgicons/settingsIconNormal"
+
+                                            fillMode: Image.PreserveAspectFit
+                                        }
+
+                                        onClicked: settingsPage.visible = true
                                     }
 
                                     Button {
                                         id: btnGoToBigPicture
-                                        Layout.preferredWidth: 40
-                                        Layout.preferredHeight: 40
+
+                                        Layout.preferredWidth: 40 * rightSection.btnScale
+                                        Layout.preferredHeight: 40 * rightSection.btnScale
                                         Layout.rightMargin: -5
+
                                         background: Item {}
+
                                         contentItem: Image {
                                             source: btnGoToBigPicture.hovered
-                                                ? "image://svgicons/bigPictureIconHovered"
-                                                : "image://svgicons/bigPictureIconNormal"
+                                                    ? "image://svgicons/bigPictureIconHovered"
+                                                    : "image://svgicons/bigPictureIconNormal"
+
                                             fillMode: Image.PreserveAspectFit
                                         }
 
-                                        // Immediately go to big picture mode and don't do any animations
-                                        // I tried configuring the animations but I couldn't get one that looked good
-                                        // while also not being completely annoying while switching in and out of the view
-                                        onClicked: stackView.push(bigPicturePageComponent, StackView.Immediate)
+                                        onClicked: stackView.push(
+                                            bigPicturePageComponent,
+                                            StackView.Immediate
+                                        )
                                     }
 
                                     Button {
-                                        id: btnSettings
-                                        Layout.preferredWidth: 37
-                                        Layout.preferredHeight: 37
+                                        id: btnGoToAlbums
+
+                                        Layout.preferredWidth: 47 * rightSection.btnScale
+                                        Layout.preferredHeight: 47 * rightSection.btnScale
                                         Layout.rightMargin: -10
+
                                         background: Item {}
+
                                         contentItem: Image {
-                                            source: btnSettings.hovered
-                                                ? "image://svgicons/settingsIconHovered"
-                                                : "image://svgicons/settingsIconNormal"
+                                            source: btnGoToAlbums.hovered
+                                                    ? "image://svgicons/goToAlbumsIconHovered"
+                                                    : "image://svgicons/goToAlbumsIconNormal"
+
                                             fillMode: Image.PreserveAspectFit
                                         }
-                                        onClicked: settingsPage.visible = true
+
+                                        onClicked: backend.goToAlbums()
                                     }
 
+                                    Button {
+                                        id: btnJumpToCurrentSong
+
+                                        Layout.preferredWidth: 48 * rightSection.btnScale
+                                        Layout.preferredHeight: 32 * rightSection.btnScale
+                                        Layout.rightMargin: -10
+
+                                        background: Item {}
+
+                                        contentItem: Image {
+                                            source: btnJumpToCurrentSong.hovered
+                                                    ? "image://svgicons/jumpToCurrentSongIconHovered"
+                                                    : "image://svgicons/jumpToCurrentSongIconNormal"
+
+                                            fillMode: Image.PreserveAspectFit
+                                        }
+
+                                        onClicked: backend.jumpToCurrentSong()
+                                    }
                                 }
+
+                                states: [
+                                    State {
+                                        name: "narrow"
+                                        when: bottomBar.width < 900
+
+                                        PropertyChanges {
+                                            target: layoutBottomButtons
+                                            Layout.column: 0
+                                            Layout.row: 0
+                                        }
+
+                                        PropertyChanges {
+                                            target: audioControls
+                                            Layout.column: 0
+                                            Layout.row: 1
+                                        }
+
+                                        // Both rows use the full available width when stacked.
+                                        PropertyChanges {
+                                            target: layoutBottomButtons
+                                            Layout.fillWidth: true
+                                            Layout.bottomMargin: -10
+                                        }
+
+                                        PropertyChanges {
+                                            target: audioControls
+                                            Layout.fillWidth: true
+                                        }
+                                    },
+
+                                    State {
+                                        name: "wide"
+                                        when: bottomBar.width >= 900
+
+                                        PropertyChanges {
+                                            target: layoutBottomButtons
+                                            Layout.column: 0
+                                            Layout.row: 0
+                                            Layout.bottomMargin: 0
+                                        }
+
+                                        PropertyChanges {
+                                            target: audioControls
+                                            Layout.column: 1
+                                            Layout.row: 0
+                                        }
+                                    }
+                                ]
                             }
                         }
                     }

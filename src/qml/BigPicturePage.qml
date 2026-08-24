@@ -95,8 +95,7 @@ Item {
             RowLayout {
                 Layout.fillWidth: false
                 Layout.preferredHeight: Math.min(30, root.height/20)
-                Layout.minimumHeight: 0
-                Layout.maximumHeight: Math.min(30, root.height/20)
+                Layout.minimumHeight: Math.min(30, root.height/20)
                 spacing: 0
 
                 Button {
@@ -262,7 +261,7 @@ Item {
                     id: labelCurrentTimeBig
                     text: formatTime(backend.playerPosition)
                     color: Qt.rgba(1, 1, 1, 150 / 255.0)
-                    font.pixelSize: Math.min(13, root.height/56)
+                    font.pixelSize: Math.min(13, root.height/32)
                     Layout.minimumWidth: 38
                     horizontalAlignment: Text.AlignRight
 
@@ -323,7 +322,7 @@ Item {
                     id: labelTotalTimeBig
                     text: formatTime(backend.playerDuration)
                     color: Qt.rgba(1, 1, 1, 150 / 255.0)
-                    font.pixelSize: Math.min(13, root.height/56)
+                    font.pixelSize: Math.min(13, root.height/32)
                     Layout.minimumWidth: 38
                     horizontalAlignment: Text.AlignLeft
 

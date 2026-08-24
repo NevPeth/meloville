@@ -61,8 +61,8 @@ Item {
     // Main dialog frame
     Rectangle {
         id: dialogArea
-        width: 650
-        height: 440
+        width: Math.min(650, root.width-50)
+        height: Math.min(440, root.height-50)
         radius: 12
         color: "#121212"
         anchors.centerIn: parent

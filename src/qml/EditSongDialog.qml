@@ -7,13 +7,13 @@ import Qt5Compat.GraphicalEffects
 Item {
     id: root
 
-    property int libraryIndex:    -1
-    property string songFilePath:    ""
-    property string editTitle:       ""
-    property string editArtist:      ""
-    property string editAlbum:       ""
+    property int libraryIndex: -1
+    property string songFilePath: ""
+    property string editTitle: ""
+    property string editArtist: ""
+    property string editAlbum: ""
     property int editTrackNumber: 0
-    property string editCoverPath:   ""
+    property string editCoverPath: ""
 
     signal accepted()
     signal rejected()
@@ -88,16 +88,16 @@ Item {
     // ── Dialog box ────────────────────────────────────────────────────────────
     Rectangle {
         id: dialogArea
-        width:  650
-        height: 560
+        width: Math.min(650, root.width-50)
+        height: Math.min(560, root.height-20)
         radius: 12
-        color:  "#121212"
+        color: "#121212"
         anchors.centerIn: parent
 
         ColumnLayout {
-            anchors.fill:    parent
+            anchors.fill: parent
             anchors.margins: 24
-            spacing:         18
+            spacing: 18
 
             // Title
             Text {
