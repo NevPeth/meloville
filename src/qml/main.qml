@@ -847,7 +847,7 @@ ApplicationWindow {
                                 }
 
                                 Rectangle {
-                                    Layout.preferredWidth: Math.min(500, libraryHeader.width-150)
+                                    Layout.preferredWidth: Math.min(500, stickyBar.width-150)
                                     Layout.preferredHeight: 32
                                     radius: 16
                                     color: "#222222"
