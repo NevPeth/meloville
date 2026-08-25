@@ -2025,9 +2025,7 @@ ApplicationWindow {
             Connections {
                 target: backend
                 function onJumpToSongIndex(visibleIndex) {
-                    // +1 accounts for the playlist hero header item
-                    var offset = (backend.isInPlaylistView || backend.isInAlbumView) ? 1 : 0
-                    listViewSongs.positionViewAtIndex(visibleIndex + offset, ListView.Center)
+                    listViewSongs.positionViewAtIndex(visibleIndex, ListView.Center)
                 }
             }
 
