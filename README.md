@@ -61,6 +61,10 @@ You'll need:
 
 Check this repo [Meloville for Arch](https://github.com/NevPeth/meloville-arch) and follow the install instructions
 
+### For Fedora
+
+Check this repo [Meloville for Fedora](https://github.com/NevPeth/meloville-fedora) and follow the install instructions
+
 ## For other distros
 
 I currently do not officially support other distros, not because I don't like you, specifically, but because I do not use other distros and am unfamiliar with their conventions. Though I do plan on other packaging methods in (hopefully) the near future.
