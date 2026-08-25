@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(Meloville VERSION 1.0.9 LANGUAGES CXX)
+project(Meloville VERSION 1.1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

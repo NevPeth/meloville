@@ -521,14 +521,18 @@ Item {
 
             // When default it should be 105, when height is decreasing, the spacer should decrease
             // but if width is decreasing and height is the same, the spacer should increase it to
-            // make the content look centered.
+            // make the content look centered. 
             Item {
                 Layout.fillWidth: true
                 Layout.preferredHeight: {
                     if (root.height < root.normalHeight) {
                         return Math.min(105, root.height / 7)
                     } else if (root.width < root.normalWidth) {
-                        return root.hasLyrics ? 105 * (root.normalWidth / root.width) : 105 * (root.normalWidth / root.width)/2
+                        var r = root.normalWidth / root.width
+                        var rMin = root.normalWidth / 500
+                        var b = 0.5 * rMin / (rMin - 1)
+                        var a = 1 - b
+                        return root.hasLyrics ? 105 * r : 105 * (a * r + b)
                     } else {
                         return 105
                     }
