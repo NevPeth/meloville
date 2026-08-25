@@ -226,6 +226,13 @@ void PlaylistManager::loadPlaylists(
     playlistAutoGenerate.clear();
     playlistAutoGenSongs.clear();
 
+    QHash<QString, int> songLookup;
+    songLookup.reserve(library.size());
+    for (int i = 0; i < library.size(); ++i) {
+        QString key = library[i].title.toLower() + '\t' + library[i].artist.toLower();
+        songLookup.insert(key, i);
+    }
+
     QJsonArray orderArray = root["playlistOrder"].toArray();
     QJsonObject playlistsObject = root["playlists"].toObject();
 
@@ -254,39 +261,8 @@ void PlaylistManager::loadPlaylists(
 
             songs.append(playlistSong);
 
-            // Binary search by title using the same comparator as the sort
-            int lo = 0, hi = library.size() - 1, found = -1;
-            while (lo <= hi){
-                int mid = lo + (hi - lo) / 2;
-                int cmp = QString::compare(
-                    library[mid].title,
-                    playlistSong.title,
-                    Qt::CaseInsensitive
-                );
-
-                if (cmp < 0)       lo = mid + 1;
-                else if (cmp > 0)  hi = mid - 1;
-                else{
-                    // Title matched — scan the equal-title block for the right artist
-                    // Scan left
-                    for (int i = mid; i >= lo && QString::compare(library[i].title, playlistSong.title, Qt::CaseInsensitive) == 0; --i){
-                        if (library[i].artist.compare(playlistSong.artist, Qt::CaseInsensitive) == 0){
-                            found = i;
-                            break;
-                        }
-                    }
-                    // Scan right if not yet found
-                    if (found < 0){
-                        for (int i = mid + 1; i <= hi && QString::compare(library[i].title, playlistSong.title, Qt::CaseInsensitive) == 0; ++i){
-                            if (library[i].artist.compare(playlistSong.artist, Qt::CaseInsensitive) == 0){
-                                found = i;
-                                break;
-                            }
-                        }
-                    }
-                    break;
-                }
-            }
+            QString key = playlistSong.title.toLower() + '\t' + playlistSong.artist.toLower();
+            int found = songLookup.value(key, -1);
 
             if (found >= 0)
                 indices.append(found);
