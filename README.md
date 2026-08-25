@@ -26,7 +26,7 @@
 
 * Native Linux support
     * <small>I literally don't have access to a machine running Windows or MacOS</small>
-* Support for mp3, flac, m4a, and ogg files
+* Support for mp3, flac, m4a, ogg, and opus files
 * Bluetooth headphone playback support
 * In-built metadata editor for songs
 * Drag and drop songs to switch songs in playlists

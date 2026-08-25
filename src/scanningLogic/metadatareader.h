@@ -46,6 +46,7 @@ private:
     static QPixmap extractFlacCover(const QString& path);
     static QPixmap extractM4ACover(const QString& path);
     static QPixmap extractOggCover(const QString& filePath);
+    static QPixmap extractOpusCover(const QString& filePath);
     static QPixmap loadPixmap(const QByteArray& imageData);
     static QPixmap fallbackCover();
 };

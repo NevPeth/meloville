@@ -23,6 +23,7 @@
 #include <taglib/mp4coverart.h>
 #include <taglib/vorbisfile.h>
 #include <taglib/xiphcomment.h>
+#include <taglib/opusfile.h>
 
 SongData MetadataReader::readSong(const QString& filePath)
 {
@@ -147,6 +148,9 @@ QPixmap MetadataReader::extractCoverArt(
     else if (extension == "ogg")
         return extractOggCover(filePath);
 
+    else if (extension == "opus")
+        return extractOpusCover(filePath);
+
     return fallbackCover();
 }
 
@@ -249,6 +253,30 @@ QPixmap MetadataReader::extractM4ACover(const QString& filePath){
 QPixmap MetadataReader::extractOggCover(const QString& filePath)
 {
     TagLib::Ogg::Vorbis::File file(filePath.toStdString().c_str());
+    if (!file.isValid())
+        return fallbackCover();
+
+    auto* tag = file.tag();
+    if (!tag)
+        return fallbackCover();
+
+    const auto pictures = tag->pictureList();
+    if (pictures.isEmpty())
+        return fallbackCover();
+
+    const auto* pic = pictures.front();
+    QByteArray imageData(pic->data().data(), pic->data().size());
+
+    QPixmap cover;
+    if (!cover.loadFromData(imageData))
+        return fallbackCover();
+
+    return cover;
+}
+
+QPixmap MetadataReader::extractOpusCover(const QString& filePath)
+{
+    TagLib::Ogg::Opus::File file(filePath.toStdString().c_str());
     if (!file.isValid())
         return fallbackCover();
 
@@ -416,6 +444,34 @@ QString MetadataReader::saveTagsToFile(
             coverList.append(coverArt);
 
             tag->setItem("covr", TagLib::MP4::Item(coverList));
+        }
+
+        f.save();
+        return cachedImagePath;
+    }
+
+    if (ext == "opus")
+    {
+        TagLib::Ogg::Opus::File f(filePath.toUtf8().constData());
+        if (!f.isValid()) return {};
+
+        auto* tag = f.tag(); // returns the XiphComment directly
+        if (!tag) return {};
+
+        tag->setTitle (TagLib::String(title.toUtf8().constData(),  TagLib::String::UTF8));
+        tag->setArtist(TagLib::String(artist.toUtf8().constData(), TagLib::String::UTF8));
+        tag->setAlbum (TagLib::String(album.toUtf8().constData(),  TagLib::String::UTF8));
+        tag->setTrack (trackNumber);
+
+        if (!imageData.isEmpty())
+        {
+            tag->removeAllPictures();
+
+            auto* picture = new TagLib::FLAC::Picture();
+            picture->setType(TagLib::FLAC::Picture::FrontCover);
+            picture->setMimeType(suffix == "png" ? "image/png" : "image/jpeg");
+            picture->setData(TagLib::ByteVector(imageData.constData(), imageData.size()));
+            tag->addPicture(picture); // XiphComment takes ownership
         }
 
         f.save();

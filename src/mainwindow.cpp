@@ -344,7 +344,7 @@ void MainWindow::loadLibrary()
     
     if (!currentMusicFolder.isEmpty()) {
         QDir dir(currentMusicFolder);
-        static const QStringList filters = {"*.mp3", "*.flac", "*.wav", "*.m4a", "*.aac", "*.ogg"};
+        static const QStringList filters = {"*.mp3", "*.flac", "*.wav", "*.m4a", "*.aac", "*.ogg", "*.opus"};
 
         // This recursively goes through all subdirectories to scan for music files
         std::function<QFileInfoList(const QString &)> collectFiles;

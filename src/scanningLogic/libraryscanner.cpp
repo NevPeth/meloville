@@ -8,7 +8,7 @@
 static QFileInfoList collectFiles(const QString &dirPath)
 {
     static const QStringList filters = {
-        "*.mp3", "*.flac", "*.wav", "*.m4a", "*.aac", "*.ogg"
+        "*.mp3", "*.flac", "*.wav", "*.m4a", "*.aac", "*.ogg", "*.opus"
     };
 
     QFileInfoList result;
