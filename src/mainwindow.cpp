@@ -464,8 +464,7 @@ void MainWindow::playSongAtVisibleIndex(int visibleIndex)
     while (!nextUp.isEmpty())
         nextUp.pop();
 
-    if(shuffleMode)
-        rebuildShufflePool();
+    rebuildShufflePool();
 
     playSong(libraryIndex);
 }
@@ -639,8 +638,7 @@ void MainWindow::toggleShuffle(){
     while (!nextUp.isEmpty())
         nextUp.pop();
 
-    if (shuffleMode)
-        rebuildShufflePool();
+    rebuildShufflePool();
 }
 
 void MainWindow::toggleRepeat(){
@@ -947,8 +945,7 @@ void MainWindow::saveSongEdits(int libraryIndex, const QString& title, const QSt
             rebuildPlaybackMap();
             if (currentLibraryIndex >= 0)
                 currentPlaybackIndex = libraryIndexToPlaybackPos.value(currentLibraryIndex, -1);
-            if (shuffleMode)
-                rebuildShufflePool();
+            rebuildShufflePool();
         }
         // else: playing from library, different playlist, or album — leave
         // currentPlaybackSongs / currentPlaybackIndex untouched
@@ -975,8 +972,7 @@ void MainWindow::saveSongEdits(int libraryIndex, const QString& title, const QSt
             rebuildPlaybackMap();
             if (currentLibraryIndex >= 0)
                 currentPlaybackIndex = libraryIndexToPlaybackPos.value(currentLibraryIndex, -1);
-            if (shuffleMode)
-                rebuildShufflePool();
+            rebuildShufflePool();
         }
 
     } else if (isInAlbumsGridView) {
@@ -1075,8 +1071,7 @@ void MainWindow::reorderPlaylist(int from, int to)
     if (currentLibraryIndex >= 0)
         currentPlaybackIndex = libraryIndexToPlaybackPos.value(currentLibraryIndex, -1);
 
-    if (shuffleMode)
-        rebuildShufflePool();
+    rebuildShufflePool();
 }
 
 void MainWindow::editPlaylist(
