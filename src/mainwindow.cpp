@@ -464,7 +464,8 @@ void MainWindow::playSongAtVisibleIndex(int visibleIndex)
     while (!nextUp.isEmpty())
         nextUp.pop();
 
-    rebuildShufflePool();
+    if(shuffleMode)
+        rebuildShufflePool();
 
     playSong(libraryIndex);
 }
@@ -811,7 +812,7 @@ void MainWindow::saveSongEdits(int libraryIndex, const QString& title, const QSt
     MetadataReader::saveTagsToFile(songFilePath, title, artist, album, trackNumber,
                                 imagePath.isEmpty() ? "" : selectedImagePath);
 
-    // ── 2. Update in-memory library + model ───────────────────────────────────
+    // ── 2. Update in-memory playlist + library ───────────────────────────────────
     playlistManager->editSongFromAllPlaylists(libraryIndex, title, artist, selectedImagePath);
 
     if (currSong.title != title) {
