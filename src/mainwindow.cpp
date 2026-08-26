@@ -464,6 +464,8 @@ void MainWindow::playSongAtVisibleIndex(int visibleIndex)
     while (!nextUp.isEmpty())
         nextUp.pop();
 
+    rebuildShufflePool();
+
     playSong(libraryIndex);
 }
 
