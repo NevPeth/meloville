@@ -6,21 +6,19 @@
 
 ### Big Picture Mode
 
-<img src="screenshots/bigpicture.png" alt="Meloville Now Playing" width="800">
+<img width="2880" height="1800" alt="bigpicture" src="https://github.com/user-attachments/assets/3e985d74-de38-4901-aa69-edced6467d0e" />
 
 ### Music Library
 
-<img src="screenshots/library.png" alt="Meloville Music Library" width="800">
+<img width="2880" height="1800" alt="library" src="https://github.com/user-attachments/assets/ac78dc78-bc20-47c1-a201-0b4704b70ee8" />
 
 ### Playlists
 
-<img src="screenshots/playlist.png" alt="Meloville Playlists" width="800">
-
+<img width="2880" height="1800" alt="playlist" src="https://github.com/user-attachments/assets/962e4dbf-2319-452d-87e8-e967be05db19" />
 
 ### Albums
 
-<img src="screenshots/albums.png" alt="Meloville Playlists" width="800">
-
+<img width="2880" height="1800" alt="albums" src="https://github.com/user-attachments/assets/8c8c441c-a79a-4db4-9e49-53b95e94cfd9" />
 
 ## Features
 
