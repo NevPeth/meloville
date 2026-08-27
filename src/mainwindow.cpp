@@ -242,8 +242,12 @@ void MainWindow::onScanFinished(const QVector<SongData>& songs, const QString& f
 
     saveLibrary();
 
-    // Reload playlists (if needed)
+    // Reload playlists
     playlistManager->loadPlaylists(library, false);
+
+    //Load categorize albums (instead of saving them, just load them)
+    allAlbums = buildAlbumList();
+    albumModel->setAlbums(allAlbums);
 
     // Switch UI state
     scanning = false;
@@ -421,6 +425,9 @@ void MainWindow::loadLibrary()
     currentPlaybackSongs = currentViewSongs;
     rebuildPlaybackMap();
     songModel->setSongs(&library, &visibleSongs);
+
+    allAlbums = buildAlbumList();
+    albumModel->setAlbums(allAlbums);
 
     if (addedAny || removedAny || addedLyrics) {
         saveLibrary();
@@ -790,6 +797,21 @@ void MainWindow::addToPlaylist(int visibleIndex, const QString& playlistName)
         unplayedIndices.append(libraryIndex);
 }
 
+// Used in album making, find the string with smallest len and returns it to be the key
+// so a song like "Artist1 feat Artist2" in album "Album1" and "Artist" in "Album1" will
+// be in the same album while "Artist2" in "Album1" would still be separate
+static QString artistKey(const QString &artist)
+{
+    QString low = artist.trimmed().toLower();
+    // Walk until we hit a non-letter that isn't part of the name itself
+    for (int i = 0; i < low.length(); ++i) {
+        if (!low[i].isLetter()) {
+            return low.left(i).trimmed();
+        }
+    }
+    return low;
+}
+
 void MainWindow::saveSongEdits(int libraryIndex, const QString& title, const QString& artist,
                                const QString& album, int trackNumber, const QString& imagePath)
 {
@@ -844,6 +866,7 @@ void MainWindow::saveSongEdits(int libraryIndex, const QString& title, const QSt
         for (int i = 0; i < nextUp.size(); ++i) nextUp[i] = remap(nextUp[i]);
         for (int &i : currentPlaybackSongs) i = remap(i);
         for (int &i : unplayedIndices) i = remap(i);
+        for (int &i : currentViewSongs) i = remap(i);
 
         rebuildPlaybackMap();
         if (currentLibraryIndex >= 0)
@@ -855,6 +878,8 @@ void MainWindow::saveSongEdits(int libraryIndex, const QString& title, const QSt
             emit currentLibraryIndexChanged();
             emit currentSongChanged();
         }
+
+        libraryIndex = newIndex; // so the album block below references the right slot
     } else {
         SongData &song = library[libraryIndex];
         song.filePath = currSong.filePath;
@@ -867,79 +892,221 @@ void MainWindow::saveSongEdits(int libraryIndex, const QString& title, const QSt
 
         if (libraryIndex == currentLibraryIndex)
             emit currentSongChanged();
+    }
 
-        // ── Album-view side-effects ───────────────────────────────────────────
-        // Case 1: song's album tag changed while we're viewing that album.
-        if (isInAlbumView && currSong.album != album && viewingAlbum == currSong.album) {
-            // Re-filter: the song moved out of this album
+    // ── 4. Album list side-effects ────────────────────────────────────────────
+    const bool albumChanged = currSong.album != album;
+    const bool artistChanged = currSong.artist != artist;
+    const bool coverChanged = currSong.coverPath != selectedImagePath;
+    bool albumViewAlreadyUpdated = false;
+
+    // Finds an entry in allAlbums by album title + artistKey. Returns -1 if missing.
+    auto findAlbum = [&](const QString &albumTitle, const QString &artKey) -> int {
+        QString lowTitle = albumTitle.trimmed().toLower();
+        // Binary search to the first entry with this title
+        auto it = std::lower_bound(allAlbums.begin(), allAlbums.end(), albumTitle,
+            [](const AlbumInfo &a, const QString &t){
+                return QString::compare(a.title, t, Qt::CaseInsensitive) < 0;
+            });
+        for (; it != allAlbums.end() && it->title.compare(albumTitle, Qt::CaseInsensitive) == 0; ++it) {
+            if (artistKey(it->artist) == artKey)
+                return std::distance(allAlbums.begin(), it);
+        }
+        return -1;
+    };
+
+    // Re-derives the shortest artist name among all songs belonging to an album
+    // bucket, using the post-edit library. Call after the library is already updated.
+    auto rederiveArtist = [&](const QString &forAlbum, const QString &forArtistKey) -> QString {
+        QString best;
+        for (const SongData &s : library) {
+            if (s.album.compare(forAlbum, Qt::CaseInsensitive) != 0)
+                continue;
+            if (artistKey(s.artist) != forArtistKey)
+                continue;
+            if (best.isEmpty() || s.artist.length() < best.length())
+                best = s.artist;
+        }
+        return best;
+    };
+
+    // Re-derives the first non-empty cover among all songs in an album bucket.
+    auto rederiveCover = [&](const QString &forAlbum, const QString &forArtistKey) -> QString {
+        for (const SongData &s : library) {
+            if (s.album.compare(forAlbum, Qt::CaseInsensitive) != 0)
+                continue;
+            if (artistKey(s.artist) != forArtistKey)
+                continue;
+            if (!s.coverPath.isEmpty())
+                return s.coverPath;
+        }
+        return QString();
+    };
+
+    if (albumChanged) {
+        // ── Case A: song moved to a different album ───────────────────────────
+
+        // A1. Decrement or remove the old album entry.
+        int oldAlbumIdx = findAlbum(currSong.album, artistKey(currSong.artist));
+        if (oldAlbumIdx >= 0) {
+            allAlbums[oldAlbumIdx].songCount--;
+            if (allAlbums[oldAlbumIdx].songCount <= 0) {
+                allAlbums.removeAt(oldAlbumIdx);
+            } else {
+                // Re-derive cover and artist from the remaining songs.
+                allAlbums[oldAlbumIdx].artist    = rederiveArtist(currSong.album, artistKey(currSong.artist));
+                allAlbums[oldAlbumIdx].coverPath = rederiveCover (currSong.album, artistKey(currSong.artist));
+            }
+        }
+
+        // A2. Increment or create the new album entry.
+        int newAlbumIdx = findAlbum(album, artistKey(artist));
+        if (newAlbumIdx >= 0) {
+            allAlbums[newAlbumIdx].songCount++;
+            if (artist.length() < allAlbums[newAlbumIdx].artist.length())
+                allAlbums[newAlbumIdx].artist = artist;
+            if (allAlbums[newAlbumIdx].coverPath.isEmpty() && !selectedImagePath.isEmpty())
+                allAlbums[newAlbumIdx].coverPath = selectedImagePath;
+        } else if (!album.isEmpty()) {
+            AlbumInfo info;
+            info.title     = album;
+            info.artist    = artist;
+            info.coverPath = selectedImagePath;
+            info.songCount = 1;
+            auto insertPos = std::lower_bound(
+                allAlbums.begin(), allAlbums.end(), info,
+                [](const AlbumInfo &a, const AlbumInfo &b){
+                    return QString::compare(a.title, b.title, Qt::CaseInsensitive) < 0;
+                });
+            allAlbums.insert(insertPos, info);
+        }
+
+        // A3. Currently-playing album tracking.
+        if (currentlyPlayingAlbum == currSong.album) {
+            currentlyPlayingAlbum = album;
+            if (artistChanged) currentlyPlayingAlbumArtist    = artist;
+            if (coverChanged)  currentlyPlayingAlbumCoverPath = selectedImagePath;
+        }
+
+        // A4. If we're viewing the OLD album, remove the song from that view.
+        if (isInAlbumView && viewingAlbum.compare(currSong.album, Qt::CaseInsensitive) == 0) {
             currentViewSongs.clear();
             for (int i = 0; i < library.size(); ++i) {
-                if (library[i].album == viewingAlbum)
+                if (library[i].album.compare(viewingAlbum, Qt::CaseInsensitive) == 0)
                     currentViewSongs.push_back(i);
             }
             std::sort(currentViewSongs.begin(), currentViewSongs.end(),
                 [this](int a, int b){ return library[a].trackNumber < library[b].trackNumber; });
             visibleSongs = currentViewSongs;
-            currentPlaybackSongs = currentViewSongs;
-            rebuildPlaybackMap();
             songModel->setSongs(&library, &visibleSongs);
+
+            // Only touch playback if we're actually playing from this album
+            if (currentlyPlayingPlaylist.isEmpty() && currentlyPlayingAlbum.compare(currSong.album, Qt::CaseInsensitive) == 0)
+            {
+                currentPlaybackSongs = currentViewSongs;
+                rebuildPlaybackMap();
+                if (currentLibraryIndex >= 0)
+                    currentPlaybackIndex = libraryIndexToPlaybackPos.value(currentLibraryIndex, -1);
+            }
+
+            // Update hero header — this song may have been the cover/artist donor.
+            int ai = findAlbum(viewingAlbum, artistKey(viewingAlbumArtist));
+            viewingAlbumCoverPath = (ai >= 0) ? allAlbums[ai].coverPath : QString();
+            emit albumViewStateChanged();
         }
 
-        // Case 2: track number changed while viewing this album — re-sort.
-        if (isInAlbumView && viewingAlbum == album && currSong.trackNumber != trackNumber) {
+        // A5. If we're viewing the NEW album, add the song into that view.
+        if (isInAlbumView && viewingAlbum.compare(album, Qt::CaseInsensitive) == 0) {
+            currentViewSongs.clear();
+            for (int i = 0; i < library.size(); ++i) {
+                if (library[i].album.compare(viewingAlbum, Qt::CaseInsensitive) == 0)
+                    currentViewSongs.push_back(i);
+            }
             std::sort(currentViewSongs.begin(), currentViewSongs.end(),
                 [this](int a, int b){ return library[a].trackNumber < library[b].trackNumber; });
-            // currentPlaybackIndex must follow the newly sorted order so playNextSong() doesn't skip to the wrong track.
+            visibleSongs = currentViewSongs;
+            songModel->setSongs(&library, &visibleSongs);
+
+            // Only touch playback if we're actually playing from this album
+            if (currentlyPlayingPlaylist.isEmpty() && currentlyPlayingAlbum.compare(album, Qt::CaseInsensitive) == 0)
+            {
+                currentPlaybackSongs = currentViewSongs;
+                rebuildPlaybackMap();
+                if (currentLibraryIndex >= 0)
+                    currentPlaybackIndex = libraryIndexToPlaybackPos.value(currentLibraryIndex, -1);
+            }
+            emit albumViewStateChanged();
+        }
+
+    } else {
+        // ── Case B: album tag unchanged ───────────────────────────────────────
+
+        // B1. Artist changed within the same album.
+        // Look up by artistKey(artist) — the key is stable across minor
+        // variations; if the key itself changed this would have been an
+        // albumChanged case handled above.
+        if (artistChanged) {
+            int ai = findAlbum(album, artistKey(artist));
+            if (ai >= 0)
+                allAlbums[ai].artist = rederiveArtist(album, artistKey(artist));
+        }
+
+        // B2. Cover changed within the same album.
+        if (coverChanged && !selectedImagePath.isEmpty()) {
+            int ai = findAlbum(album, artistKey(artist));
+            if (ai >= 0) {
+                if (allAlbums[ai].coverPath.isEmpty() ||
+                    allAlbums[ai].coverPath == currSong.coverPath)
+                {
+                    allAlbums[ai].coverPath = selectedImagePath;
+                }
+            }
+        }
+
+        // B3. Track number changed — re-sort the album view if open.
+        if (isInAlbumView && viewingAlbum.compare(album, Qt::CaseInsensitive) == 0
+            && currSong.trackNumber != trackNumber)
+        {
+            std::sort(currentViewSongs.begin(), currentViewSongs.end(),
+                [this](int a, int b){ return library[a].trackNumber < library[b].trackNumber; });
             std::sort(currentPlaybackSongs.begin(), currentPlaybackSongs.end(),
                 [this](int a, int b){ return library[a].trackNumber < library[b].trackNumber; });
+            rebuildPlaybackMap();
             if (currentLibraryIndex >= 0)
                 currentPlaybackIndex = libraryIndexToPlaybackPos.value(currentLibraryIndex, -1);
             visibleSongs = currentViewSongs;
             songModel->setSongs(&library, &visibleSongs);
         }
 
-        // Case 3: cover art or artist changed for the currently-viewed album.
-        // Update the hero header data the QML side reads via Q_PROPERTY.
-        if (isInAlbumView && viewingAlbum == album) {
-            // If this is the first song (the one that donated the cover),
-            // the header cover needs refreshing too.
-            if (!selectedImagePath.isEmpty() && viewingAlbumCoverPath == currSong.coverPath) {
+        // B4. Album view hero header refresh.
+        if (isInAlbumView && viewingAlbum.compare(album, Qt::CaseInsensitive) == 0
+            && (artistChanged || coverChanged))
+        {
+            if (coverChanged && !selectedImagePath.isEmpty() &&
+                viewingAlbumCoverPath == currSong.coverPath)
                 viewingAlbumCoverPath = selectedImagePath;
-            }
-            if (viewingAlbumArtist == currSong.artist && artist != currSong.artist) {
+            if (artistChanged && viewingAlbumArtist == currSong.artist)
                 viewingAlbumArtist = artist;
-            }
-            emit albumViewStateChanged(); // hero header re-reads viewingAlbumCover + artist
+            emit albumViewStateChanged();
         }
 
-        // Also keep the "currently playing" tracking in sync if this song
-        // is the one being played from an album context.
-        if (currentlyPlayingAlbum == currSong.album) {
-            if (!selectedImagePath.isEmpty() && currentlyPlayingAlbumCoverPath == currSong.coverPath)
+        // B5. Currently-playing album tracking.
+        if (currentlyPlayingAlbum == album) {
+            if (coverChanged && !selectedImagePath.isEmpty() &&
+                currentlyPlayingAlbumCoverPath == currSong.coverPath)
                 currentlyPlayingAlbumCoverPath = selectedImagePath;
-            if (currentlyPlayingAlbumArtist == currSong.artist && artist != currSong.artist)
+            if (artistChanged && currentlyPlayingAlbumArtist == currSong.artist)
                 currentlyPlayingAlbumArtist = artist;
-            // If album tag was changed, the "playing from" context should follow
-            if (currSong.album != album)
-                currentlyPlayingAlbum = album;
         }
     }
 
-    currentViewSongs.clear();
-    for (int i = 0; i < library.size(); i++)
-        currentViewSongs.push_back(i);
+    // ── 5. Push updated allAlbums into the model ──────────────────────────────
+    albumModel->setAlbums(allAlbums);
 
     if (isInPlaylistView) {
-        // Rebuild the view for the playlist being viewed
-        QList<int> songs = playlistManager->getPlaylistSongs(viewingPlaylist);
-        currentViewSongs.clear();
-        for (int libraryIndex : songs)
-            currentViewSongs.push_back(libraryIndex);
-
         visibleSongs = currentViewSongs;
         songModel->setSongs(&library, &visibleSongs);
 
-        // Only update playback context if we're actually playing from this playlist
         if (currentlyPlayingPlaylist == viewingPlaylist) {
             currentPlaybackSongs = currentViewSongs;
             rebuildPlaybackMap();
@@ -947,9 +1114,6 @@ void MainWindow::saveSongEdits(int libraryIndex, const QString& title, const QSt
                 currentPlaybackIndex = libraryIndexToPlaybackPos.value(currentLibraryIndex, -1);
             rebuildShufflePool();
         }
-        // else: playing from library, different playlist, or album — leave
-        // currentPlaybackSongs / currentPlaybackIndex untouched
-
     } else if (isInAlbumView) {
         currentViewSongs.clear();
         for (int i = 0; i < library.size(); ++i) {
@@ -976,10 +1140,7 @@ void MainWindow::saveSongEdits(int libraryIndex, const QString& title, const QSt
         }
 
     } else if (isInAlbumsGridView) {
-        allAlbums = buildAlbumList();
-        albumModel->setAlbums(allAlbums);
         filterSongsAndAlbums(filterText);
-
     } else {
         // Library view — only update playback if actually playing from library
         visibleSongs = currentViewSongs;
@@ -1148,21 +1309,6 @@ void MainWindow::editCurrentSong(int visibleIndex)
     );
 }
 
-// Used in album making, find the string with smallest len and returns it to be the key
-// so a song like "Artist1 feat Artist2" in album "Album1" and "Artist" in "Album1" will
-// be in the same album while "Artist2" in "Album1" would still be separate
-static QString artistKey(const QString &artist)
-{
-    QString low = artist.trimmed().toLower();
-    // Walk until we hit a non-letter that isn't part of the name itself
-    for (int i = 0; i < low.length(); ++i) {
-        if (!low[i].isLetter()) {
-            return low.left(i).trimmed();
-        }
-    }
-    return low;
-}
-
 QVector<AlbumInfo> MainWindow::buildAlbumList() const
 {
     // key: (albumTitle.toLower(), artistKey) -> index into result
@@ -1218,8 +1364,6 @@ void MainWindow::goToAlbums(){
 
     leaveAlbumView();
     isInAlbumsGridView = true;
-    allAlbums = buildAlbumList();
-    albumModel->setAlbums(allAlbums);
     emit albumViewStateChanged();
 }
 
@@ -1542,6 +1686,9 @@ void MainWindow::selectMusicFolder()
         // Library is fully populated — safe to load playlists now
         playlistManager->loadPlaylists(library, false);
         updatePlaylistNames();
+
+        allAlbums = buildAlbumList();
+        albumModel->setAlbums(allAlbums);
 
         scanning = false;
         emit scanningChanged();
