@@ -719,7 +719,6 @@ void MainWindow::loadPlaylistView(const QString& playlistName)
     filterText.clear();
     emit dragReorderAllowedChanged();
     
-
     QString coverPath = appDataPath + 
         playlistManager->playlistImage(
             playlistName
@@ -831,15 +830,15 @@ void MainWindow::saveSongEdits(
     QString selectedImagePath = oldSong.coverPath;
 
     if (!imagePath.isEmpty()) {
-        QString uniqueKey = MetadataReader::cacheKeyForPath(songFilePath) + "_" + QUuid::createUuid().toString(QUuid::WithoutBraces);
-        MetadataReader::removeCachedCoverArt(appDataPath + "/cache", MetadataReader::cacheKeyForPath(songFilePath));
+        QString uniqueKey = MetadataReader::cacheKeyForPath(songFilePath);
+        MetadataReader::removeCachedCoverArt(appDataPath + "/cache", uniqueKey);
         selectedImagePath = MetadataReader::cacheUserImage(imagePath, appDataPath + "/cache", uniqueKey);
     }
 
     // Save metadata
-    MetadataReader::saveTagsToFile( songFilePath, title, artist, album, trackNumber, selectedImagePath);
+    MetadataReader::saveTagsToFile(songFilePath, title, artist, album, trackNumber, selectedImagePath);
 
-    // 3. Construct the finalized SongData.
+    // Construct the finalized SongData.
     SongData newSong = oldSong;
     newSong.title = title;
     newSong.artist = artist;
@@ -899,15 +898,15 @@ void MainWindow::saveSongEdits(
         library[libraryIndex] = newSong;
     }
 
-    libraryIndex = newLibraryIndex;
-
-    // Update playlists
     playlistManager->editSongFromAllPlaylists(
         libraryIndex,
         title,
         artist,
-        selectedImagePath
+        selectedImagePath,
+        newLibraryIndex
     );
+
+    libraryIndex = newLibraryIndex;
 
     if (titleChanged)
         playlistManager->loadPlaylists(library, false);
@@ -956,19 +955,13 @@ void MainWindow::saveSongEdits(
 
         // Only change playback ordering when playback is coming from
         // this album rather than a playlist.
-        if (currentlyPlayingPlaylist.isEmpty() &&
-            currentlyPlayingAlbum == viewingAlbum)
-        {
+        if (currentlyPlayingPlaylist.isEmpty() && currentlyPlayingAlbum == viewingAlbum){
             currentPlaybackSongs = currentViewSongs;
 
             rebuildPlaybackMap();
 
             if (currentLibraryIndex >= 0) {
-                currentPlaybackIndex =
-                    libraryIndexToPlaybackPos.value(
-                        currentLibraryIndex,
-                        -1
-                    );
+                currentPlaybackIndex = libraryIndexToPlaybackPos.value(currentLibraryIndex, -1);
             }
 
             rebuildShufflePool();
@@ -981,15 +974,10 @@ void MainWindow::saveSongEdits(
     }
     else if (isInPlaylistView) {
         visibleSongs = currentViewSongs;
-
-        songModel->setSongs(
-            &library,
-            &visibleSongs
-        );
+        songModel->setSongs(&library, &visibleSongs);
 
         if (currentlyPlayingPlaylist == viewingPlaylist) {
             currentPlaybackSongs = currentViewSongs;
-
             rebuildPlaybackMap();
 
             if (currentLibraryIndex >= 0) {
@@ -1002,18 +990,12 @@ void MainWindow::saveSongEdits(
     else {
         visibleSongs = currentViewSongs;
 
-        if (currentlyPlayingPlaylist.isEmpty() &&
-            currentlyPlayingAlbum.isEmpty())
-        {
+        if (currentlyPlayingPlaylist.isEmpty() && currentlyPlayingAlbum.isEmpty()){
             currentPlaybackSongs = currentViewSongs;
             rebuildPlaybackMap();
 
             if (currentLibraryIndex >= 0) {
-                currentPlaybackIndex =
-                    libraryIndexToPlaybackPos.value(
-                        currentLibraryIndex,
-                        -1
-                    );
+                currentPlaybackIndex = libraryIndexToPlaybackPos.value(currentLibraryIndex, -1);
             }
             rebuildShufflePool();
         }
@@ -1024,6 +1006,8 @@ void MainWindow::saveSongEdits(
     if (currentLibraryIndex >= 0) {
         currentPlaybackIndex = libraryIndexToPlaybackPos.value(currentLibraryIndex, -1);
     }
+
+    songModel->setPlayingIndex(libraryIndex);
 
     emit songCoverUpdated(currentLibraryIndex, selectedImagePath);
     saveLibrary();

@@ -43,7 +43,7 @@ public:
         const QString& imagePath
     );
     void deletePlaylist(const QString& playlistName);
-    void editSongFromAllPlaylists(int libraryIndex, const QString& newSongTitle, const QString& newArtist, const QString& imagePath);
+    void editSongFromAllPlaylists(int libraryIndex, const QString& newSongTitle, const QString& newArtist, const QString& imagePath, int newLibraryIndex);
     void removeSongFromAllPlaylists(int libraryIndex);
 
     void reorderPlaylist(const QString& playlistName, int from, int to);
@@ -56,7 +56,8 @@ private slots:
     void updateAutoGenSongs(const QString& playlistName);
 
 private:
-    QString appDataPath;QString coverPath;
+    QString appDataPath;
+    QString coverPath;
     QStringList playlistOrder;
     QMap<QString, QString> playlistImages;
     QMap<QString, QList<int>> playlists;
