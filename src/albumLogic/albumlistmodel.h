@@ -17,6 +17,7 @@ public:
     explicit AlbumListModel(QObject *parent = nullptr);
 
     void setAlbums(const QVector<AlbumInfo> &albums);
+    void refreshFilter(); //Filters albums that have more than 1 song in them
     const AlbumInfo &albumAt(int row) const;
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -24,5 +25,6 @@ public:
     QHash<int, QByteArray> roleNames() const override;
 
 private:
-    QVector<AlbumInfo> m_albums;
+    QVector<AlbumInfo> m_source; // unfiltered albums
+    QVector<AlbumInfo> m_albums; // albums actually displayed to the user
 };

@@ -7,8 +7,18 @@ AlbumListModel::AlbumListModel(QObject *parent)
 
 void AlbumListModel::setAlbums(const QVector<AlbumInfo> &albums)
 {
+    m_source = albums;
+    refreshFilter();
+}
+
+// Filters for albums with more than 1 song
+void AlbumListModel::refreshFilter()
+{
     beginResetModel();
-    m_albums = albums;
+    m_albums.clear();
+    for (const AlbumInfo &a : m_source)
+        if (a.songCount > 1)
+            m_albums.append(a);
     endResetModel();
 }
 

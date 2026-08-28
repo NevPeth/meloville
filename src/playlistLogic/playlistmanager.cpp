@@ -109,13 +109,11 @@ void PlaylistManager::editSongFromAllPlaylists(
     int libraryIndex, 
     const QString& newSongTitle, 
     const QString& newArtist, 
-    const QString& imagePath
+    const QString& imagePath,
+    int newLibraryIndex
 ){
     for(const QString& playlistName : playlistOrder){
-        int index =
-            playlists[playlistName].indexOf(
-                libraryIndex
-            );
+        int index = playlists[playlistName].indexOf(libraryIndex);
 
         if (index < 0)
             continue;
@@ -124,6 +122,8 @@ void PlaylistManager::editSongFromAllPlaylists(
         playlistSong.title = newSongTitle;
         playlistSong.artist = newArtist;
         playlistSong.coverPath = imagePath;
+
+        playlists[playlistName][index] = newLibraryIndex;
 
         if (playlistAutoGenerate.value(playlistName) && index < 4)
             updateAutoGenSongs(playlistName);
