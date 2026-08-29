@@ -360,9 +360,15 @@ Item {
                     Layout.preferredHeight: Math.min(40, root.height/10)
                     background: Item {}
                     contentItem: Image {
-                        source: (btnShuffleBig.hovered || backend.shuffleMode)
-                                ? "image://svgicons/shuffleIconBigHovered"
-                                : "image://svgicons/shuffleIconBigNormal"
+                        source: {
+                            if (backend.shuffleMode){
+                                return "image://svgicons/shuffleIconBigActive"
+                            }
+                            if (btnShuffleBig.hovered){
+                                return "image://svgicons/shuffleIconBigHovered"
+                            }
+                            return "image://svgicons/shuffleIconBigNormal"
+                        }
                         fillMode: Image.PreserveAspectFit
                     }
                     onClicked: backend.toggleShuffle()
@@ -418,9 +424,15 @@ Item {
                     Layout.preferredHeight: Math.min(40, root.height/10)
                     background: Item {}
                     contentItem: Image {
-                        source: (btnRepeatBig.hovered || backend.repeatMode)
-                                ? "image://svgicons/repeatIconBigHovered"
-                                : "image://svgicons/repeatIconBigNormal"
+                        source: {
+                            if (backend.repeatMode){
+                                return "image://svgicons/repeatIconBigActive"
+                            }
+                            if (btnRepeatBig.hovered){
+                                return "image://svgicons/repeatIconBigHovered"
+                            }
+                            return "image://svgicons/repeatIconBigNormal"
+                        }
                         fillMode: Image.PreserveAspectFit
                     }
                     onClicked: backend.toggleRepeat()

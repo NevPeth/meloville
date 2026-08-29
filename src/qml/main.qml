@@ -1564,9 +1564,15 @@ ApplicationWindow {
                                         Layout.rightMargin: -5
                                         background: Item {}
                                         contentItem: Image {
-                                            source: (btnShuffle.hovered || backend.shuffleMode)
-                                                ? "image://svgicons/shuffleIconHovered"
-                                                : "image://svgicons/shuffleIconNormal"
+                                            source: {
+                                                if(backend.shuffleMode){
+                                                    return "image://svgicons/shuffleIconActive"
+                                                }
+                                                if(btnShuffle.hovered){
+                                                    return "image://svgicons/shuffleIconHovered"
+                                                }
+                                                return "image://svgicons/shuffleIconNormal"
+                                            }
                                             fillMode: Image.PreserveAspectFit
                                         }
                                         onClicked: backend.toggleShuffle()
@@ -1627,9 +1633,15 @@ ApplicationWindow {
                                         Layout.leftMargin: -5
                                         background: Item {}
                                         contentItem: Image {
-                                            source: (btnRepeat.hovered || backend.repeatMode)
-                                                ? "image://svgicons/repeatIconHovered"
-                                                : "image://svgicons/repeatIconNormal"
+                                            source: {
+                                                if (backend.repeatMode){
+                                                    return "image://svgicons/repeatIconActive"
+                                                }
+                                                if (btnRepeat.hovered){
+                                                    return "image://svgicons/repeatIconHovered"
+                                                }
+                                                return "image://svgicons/repeatIconNormal"
+                                            }
                                             fillMode: Image.PreserveAspectFit
                                         }
                                         onClicked: backend.toggleRepeat()

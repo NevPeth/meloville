@@ -12,10 +12,12 @@ inline void registerIcons(SvgImageProvider& provider)
         QSize(60, 60));
 
     provider.registerIcon("shuffleIconNormal",":/icons/shuffle.svg",QColor("#535353"), QSize(42, 30));
-    provider.registerIcon("shuffleIconHovered",":/icons/shuffle.svg",Qt::white,QSize(42, 30));
+    provider.registerIcon("shuffleIconHovered",":/icons/shuffle.svg",QColor("#939393"),QSize(42, 30));
+    provider.registerIcon("shuffleIconActive",":/icons/shuffle.svg",Qt::white,QSize(42, 30));
 
     provider.registerIcon("repeatIconNormal",":/icons/repeat.svg",QColor("#535353"), QSize(44, 44));
-    provider.registerIcon("repeatIconHovered",":/icons/repeat.svg",Qt::white,QSize(44, 44));
+    provider.registerIcon("repeatIconHovered",":/icons/repeat.svg",QColor("#939393"),QSize(44, 44));
+    provider.registerIcon("repeatIconActive",":/icons/repeat.svg",Qt::white,QSize(44, 44));
 
     provider.registerDualIcon(
         "playButtonIcon",
@@ -74,13 +76,18 @@ inline void registerIcons(SvgImageProvider& provider)
 
     // Icons that are for the big picture page
     provider.registerIcon("shuffleIconBigNormal",":/icons/shuffle.svg",QColor(255,255,255,50), QSize(60, 42));
-    provider.registerIcon("shuffleIconBigHovered",":/icons/shuffle.svg", QColor(255,255,255,170),QSize(60, 42));
+    provider.registerIcon("shuffleIconBigHovered",":/icons/shuffle.svg", QColor(255,255,255,130),QSize(60, 42));
+    provider.registerIcon("shuffleIconBigActive",":/icons/shuffle.svg", QColor(255,255,255,230),QSize(60, 42));
+
     provider.registerIcon("reverseIconBig",":/icons/reverseBig.svg",QColor(255, 255, 255, 230),QSize(70, 70));
     provider.registerIcon("playIconBig",":/icons/menuPlayIcon.svg",QColor(255, 255, 255, 230),QSize(70, 70));
     provider.registerIcon("pauseIconBig",":/icons/menuPauseIcon.svg",QColor(255, 255, 255, 230),QSize(70, 70));
     provider.registerIcon("skipIconBig",":/icons/skipBig.svg",QColor(255, 255, 255, 230),QSize(70, 70));
+
     provider.registerIcon("repeatIconBigNormal",":/icons/repeat.svg",QColor(255,255,255,50), QSize(60, 60));
-    provider.registerIcon("repeatIconBigHovered",":/icons/repeat.svg", QColor(255, 255, 255, 170),QSize(60, 60));
+    provider.registerIcon("repeatIconBigHovered",":/icons/repeat.svg", QColor(255, 255, 255, 130),QSize(60, 60));
+    provider.registerIcon("repeatIconBigActive",":/icons/repeat.svg", QColor(255,255,255,230),QSize(60, 60));
+
     provider.registerIcon("speakerLeftIconNormal", ":/icons/speakerLowVolume.svg", QColor(255,255,255,50), QSize(40,40));
     provider.registerIcon("speakerLeftIconHovered", ":/icons/speakerLowVolume.svg", QColor(255,255,255,170), QSize(40,40));
     provider.registerIcon("speakerRightIconNormal", ":/icons/speakerFullVolume.svg", QColor(255,255,255,50), QSize(40,40));
