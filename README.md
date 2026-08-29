@@ -42,6 +42,8 @@
 
 ## Features That I Plan On Implementing
 
+* Scrobble support
+    * In the meantime I would recommend [this](https://github.com/mariusor/mpris-scrobbler) project which works with the already in-built mpris support to automatically send scrobbles to Last.fm and other services
 * Getting the pkgbuild on the AUR for arch (new registrations are currently closed so I would be happy if one of you could do that)
 * Adding official support for other distros
 
