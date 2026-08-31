@@ -212,7 +212,7 @@ Item {
 
                 ColumnLayout {
                     id: contentCol
-                    width: contentFlick.width
+                    width: parent.width
                     spacing: 0
 
                     // ── Shared section header component ─────────────────────────────
@@ -277,6 +277,11 @@ Item {
                                 Layout.maximumWidth: root.width/3
                                 visible: text !== ""
                             }
+                        }
+
+                        Item {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
                         }
 
                         // Custom toggle switch
@@ -346,7 +351,6 @@ Item {
 
                         id: animSliderRoot
                         Layout.fillWidth: true
-                        Layout.maximumWidth: root.width/2
                         spacing: 8
 
                         RowLayout {
