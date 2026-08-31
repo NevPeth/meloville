@@ -61,6 +61,12 @@ qt_add_executable(meloville
     listenAlongServer/listenalongserver.h
     listenAlongServer/listenalongserver.cpp
 
+    scrobble/lastfmscrobbler.h
+    scrobble/lastfmscrobbler.cpp
+    scrobble/scrobblercache.h
+    scrobble/scrobblercache.cpp
+    scrobble/scrobblercacheitem.h
+
     resources.qrc
 )
 
@@ -84,6 +90,7 @@ target_include_directories(meloville PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/playlistLogic
     ${CMAKE_CURRENT_SOURCE_DIR}/albumLogic
     ${CMAKE_CURRENT_SOURCE_DIR}/listenAlongServer
+    ${CMAKE_CURRENT_SOURCE_DIR}/scrobble
 )
 
 # Installation

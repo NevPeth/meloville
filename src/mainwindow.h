@@ -11,6 +11,7 @@
 #include "albumlistmodel.h"
 #include "mprisadapter.h"
 #include "listenalongserver.h"
+#include "lastfmscrobbler.h"
 #include <pulse/pulseaudio.h>
 #include <QMainWindow>
 #include <QQuickView>
@@ -68,6 +69,9 @@ class MainWindow : public QObject
     Q_PROPERTY(bool customResizing READ getCustomResizing WRITE setCustomResizing NOTIFY customResizingChanged)
     Q_PROPERTY(bool nativeResizing READ getNativeResizing WRITE setNativeResizing NOTIFY nativeResizingChanged)
 
+    Q_PROPERTY(bool scrobblingAuthenticated READ getScrobblingAuthenticated NOTIFY scrobblingAuthChanged)
+    Q_PROPERTY(QString scrobblingUsername READ getScrobblingUsername NOTIFY scrobblingAuthChanged)
+
 public:
     explicit MainWindow(QObject *parent = nullptr);
     ~MainWindow();
@@ -112,6 +116,8 @@ public:
     Q_INVOKABLE void setCloseToTray(bool close);
     Q_INVOKABLE void setCustomResizing(bool custom);
     Q_INVOKABLE void setNativeResizing(bool native);
+    Q_INVOKABLE void scrobblerAuthenticate();
+    Q_INVOKABLE void scrobblerLogout();
 
     double getProgress() const { return progress; }
     PlaylistModel* getPlaylistModel() const { return playlistModel; }
@@ -159,6 +165,8 @@ public:
     QString getViewingAlbumArtist() const { return viewingAlbumArtist; }
     QString getViewingAlbumCover() const { return viewingAlbumCoverPath; }
     QObject* getAlbumModel() const { return albumModel; }
+    bool getScrobblingAuthenticated() const { return lFmScrobbler && lFmScrobbler->isAuthenticated(); }
+    QString getScrobblingUsername() const { return lFmScrobbler ? lFmScrobbler->username() : QString(); }
     // Values retrieved in settings
     QString getMusicFolder() const { return currentMusicFolder; }
     qreal getDelegateHeight() const { return delegateHeight; }
@@ -223,6 +231,8 @@ signals:
     void closeToTrayChanged();
     void customResizingChanged();
     void nativeResizingChanged();
+    void scrobblingAuthChanged();
+    void scrobblingError(const QString &message);
 
 private:
     QVector<SongData> library;
@@ -273,6 +283,8 @@ private:
     QVector<AlbumInfo> allAlbums;
 
     ListenAlongServer *listenAlongServer = nullptr;
+
+    LastFmScrobbler *lFmScrobbler = nullptr;
 
     //Variables used in Settings
     qreal delegateHeight = 62.0;
