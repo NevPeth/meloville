@@ -11,6 +11,8 @@
 #include "albumlistmodel.h"
 #include "mprisadapter.h"
 #include "listenalongserver.h"
+#include "lastfmscrobbler.h"
+#include "listenbrainzscrobbler.h"
 #include <pulse/pulseaudio.h>
 #include <QMainWindow>
 #include <QQuickView>
@@ -68,6 +70,11 @@ class MainWindow : public QObject
     Q_PROPERTY(bool customResizing READ getCustomResizing WRITE setCustomResizing NOTIFY customResizingChanged)
     Q_PROPERTY(bool nativeResizing READ getNativeResizing WRITE setNativeResizing NOTIFY nativeResizingChanged)
 
+    Q_PROPERTY(bool scrobblingAuthenticated READ getScrobblingAuthenticated NOTIFY scrobblingAuthChanged)
+    Q_PROPERTY(QString scrobblingUsername READ getScrobblingUsername NOTIFY scrobblingAuthChanged)
+    Q_PROPERTY(bool lbzAuthenticated READ getLbzAuthenticated NOTIFY lbzAuthChanged)
+    Q_PROPERTY(QString lbzUsername READ getLbzUsername NOTIFY lbzAuthChanged)
+
 public:
     explicit MainWindow(QObject *parent = nullptr);
     ~MainWindow();
@@ -112,6 +119,10 @@ public:
     Q_INVOKABLE void setCloseToTray(bool close);
     Q_INVOKABLE void setCustomResizing(bool custom);
     Q_INVOKABLE void setNativeResizing(bool native);
+    Q_INVOKABLE void scrobblerAuthenticate();
+    Q_INVOKABLE void scrobblerLogout();
+    Q_INVOKABLE void lbzSetToken(const QString &token);
+    Q_INVOKABLE void lbzLogout();
 
     double getProgress() const { return progress; }
     PlaylistModel* getPlaylistModel() const { return playlistModel; }
@@ -159,6 +170,11 @@ public:
     QString getViewingAlbumArtist() const { return viewingAlbumArtist; }
     QString getViewingAlbumCover() const { return viewingAlbumCoverPath; }
     QObject* getAlbumModel() const { return albumModel; }
+    // Scrobble getters
+    bool getScrobblingAuthenticated() const { return lFmScrobbler && lFmScrobbler->isAuthenticated(); }
+    QString getScrobblingUsername() const { return lFmScrobbler ? lFmScrobbler->username() : QString(); }
+    bool getLbzAuthenticated() const { return lbzScrobbler && lbzScrobbler->isAuthenticated(); }
+    QString getLbzUsername() const { return lbzScrobbler ? lbzScrobbler->username() : QString(); }
     // Values retrieved in settings
     QString getMusicFolder() const { return currentMusicFolder; }
     qreal getDelegateHeight() const { return delegateHeight; }
@@ -223,6 +239,9 @@ signals:
     void closeToTrayChanged();
     void customResizingChanged();
     void nativeResizingChanged();
+    void scrobblingAuthChanged();
+    void scrobblingError(const QString &message);
+    void lbzAuthChanged();
 
 private:
     QVector<SongData> library;
@@ -273,6 +292,9 @@ private:
     QVector<AlbumInfo> allAlbums;
 
     ListenAlongServer *listenAlongServer = nullptr;
+
+    LastFmScrobbler *lFmScrobbler = nullptr;
+    ListenBrainzScrobbler *lbzScrobbler = nullptr;
 
     //Variables used in Settings
     qreal delegateHeight = 62.0;

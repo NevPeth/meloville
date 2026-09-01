@@ -6,6 +6,8 @@
 #include "albumlistmodel.h"
 #include "mprisadapter.h"
 #include "listenalongserver.h"
+#include "lastfmscrobbler.h"
+#include "listenbrainzscrobbler.h"
 #include <QFileDialog>
 #include <QDir>
 #include <QJsonDocument>
@@ -137,6 +139,31 @@ MainWindow::MainWindow(QObject *parent)
     playlistManager->loadPlaylists(library, true);
     updatePlaylistNames();
     playlistModel = new PlaylistModel(playlistManager, this);
+    // Scrobble logic
+    lFmScrobbler = new LastFmScrobbler("e990f4f5655cd2f176e831ffe87ee9d8", "e9fff39f6b35f42e6fa887c7f947883d", this);
+
+    connect(lFmScrobbler, &LastFmScrobbler::errorOccurred,
+    this, [this](const QString &msg) {
+        emit scrobblingError(msg);
+    });
+
+    if (!lFmScrobbler->isAuthenticated()) {
+        lFmScrobbler->authenticate();
+    }
+
+    connect(lFmScrobbler, &LastFmScrobbler::authenticationComplete,
+        this, [this](bool, const QString &) {
+        emit scrobblingAuthChanged();
+    });
+
+    lbzScrobbler = new ListenBrainzScrobbler(this);
+
+    connect(lbzScrobbler, &ListenBrainzScrobbler::authChanged,
+            this, [this]() { emit lbzAuthChanged(); });
+
+    connect(lbzScrobbler, &ListenBrainzScrobbler::errorOccurred,
+            this, [this](const QString &msg) { emit scrobblingError(msg); });
+
     loadSessionState();
 
     // There is an option to set a server on Meloville to listen along, be reassured that
@@ -504,6 +531,19 @@ void MainWindow::playSong(int libraryIndex)
     mpris->getPlayer()->emitSeeked(0);
     emit currentLibraryIndexChanged();
     emit currentSongChanged();
+
+    if (lFmScrobbler) {
+        lFmScrobbler->notifySongStarted(
+            song.title,
+            song.artist,
+            song.album,
+            song.duration
+        );
+    }
+    if (lbzScrobbler) {
+        lbzScrobbler->notifySongStarted(
+            song.title, song.artist, song.album, song.duration);
+    }
 }
 
 void MainWindow::rebuildPlaybackMap()
@@ -1483,6 +1523,25 @@ void MainWindow::loadSessionState()
     qint64 savedPos = settings.value("session/position", 0).toLongLong();
     QTimer::singleShot(300, this, [this, savedPos]() {
         playbackController->player()->setPosition(savedPos);
+        // After restoring session, notify the scrobbler so it tracks this song.
+        if (lFmScrobbler && currentLibraryIndex >= 0 && currentLibraryIndex < library.size()) {
+            const SongData &song = library[currentLibraryIndex];
+            int remainingSec = song.duration - static_cast<int>(savedPos / 1000);
+            if (remainingSec > 0) {
+                lFmScrobbler->notifySongStarted(
+                    song.title,
+                    song.artist,
+                    song.album,
+                    remainingSec
+                );
+            }
+        }
+        if (lbzScrobbler && currentLibraryIndex >= 0 && currentLibraryIndex < library.size()) {
+            const SongData &song = library[currentLibraryIndex];
+            int remainingSec = song.duration - static_cast<int>(savedPos / 1000);
+            if (remainingSec > 0)
+                lbzScrobbler->notifySongStarted(song.title, song.artist, song.album, remainingSec);
+        }
         emit sessionRestored(savedPos);
     });
 }
@@ -1617,3 +1676,28 @@ void MainWindow::setPlaylistRenewalMode(bool renewal){ playlistRenewal = renewal
 void MainWindow::setCloseToTray(bool close){ closeToTray = close; emit closeToTrayChanged(); }
 void MainWindow::setCustomResizing(bool custom){ customResizing = custom; emit customResizingChanged(); }
 void MainWindow::setNativeResizing(bool native){ nativeResizing = native; emit nativeResizingChanged(); }
+
+void MainWindow::scrobblerAuthenticate() {
+    if (lFmScrobbler) 
+        lFmScrobbler->authenticate();
+}
+void MainWindow::scrobblerLogout() {
+    if (lFmScrobbler) { 
+        lFmScrobbler->logout(); 
+        emit scrobblingAuthChanged(); 
+    }
+}
+
+void MainWindow::lbzSetToken(const QString &token)
+{
+    if (lbzScrobbler)
+        lbzScrobbler->setToken(token);
+}
+
+void MainWindow::lbzLogout()
+{
+    if (lbzScrobbler) {
+        lbzScrobbler->logout();
+        emit lbzAuthChanged();
+    }
+}

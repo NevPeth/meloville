@@ -39,11 +39,11 @@
 * Synced Lyrics Support
     * <small>Only works with .lrc files and must be the same name as music file. Just have the .lrc be somewhere in the music folder and it will automatically find it on relaunch.</small>
 * Making auto-generated covers for playlists based on top four song covers
+* Scrobble support
+    * Currently only supports Last.Fm and ListenBrainz. A lot of this code was adapted from the [Strawberry Music Player](https://github.com/strawberrymusicplayer/strawberry) code.
 
 ## Features That I Plan On Implementing
 
-* Scrobble support
-    * In the meantime I would recommend [this](https://github.com/mariusor/mpris-scrobbler) project which works with the already in-built mpris support to automatically send scrobbles to Last.fm and other services
 * Getting the pkgbuild on the AUR for arch (new registrations are currently closed so I would be happy if one of you could do that)
 * Adding official support for other distros
 

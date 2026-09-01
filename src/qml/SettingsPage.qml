@@ -12,6 +12,9 @@ Item {
     property bool serverRunning: false
     property string serverUrl: "" 
     property bool urlCopied: false
+    property bool scrobbleAuthPending: false
+    property bool lbzAuthPending: false
+    property string lbzTokenInput: ""
 
     Connections {
         target: backend
@@ -32,6 +35,14 @@ Item {
             root.serverRunning = false
             root.serverUrl = ""
             root.urlCopied = false
+        }
+
+        function onScrobblingAuthChanged() {
+            root.scrobbleAuthPending = false
+        }
+
+        function onLbzAuthChanged() {
+            root.lbzAuthPending = false
         }
     }
 
@@ -158,6 +169,7 @@ Item {
                     }
                     TabButton { label: "General";      sectionIndex: 0 }
                     TabButton { label: "Listen Along"; sectionIndex: 1 }
+                    TabButton { label: "Scrobbling";   sectionIndex: 2 }
 
                     Item { Layout.fillHeight: true }
                 }
@@ -175,11 +187,56 @@ Item {
                 contentWidth: width
 
                 ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+                property real velocity: 0
+                property real threshold: 40
+
+                WheelHandler {
+                    acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+
+                    onWheel: function(event) {
+                        var delta = event.pixelDelta.y !== 0
+                                ? event.pixelDelta.y
+                                : event.angleDelta.y / 4
+
+                        if (Math.abs(delta) < contentFlick.threshold) {
+                            contentFlick.velocity += delta
+                        } else {
+                            var excess = Math.abs(delta) - contentFlick.threshold
+                            contentFlick.velocity += delta + Math.sign(delta) * excess * 0.8
+                        }
+
+                        event.accepted = true
+                    }
+                }
+
+                Timer {
+                    interval: 8
+                    running: true
+                    repeat: true
+
+                    onTriggered: {
+                        if (Math.abs(contentFlick.velocity) < 0.05) {
+                            contentFlick.velocity = 0
+                            return
+                        }
+
+                        var newY = contentFlick.contentY - contentFlick.velocity
+                        // Clamp to valid scroll range
+                        contentFlick.contentY = Math.max(0, Math.min(newY, contentFlick.contentHeight - contentFlick.height))
+
+                        if (Math.abs(contentFlick.velocity) < contentFlick.threshold)
+                            contentFlick.velocity *= 0.55    // stop quickly
+                        else
+                            contentFlick.velocity *= 0.90    // glide
+                    }
+                }
 
                 // Track active section by scroll position
                 onContentYChanged: {
                     var midScroll = contentY + height / 3
-                    if (listenAlongSection.y !== undefined && midScroll >= listenAlongSection.y) {
+                    if (scrobblingSection.y !== undefined && midScroll >= scrobblingSection.y) {
+                        root.activeSection = 2
+                    } else if (listenAlongSection.y !== undefined && midScroll >= listenAlongSection.y) {
                         root.activeSection = 1
                     } else {
                         root.activeSection = 0
@@ -194,12 +251,17 @@ Item {
                             listenAlongSection.y,
                             contentFlick.contentHeight - contentFlick.height
                         )
+                    } else if (idx === 2) {
+                        contentFlick.contentY = Math.min(
+                            scrobblingSection.y,
+                            contentFlick.contentHeight - contentFlick.height
+                        )
                     }
                 }
 
                 ColumnLayout {
                     id: contentCol
-                    width: contentFlick.width
+                    width: parent.width
                     spacing: 0
 
                     // ── Shared section header component ─────────────────────────────
@@ -264,6 +326,11 @@ Item {
                                 Layout.maximumWidth: root.width/3
                                 visible: text !== ""
                             }
+                        }
+
+                        Item {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
                         }
 
                         // Custom toggle switch
@@ -333,7 +400,6 @@ Item {
 
                         id: animSliderRoot
                         Layout.fillWidth: true
-                        Layout.maximumWidth: root.width/2
                         spacing: 8
 
                         RowLayout {
@@ -796,6 +862,424 @@ Item {
                             }
 
                             Item { height: 200 }
+                        }
+                    }
+
+                    // ════════════════════════════════════════════════════════
+                    //  SECTION 2 — SCROBBLING
+                    // ════════════════════════════════════════════════════════
+                    Item {
+                        id: scrobblingSection
+                        Layout.fillWidth: true
+                        implicitHeight: scrobblingCol.implicitHeight
+
+                        ColumnLayout {
+                            id: scrobblingCol
+                            anchors.fill: parent
+                            anchors.margins: 32
+                            spacing: 20
+
+                            SectionHeader {
+                                title: "Scrobbling"
+                                subtitle: "Track your listening history on Last.fm. Songs are scrobbled after you've listened to at least half the track or four minutes, whichever comes first."
+                            }
+
+                            // ── Status card ───────────────────────────────────────────────
+                            Rectangle {
+                                Layout.fillWidth: true
+                                height: statusCardCol.implicitHeight + 24
+                                radius: 8
+                                color: "#0d0d0d"
+                                border.color: "#222222"
+                                border.width: 1
+
+                                ColumnLayout {
+                                    id: statusCardCol
+                                    anchors {
+                                        left: parent.left; right: parent.right
+                                        verticalCenter: parent.verticalCenter
+                                        leftMargin: 16; rightMargin: 16
+                                    }
+                                    spacing: 6
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 10
+
+                                        Rectangle {
+                                            width: 8; height: 8; radius: 4
+                                            color: backend.scrobblingAuthenticated ? "#4caf74" : "#666666"
+                                            Behavior on color { ColorAnimation { duration: 300 } }
+                                        }
+
+                                        Text {
+                                            text: backend.scrobblingAuthenticated
+                                                ? "Connected as " + backend.scrobblingUsername
+                                                : "Not connected"
+                                            color: backend.scrobblingAuthenticated ? "#dddddd" : "#888888"
+                                            font.pixelSize: 13
+                                            font.bold: backend.scrobblingAuthenticated
+                                            Layout.fillWidth: true
+                                        }
+                                    }
+
+                                    Text {
+                                        visible: !backend.scrobblingAuthenticated
+                                        text: "Sign in to start scrobbling your plays to Last.fm."
+                                        color: "#666666"
+                                        font.pixelSize: 12
+                                        wrapMode: Text.WordWrap
+                                        Layout.fillWidth: true
+                                    }
+                                }
+                            }
+
+                            // ── How it works (only shown when not authenticated) ──────────
+                            ColumnLayout {
+                                visible: !backend.scrobblingAuthenticated
+                                Layout.fillWidth: true
+                                spacing: 10
+
+                                Text {
+                                    text: "HOW IT WORKS"
+                                    color: "#555555"
+                                    font.pixelSize: 10
+                                    font.letterSpacing: 1.5
+                                    font.bold: true
+                                }
+
+                                Repeater {
+                                    model: [
+                                        "Clicking \"Connect\" opens Last.fm in your browser.",
+                                        "Log in and approve access — you'll be redirected back automatically.",
+                                        "Your session is saved locally; you won't need to sign in again."
+                                    ]
+                                    delegate: RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 10
+
+                                        Rectangle {
+                                            width: 18; height: 18; radius: 9
+                                            color: "#1e1e1e"
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: (index + 1).toString()
+                                                color: "#888888"
+                                                font.pixelSize: 10
+                                                font.bold: true
+                                            }
+                                        }
+
+                                        Text {
+                                            text: modelData
+                                            color: "#888888"
+                                            font.pixelSize: 12
+                                            wrapMode: Text.WordWrap
+                                            Layout.fillWidth: true
+                                            lineHeight: 1.3
+                                        }
+                                    }
+                                }
+                            }
+
+                            Rectangle { Layout.fillWidth: true; height: 1; color: "#1a1a1a" }
+
+                            // ── Scrobble timing reference ─────────────────────────────────
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 8
+
+                                Text {
+                                    text: "SCROBBLE TIMING"
+                                    color: "#555555"
+                                    font.pixelSize: 10
+                                    font.letterSpacing: 1.5
+                                    font.bold: true
+                                }
+
+                                Repeater {
+                                    model: [
+                                        { label: "Now Playing", detail: "Sent immediately when a song starts." },
+                                        { label: "Scrobble",    detail: "Submitted after 50% of the track or 4 minutes, whichever is sooner." },
+                                        { label: "Skip",        detail: "If you skip after 30 s and past the threshold, the play still counts." },
+                                        { label: "Offline",     detail: "Plays are queued on disk and submitted the next time a session is available." }
+                                    ]
+                                    delegate: RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 12
+
+                                        Text {
+                                            text: modelData.label
+                                            color: "#aaaaaa"
+                                            font.pixelSize: 12
+                                            font.bold: true
+                                            Layout.minimumWidth: 90
+                                        }
+
+                                        Text {
+                                            text: modelData.detail
+                                            color: "#666666"
+                                            font.pixelSize: 12
+                                            wrapMode: Text.WordWrap
+                                            Layout.fillWidth: true
+                                            lineHeight: 1.3
+                                        }
+                                    }
+                                }
+                            }
+
+                            Rectangle { Layout.fillWidth: true; height: 1; color: "#1a1a1a" }
+
+                            // ── Action button ─────────────────────────────────────────────
+                            RowLayout {
+                                spacing: 12
+
+                                Rectangle {
+                                    id: scrobbleAuthBtn
+                                    property bool hovered: false
+                                    opacity: root.scrobbleAuthPending ? 0.45 : 1.0
+                                    Behavior on opacity { NumberAnimation { duration: 150 } }
+
+                                    width: scrobbleAuthBtnText.implicitWidth + 28
+                                    height: 36
+                                    radius: 6
+                                    color: backend.scrobblingAuthenticated
+                                        ? (hovered ? "#e06060" : "#cc4444")
+                                        : (hovered ? "#f0f0f0" : "white")
+                                    Behavior on color { ColorAnimation { duration: 100 } }
+
+                                    Text {
+                                        id: scrobbleAuthBtnText
+                                        anchors.centerIn: parent
+                                        text: backend.scrobblingAuthenticated ? "Disconnect" : "Connect to Last.fm"
+                                        color: backend.scrobblingAuthenticated ? "white" : "#111111"
+                                        font.pixelSize: 13
+                                        font.bold: true
+                                    }
+
+                                    HoverHandler { onHoveredChanged: scrobbleAuthBtn.hovered = hovered }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        enabled: !root.scrobbleAuthPending
+                                        cursorShape: root.scrobbleAuthPending ? Qt.ArrowCursor : Qt.PointingHandCursor
+                                        onClicked: {
+                                            if (backend.scrobblingAuthenticated) {
+                                                backend.scrobblerLogout()
+                                            } else {
+                                                root.scrobbleAuthPending = true
+                                                backend.scrobblerAuthenticate()
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Text {
+                                    visible: root.scrobbleAuthPending
+                                    text: "Browser opened — sign in to Last.fm…"
+                                    color: "#666666"
+                                    font.pixelSize: 12
+                                }
+                            }
+
+                            Item { height: 24 }
+
+                            // ── ListenBrainz ──────────────────────────────────────────────────────
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 20
+
+                                // Sub-header
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 4
+                                    Text {
+                                        text: "ListenBrainz"
+                                        color: "white"
+                                        font.pixelSize: 16
+                                        font.bold: true
+                                    }
+                                    Text {
+                                        text: "Open-source listening history. Paste your API token from listenbrainz.org/profile/."
+                                        color: "#888888"
+                                        font.pixelSize: 12
+                                        wrapMode: Text.WordWrap
+                                        Layout.fillWidth: true
+                                    }
+                                    Rectangle { Layout.fillWidth: true; height: 1; color: "#222222"; Layout.topMargin: 6 }
+                                }
+
+                                // Status card
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    height: lbzStatusCol.implicitHeight + 24
+                                    radius: 8
+                                    color: "#0d0d0d"
+                                    border.color: "#222222"
+                                    border.width: 1
+
+                                    ColumnLayout {
+                                        id: lbzStatusCol
+                                        anchors {
+                                            left: parent.left; right: parent.right
+                                            verticalCenter: parent.verticalCenter
+                                            leftMargin: 16; rightMargin: 16
+                                        }
+                                        spacing: 6
+
+                                        RowLayout {
+                                            Layout.fillWidth: true
+                                            spacing: 10
+
+                                            Rectangle {
+                                                width: 8; height: 8; radius: 4
+                                                color: backend.lbzAuthenticated ? "#4caf74" : "#666666"
+                                                Behavior on color { ColorAnimation { duration: 300 } }
+                                            }
+
+                                            Text {
+                                                text: backend.lbzAuthenticated
+                                                    ? "Connected as " + backend.lbzUsername
+                                                    : "Not connected"
+                                                color: backend.lbzAuthenticated ? "#dddddd" : "#888888"
+                                                font.pixelSize: 13
+                                                font.bold: backend.lbzAuthenticated
+                                                Layout.fillWidth: true
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Token input row (hidden when already connected)
+                                ColumnLayout {
+                                    visible: !backend.lbzAuthenticated
+                                    Layout.fillWidth: true
+                                    spacing: 8
+
+                                    Text {
+                                        text: "API TOKEN"
+                                        color: "#555555"
+                                        font.pixelSize: 10
+                                        font.letterSpacing: 1.5
+                                        font.bold: true
+                                    }
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 10
+
+                                        Rectangle {
+                                            Layout.fillWidth: true
+                                            height: 36
+                                            radius: 6
+                                            color: lbzTokenField.activeFocus ? "#1e1e1e" : "#161616"
+                                            border.color: lbzTokenField.activeFocus ? "#555555" : "#2a2a2a"
+                                            border.width: 1
+
+                                            Behavior on border.color { ColorAnimation { duration: 100 } }
+
+                                            Text {
+                                                anchors { fill: parent; leftMargin: 10; rightMargin: 10 }
+                                                verticalAlignment: Text.AlignVCenter
+                                                text: "Paste your ListenBrainz token here"
+                                                color: "#444444"
+                                                font.pixelSize: 13
+                                                visible: lbzTokenField.text.length === 0 && !lbzTokenField.activeFocus
+                                            }
+
+                                            TextInput {
+                                                id: lbzTokenField
+                                                anchors { fill: parent; leftMargin: 10; rightMargin: 10 }
+                                                verticalAlignment: TextInput.AlignVCenter
+                                                color: "white"
+                                                font.pixelSize: 13
+                                                selectByMouse: true
+                                                echoMode: TextInput.Password
+                                                onTextChanged: root.lbzTokenInput = text
+                                            }
+                                        }
+
+            // Connect button
+            Rectangle {
+                id: lbzConnectBtn
+                property bool hovered: false
+                opacity: (root.lbzAuthPending || root.lbzTokenInput.length === 0) ? 0.45 : 1.0
+                Behavior on opacity { NumberAnimation { duration: 150 } }
+
+                width: lbzConnectText.implicitWidth + 28
+                height: 36
+                radius: 6
+                color: hovered ? "#f0f0f0" : "white"
+                Behavior on color { ColorAnimation { duration: 100 } }
+
+                Text {
+                    id: lbzConnectText
+                    anchors.centerIn: parent
+                    text: root.lbzAuthPending ? "Connecting…" : "Connect"
+                    color: "#111111"
+                    font.pixelSize: 13
+                    font.bold: true
+                }
+
+                HoverHandler { onHoveredChanged: lbzConnectBtn.hovered = hovered }
+
+                MouseArea {
+                    anchors.fill: parent
+                    enabled: !root.lbzAuthPending && root.lbzTokenInput.length > 0
+                    cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                    onClicked: {
+                        root.lbzAuthPending = true
+                        backend.lbzSetToken(root.lbzTokenInput)
+                        lbzTokenField.text = ""
+                    }
+                }
+            }
+        }
+
+        Text {
+            text: "Find your token at listenbrainz.org/profile/ under \"User Token\"."
+            color: "#555555"
+            font.pixelSize: 11
+            wrapMode: Text.WordWrap
+            Layout.fillWidth: true
+        }
+    }
+
+    // Disconnect button (shown only when connected)
+    RowLayout {
+        visible: backend.lbzAuthenticated
+        spacing: 12
+
+        Rectangle {
+            id: lbzDisconnectBtn
+            property bool hovered: false
+            width: lbzDisconnectText.implicitWidth + 28
+            height: 36
+            radius: 6
+            color: hovered ? "#e06060" : "#cc4444"
+            Behavior on color { ColorAnimation { duration: 100 } }
+
+            Text {
+                id: lbzDisconnectText
+                anchors.centerIn: parent
+                text: "Disconnect"
+                color: "white"
+                font.pixelSize: 13
+                font.bold: true
+            }
+
+            HoverHandler { onHoveredChanged: lbzDisconnectBtn.hovered = hovered }
+
+            MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: backend.lbzLogout()
+            }
+        }
+    }
+}
+
+Item { height: 40 }
                         }
                     }
                 }

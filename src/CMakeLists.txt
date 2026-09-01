@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(Meloville VERSION 1.1.2 LANGUAGES CXX)
+project(Meloville VERSION 1.1.3 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -61,6 +61,14 @@ qt_add_executable(meloville
     listenAlongServer/listenalongserver.h
     listenAlongServer/listenalongserver.cpp
 
+    scrobble/scrobblercache.h
+    scrobble/scrobblercache.cpp
+    scrobble/scrobblercacheitem.h
+    scrobble/lastfmscrobbler.h
+    scrobble/lastfmscrobbler.cpp
+    scrobble/listenbrainzscrobbler.h
+    scrobble/listenbrainzscrobbler.cpp
+
     resources.qrc
 )
 
@@ -84,6 +92,7 @@ target_include_directories(meloville PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/playlistLogic
     ${CMAKE_CURRENT_SOURCE_DIR}/albumLogic
     ${CMAKE_CURRENT_SOURCE_DIR}/listenAlongServer
+    ${CMAKE_CURRENT_SOURCE_DIR}/scrobble
 )
 
 # Installation
