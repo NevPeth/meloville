@@ -7,6 +7,7 @@
 #include "mprisadapter.h"
 #include "listenalongserver.h"
 #include "lastfmscrobbler.h"
+#include "listenbrainzscrobbler.h"
 #include <QFileDialog>
 #include <QDir>
 #include <QJsonDocument>
@@ -154,6 +155,14 @@ MainWindow::MainWindow(QObject *parent)
         this, [this](bool, const QString &) {
         emit scrobblingAuthChanged();
     });
+
+    lbzScrobbler = new ListenBrainzScrobbler(this);
+
+    connect(lbzScrobbler, &ListenBrainzScrobbler::authChanged,
+            this, [this]() { emit lbzAuthChanged(); });
+
+    connect(lbzScrobbler, &ListenBrainzScrobbler::errorOccurred,
+            this, [this](const QString &msg) { emit scrobblingError(msg); });
 
     loadSessionState();
 
@@ -530,6 +539,10 @@ void MainWindow::playSong(int libraryIndex)
             song.album,
             song.duration
         );
+    }
+    if (lbzScrobbler) {
+        lbzScrobbler->notifySongStarted(
+            song.title, song.artist, song.album, song.duration);
     }
 }
 
@@ -1523,6 +1536,12 @@ void MainWindow::loadSessionState()
                 );
             }
         }
+        if (lbzScrobbler && currentLibraryIndex >= 0 && currentLibraryIndex < library.size()) {
+            const SongData &song = library[currentLibraryIndex];
+            int remainingSec = song.duration - static_cast<int>(savedPos / 1000);
+            if (remainingSec > 0)
+                lbzScrobbler->notifySongStarted(song.title, song.artist, song.album, remainingSec);
+        }
         emit sessionRestored(savedPos);
     });
 }
@@ -1666,5 +1685,19 @@ void MainWindow::scrobblerLogout() {
     if (lFmScrobbler) { 
         lFmScrobbler->logout(); 
         emit scrobblingAuthChanged(); 
+    }
+}
+
+void MainWindow::lbzSetToken(const QString &token)
+{
+    if (lbzScrobbler)
+        lbzScrobbler->setToken(token);
+}
+
+void MainWindow::lbzLogout()
+{
+    if (lbzScrobbler) {
+        lbzScrobbler->logout();
+        emit lbzAuthChanged();
     }
 }

@@ -13,6 +13,8 @@ Item {
     property string serverUrl: "" 
     property bool urlCopied: false
     property bool scrobbleAuthPending: false
+    property bool lbzAuthPending: false
+    property string lbzTokenInput: ""
 
     Connections {
         target: backend
@@ -37,6 +39,10 @@ Item {
 
         function onScrobblingAuthChanged() {
             root.scrobbleAuthPending = false
+        }
+
+        function onLbzAuthChanged() {
+            root.lbzAuthPending = false
         }
     }
 
@@ -1033,7 +1039,204 @@ Item {
                                 }
                             }
 
-                            Item { height: 40 }
+                            Item { height: 24 }
+
+                            // ── ListenBrainz ──────────────────────────────────────────────────────
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 20
+
+                                // Sub-header
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 4
+                                    Text {
+                                        text: "ListenBrainz"
+                                        color: "white"
+                                        font.pixelSize: 16
+                                        font.bold: true
+                                    }
+                                    Text {
+                                        text: "Open-source listening history. Paste your API token from listenbrainz.org/profile/."
+                                        color: "#888888"
+                                        font.pixelSize: 12
+                                        wrapMode: Text.WordWrap
+                                        Layout.fillWidth: true
+                                    }
+                                    Rectangle { Layout.fillWidth: true; height: 1; color: "#222222"; Layout.topMargin: 6 }
+                                }
+
+                                // Status card
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    height: lbzStatusCol.implicitHeight + 24
+                                    radius: 8
+                                    color: "#0d0d0d"
+                                    border.color: "#222222"
+                                    border.width: 1
+
+                                    ColumnLayout {
+                                        id: lbzStatusCol
+                                        anchors {
+                                            left: parent.left; right: parent.right
+                                            verticalCenter: parent.verticalCenter
+                                            leftMargin: 16; rightMargin: 16
+                                        }
+                                        spacing: 6
+
+                                        RowLayout {
+                                            Layout.fillWidth: true
+                                            spacing: 10
+
+                                            Rectangle {
+                                                width: 8; height: 8; radius: 4
+                                                color: backend.lbzAuthenticated ? "#4caf74" : "#666666"
+                                                Behavior on color { ColorAnimation { duration: 300 } }
+                                            }
+
+                                            Text {
+                                                text: backend.lbzAuthenticated
+                                                    ? "Connected as " + backend.lbzUsername
+                                                    : "Not connected"
+                                                color: backend.lbzAuthenticated ? "#dddddd" : "#888888"
+                                                font.pixelSize: 13
+                                                font.bold: backend.lbzAuthenticated
+                                                Layout.fillWidth: true
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Token input row (hidden when already connected)
+                                ColumnLayout {
+                                    visible: !backend.lbzAuthenticated
+                                    Layout.fillWidth: true
+                                    spacing: 8
+
+                                    Text {
+                                        text: "API TOKEN"
+                                        color: "#555555"
+                                        font.pixelSize: 10
+                                        font.letterSpacing: 1.5
+                                        font.bold: true
+                                    }
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 10
+
+                                        Rectangle {
+                                            Layout.fillWidth: true
+                                            height: 36
+                                            radius: 6
+                                            color: lbzTokenField.activeFocus ? "#1e1e1e" : "#161616"
+                                            border.color: lbzTokenField.activeFocus ? "#555555" : "#2a2a2a"
+                                            border.width: 1
+
+                                            Behavior on border.color { ColorAnimation { duration: 100 } }
+
+                                            Text {
+                                                anchors { fill: parent; leftMargin: 10; rightMargin: 10 }
+                                                verticalAlignment: Text.AlignVCenter
+                                                text: "Paste your ListenBrainz token here"
+                                                color: "#444444"
+                                                font.pixelSize: 13
+                                                visible: lbzTokenField.text.length === 0 && !lbzTokenField.activeFocus
+                                            }
+
+                                            TextInput {
+                                                id: lbzTokenField
+                                                anchors { fill: parent; leftMargin: 10; rightMargin: 10 }
+                                                verticalAlignment: TextInput.AlignVCenter
+                                                color: "white"
+                                                font.pixelSize: 13
+                                                selectByMouse: true
+                                                echoMode: TextInput.Password
+                                                onTextChanged: root.lbzTokenInput = text
+                                            }
+                                        }
+
+            // Connect button
+            Rectangle {
+                id: lbzConnectBtn
+                property bool hovered: false
+                opacity: (root.lbzAuthPending || root.lbzTokenInput.length === 0) ? 0.45 : 1.0
+                Behavior on opacity { NumberAnimation { duration: 150 } }
+
+                width: lbzConnectText.implicitWidth + 28
+                height: 36
+                radius: 6
+                color: hovered ? "#f0f0f0" : "white"
+                Behavior on color { ColorAnimation { duration: 100 } }
+
+                Text {
+                    id: lbzConnectText
+                    anchors.centerIn: parent
+                    text: root.lbzAuthPending ? "Connecting…" : "Connect"
+                    color: "#111111"
+                    font.pixelSize: 13
+                    font.bold: true
+                }
+
+                HoverHandler { onHoveredChanged: lbzConnectBtn.hovered = hovered }
+
+                MouseArea {
+                    anchors.fill: parent
+                    enabled: !root.lbzAuthPending && root.lbzTokenInput.length > 0
+                    cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                    onClicked: {
+                        root.lbzAuthPending = true
+                        backend.lbzSetToken(root.lbzTokenInput)
+                        lbzTokenField.text = ""
+                    }
+                }
+            }
+        }
+
+        Text {
+            text: "Find your token at listenbrainz.org/profile/ under \"User Token\"."
+            color: "#555555"
+            font.pixelSize: 11
+            wrapMode: Text.WordWrap
+            Layout.fillWidth: true
+        }
+    }
+
+    // Disconnect button (shown only when connected)
+    RowLayout {
+        visible: backend.lbzAuthenticated
+        spacing: 12
+
+        Rectangle {
+            id: lbzDisconnectBtn
+            property bool hovered: false
+            width: lbzDisconnectText.implicitWidth + 28
+            height: 36
+            radius: 6
+            color: hovered ? "#e06060" : "#cc4444"
+            Behavior on color { ColorAnimation { duration: 100 } }
+
+            Text {
+                id: lbzDisconnectText
+                anchors.centerIn: parent
+                text: "Disconnect"
+                color: "white"
+                font.pixelSize: 13
+                font.bold: true
+            }
+
+            HoverHandler { onHoveredChanged: lbzDisconnectBtn.hovered = hovered }
+
+            MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: backend.lbzLogout()
+            }
+        }
+    }
+}
+
+Item { height: 40 }
                         }
                     }
                 }

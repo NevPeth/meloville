@@ -40,7 +40,7 @@
     * <small>Only works with .lrc files and must be the same name as music file. Just have the .lrc be somewhere in the music folder and it will automatically find it on relaunch.</small>
 * Making auto-generated covers for playlists based on top four song covers
 * Scrobble support
-    * Currently only supports Last.Fm but am planning to add more services in the future. A lot of this code was adapted from the [Strawberry Music Player](https://github.com/strawberrymusicplayer/strawberry) code.
+    * Currently only supports Last.Fm and ListenBrainz. A lot of this code was adapted from the [Strawberry Music Player](https://github.com/strawberrymusicplayer/strawberry) code.
 
 ## Features That I Plan On Implementing
 
