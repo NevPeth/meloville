@@ -147,10 +147,6 @@ MainWindow::MainWindow(QObject *parent)
         emit scrobblingError(msg);
     });
 
-    if (!lFmScrobbler->isAuthenticated()) {
-        lFmScrobbler->authenticate();
-    }
-
     connect(lFmScrobbler, &LastFmScrobbler::authenticationComplete,
         this, [this](bool, const QString &) {
         emit scrobblingAuthChanged();
