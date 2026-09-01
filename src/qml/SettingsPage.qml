@@ -1040,7 +1040,7 @@ Item {
                                     opacity: root.scrobbleAuthPending ? 0.45 : 1.0
                                     Behavior on opacity { NumberAnimation { duration: 150 } }
 
-                                    width: scrobbleAuthBtnText.implicitWidth + 28
+                                    width: 160
                                     height: 36
                                     radius: 6
                                     color: backend.scrobblingAuthenticated
@@ -1181,7 +1181,7 @@ Item {
                                             Text {
                                                 anchors { fill: parent; leftMargin: 10; rightMargin: 10 }
                                                 verticalAlignment: Text.AlignVCenter
-                                                text: "Paste your ListenBrainz token here"
+                                                text: "Paste your token here"
                                                 color: "#444444"
                                                 font.pixelSize: 13
                                                 visible: lbzTokenField.text.length === 0 && !lbzTokenField.activeFocus
@@ -1199,87 +1199,87 @@ Item {
                                             }
                                         }
 
-            // Connect button
-            Rectangle {
-                id: lbzConnectBtn
-                property bool hovered: false
-                opacity: (root.lbzAuthPending || root.lbzTokenInput.length === 0) ? 0.45 : 1.0
-                Behavior on opacity { NumberAnimation { duration: 150 } }
+                                    // Connect button
+                                    Rectangle {
+                                        id: lbzConnectBtn
+                                        property bool hovered: false
+                                        opacity: (root.lbzAuthPending || root.lbzTokenInput.length === 0) ? 0.45 : 1.0
+                                        Behavior on opacity { NumberAnimation { duration: 150 } }
 
-                width: lbzConnectText.implicitWidth + 28
-                height: 36
-                radius: 6
-                color: hovered ? "#f0f0f0" : "white"
-                Behavior on color { ColorAnimation { duration: 100 } }
+                                        width: lbzConnectText.implicitWidth + 28
+                                        height: 36
+                                        radius: 6
+                                        color: hovered ? "#f0f0f0" : "white"
+                                        Behavior on color { ColorAnimation { duration: 100 } }
 
-                Text {
-                    id: lbzConnectText
-                    anchors.centerIn: parent
-                    text: root.lbzAuthPending ? "Connecting…" : "Connect"
-                    color: "#111111"
-                    font.pixelSize: 13
-                    font.bold: true
-                }
+                                        Text {
+                                            id: lbzConnectText
+                                            anchors.centerIn: parent
+                                            text: root.lbzAuthPending ? "Connecting…" : "Connect"
+                                            color: "#111111"
+                                            font.pixelSize: 13
+                                            font.bold: true
+                                        }
 
-                HoverHandler { onHoveredChanged: lbzConnectBtn.hovered = hovered }
+                                        HoverHandler { onHoveredChanged: lbzConnectBtn.hovered = hovered }
 
-                MouseArea {
-                    anchors.fill: parent
-                    enabled: !root.lbzAuthPending && root.lbzTokenInput.length > 0
-                    cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-                    onClicked: {
-                        root.lbzAuthPending = true
-                        backend.lbzSetToken(root.lbzTokenInput)
-                        lbzTokenField.text = ""
-                    }
-                }
-            }
-        }
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            enabled: !root.lbzAuthPending && root.lbzTokenInput.length > 0
+                                            cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                            onClicked: {
+                                                root.lbzAuthPending = true
+                                                backend.lbzSetToken(root.lbzTokenInput)
+                                                lbzTokenField.text = ""
+                                            }
+                                        }
+                                    }
+                                }
 
-        Text {
-            text: "Find your token at listenbrainz.org/profile/ under \"User Token\"."
-            color: "#555555"
-            font.pixelSize: 11
-            wrapMode: Text.WordWrap
-            Layout.fillWidth: true
-        }
-    }
+                                Text {
+                                    text: "Find your token at listenbrainz.org/profile/ under \"User Token\"."
+                                    color: "#555555"
+                                    font.pixelSize: 11
+                                    wrapMode: Text.WordWrap
+                                    Layout.fillWidth: true
+                                }
+                            }
 
-    // Disconnect button (shown only when connected)
-    RowLayout {
-        visible: backend.lbzAuthenticated
-        spacing: 12
+                            // Disconnect button (shown only when connected)
+                            RowLayout {
+                                visible: backend.lbzAuthenticated
+                                spacing: 12
 
-        Rectangle {
-            id: lbzDisconnectBtn
-            property bool hovered: false
-            width: lbzDisconnectText.implicitWidth + 28
-            height: 36
-            radius: 6
-            color: hovered ? "#e06060" : "#cc4444"
-            Behavior on color { ColorAnimation { duration: 100 } }
+                                Rectangle {
+                                    id: lbzDisconnectBtn
+                                    property bool hovered: false
+                                    width: lbzDisconnectText.implicitWidth + 28
+                                    height: 36
+                                    radius: 6
+                                    color: hovered ? "#e06060" : "#cc4444"
+                                    Behavior on color { ColorAnimation { duration: 100 } }
 
-            Text {
-                id: lbzDisconnectText
-                anchors.centerIn: parent
-                text: "Disconnect"
-                color: "white"
-                font.pixelSize: 13
-                font.bold: true
-            }
+                                    Text {
+                                        id: lbzDisconnectText
+                                        anchors.centerIn: parent
+                                        text: "Disconnect"
+                                        color: "white"
+                                        font.pixelSize: 13
+                                        font.bold: true
+                                    }
 
-            HoverHandler { onHoveredChanged: lbzDisconnectBtn.hovered = hovered }
+                                    HoverHandler { onHoveredChanged: lbzDisconnectBtn.hovered = hovered }
 
-            MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                onClicked: backend.lbzLogout()
-            }
-        }
-    }
-}
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: backend.lbzLogout()
+                                    }
+                                }
+                            }
+                        }
 
-Item { height: 40 }
+                        Item { height: 40 }
                         }
                     }
                 }
