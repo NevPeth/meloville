@@ -187,6 +187,49 @@ Item {
                 contentWidth: width
 
                 ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+                property real velocity: 0
+                property real threshold: 40
+
+                WheelHandler {
+                    acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+
+                    onWheel: function(event) {
+                        var delta = event.pixelDelta.y !== 0
+                                ? event.pixelDelta.y
+                                : event.angleDelta.y / 4
+
+                        if (Math.abs(delta) < contentFlick.threshold) {
+                            contentFlick.velocity += delta
+                        } else {
+                            var excess = Math.abs(delta) - contentFlick.threshold
+                            contentFlick.velocity += delta + Math.sign(delta) * excess * 0.8
+                        }
+
+                        event.accepted = true
+                    }
+                }
+
+                Timer {
+                    interval: 8
+                    running: true
+                    repeat: true
+
+                    onTriggered: {
+                        if (Math.abs(contentFlick.velocity) < 0.05) {
+                            contentFlick.velocity = 0
+                            return
+                        }
+
+                        var newY = contentFlick.contentY - contentFlick.velocity
+                        // Clamp to valid scroll range
+                        contentFlick.contentY = Math.max(0, Math.min(newY, contentFlick.contentHeight - contentFlick.height))
+
+                        if (Math.abs(contentFlick.velocity) < contentFlick.threshold)
+                            contentFlick.velocity *= 0.55    // stop quickly
+                        else
+                            contentFlick.velocity *= 0.90    // glide
+                    }
+                }
 
                 // Track active section by scroll position
                 onContentYChanged: {
