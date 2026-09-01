@@ -25,26 +25,6 @@ class QTimer;
 class QNetworkAccessManager;
 class QNetworkReply;
 
-// ---------------------------------------------------------------------------
-// LastFmScrobbler
-// ---------------------------------------------------------------------------
-// Drop-in Last.fm scrobbling service.  Call notifySongStarted() from
-// playSong() and the class handles the rest:
-//
-//   • "Now Playing" update  (immediate, best-effort)
-//   • Scrobble submission   (after 50% or 4 min, whichever comes first —
-//                            Last.fm rule; handled by the 4-min timer)
-//   • Offline queue         (cache survives restarts, submitted next launch)
-//   • Session auth via OAuth-style token flow (browser redirect)
-//
-// Usage:
-//   1. Construct once, keep alive for app lifetime.
-//   2. Call authenticate() if !isAuthenticated(); connect to
-//      authenticationComplete(bool, QString) to know when done.
-//   3. Call notifySongStarted(title, artist, album, durationSeconds)
-//      from MainWindow::playSong().
-//   4. Call notifyStopped() when playback ends / app closes.
-// ---------------------------------------------------------------------------
 class LastFmScrobbler : public QObject {
     Q_OBJECT
 
@@ -56,9 +36,9 @@ public:
 
     // ---------- Auth ----------
     bool isAuthenticated() const { return !username_.isEmpty() && !sessionKey_.isEmpty(); }
-    QString username()     const { return username_; }
+    QString username() const { return username_; }
 
-    void authenticate();   // opens browser, waits for redirect
+    void authenticate(); // opens browser, waits for redirect
     void logout();
 
     // ---------- Playback events ----------
@@ -72,8 +52,7 @@ public:
     // Call when the user stops / the app closes.
     void notifyStopped();
 
-    // ---------- Love ----------
-    void love();   // loves the currently-playing song
+    void love(); // loves the currently-playing song (may add later)
 
 signals:
     void authenticationComplete(bool success, const QString &error = {});
@@ -126,25 +105,25 @@ private:
     QString currentTitle_;
     QString currentArtist_;
     QString currentAlbum_;
-    int     currentDurationSec_ = 0;
-    qint64  playStartTimestamp_ = 0;  // unix seconds when song started
-    bool    scrobbled_          = false;
+    int currentDurationSec_ = 0;
+    qint64 playStartTimestamp_ = 0;  // unix seconds when song started
+    bool scrobbled_ = false;
 
     // Local redirect server for OAuth token receipt
     class LocalServer;
     LocalServer *localServer_ = nullptr;
 
-    QTimer *scrobbleTimer_;   // fires when scrobble threshold reached
-    QTimer *submitTimer_;     // delayed submit after transient error
-    bool    submitPending_    = false;
-    bool    submitError_      = false;
+    QTimer *scrobbleTimer_; // fires when scrobble threshold reached
+    QTimer *submitTimer_; // delayed submit after transient error
+    bool submitPending_ = false;
+    bool submitError_  = false;
 
     QList<QNetworkReply *> pendingReplies_;
 
     static constexpr int kScrobblesPerRequest = 50;
-    static constexpr const char *kApiUrl      = "https://ws.audioscrobbler.com/2.0/";
-    static constexpr const char *kAuthUrl     = "https://www.last.fm/api/auth/";
-    static constexpr const char *kCacheFile   = "lastfm_scrobbler.cache";
+    static constexpr const char *kApiUrl = "https://ws.audioscrobbler.com/2.0/";
+    static constexpr const char *kAuthUrl = "https://www.last.fm/api/auth/";
+    static constexpr const char *kCacheFile = "lastfm_scrobbler.cache";
 };
 
 #endif // LASTFMSCROBBLER_H

@@ -31,10 +31,6 @@
 #include <QTcpSocket>
 #include <QDebug>
 
-// ---------------------------------------------------------------------------
-// Embedded local redirect server — listens on an ephemeral port, reads the
-// first HTTP request (the browser redirect from Last.fm), and emits finished().
-// ---------------------------------------------------------------------------
 class LastFmScrobbler::LocalServer : public QObject {
     Q_OBJECT
 public:
@@ -387,16 +383,16 @@ void LastFmScrobbler::scrobbleCurrentSong()
     scrobbled_ = true;
 
     ScrobbleMetadata meta;
-    meta.title       = currentTitle_;
-    meta.artist      = currentArtist_;
-    meta.album       = currentAlbum_;
+    meta.title = currentTitle_;
+    meta.artist = currentArtist_;
+    meta.album = currentAlbum_;
     meta.length_nsec = static_cast<qint64>(currentDurationSec_) * 1'000'000'000LL;
 
     cache_->Add(meta, static_cast<quint64>(playStartTimestamp_));
 
     if (!isAuthenticated()) return;
 
-    startSubmit(/*initial=*/true);
+    startSubmit(true);
 }
 
 // ---------------------------------------------------------------------------
@@ -425,14 +421,13 @@ void LastFmScrobbler::submitCache()
 
     ParamList params = {{ QStringLiteral("method"), QStringLiteral("track.scrobble") }};
 
-    int i = 0;
+    int idx = 0;
     ScrobblerCacheItemPtrList toSend;
     for (const ScrobblerCacheItemPtr &item : cache_->List()) {
         if (item->sent) continue;
         item->sent = true;
         toSend << item;
 
-        const QString idx = QString::number(i);
         params.append({ QStringLiteral("artist[%1]").arg(idx),    item->metadata.artist });
         params.append({ QStringLiteral("track[%1]").arg(idx),     item->metadata.title });
         params.append({ QStringLiteral("timestamp[%1]").arg(idx), QString::number(item->timestamp) });
@@ -441,7 +436,7 @@ void LastFmScrobbler::submitCache()
         if (!item->metadata.album.isEmpty())
             params.append({ QStringLiteral("album[%1]").arg(idx), item->metadata.album });
 
-        ++i;
+        ++idx;
         if (toSend.count() >= kScrobblesPerRequest) break;
     }
 
@@ -502,10 +497,6 @@ void LastFmScrobbler::onScrobbleReplyFinished(QNetworkReply *reply,
     // Submit again if more items accumulated while this batch was in-flight.
     startSubmit();
 }
-
-// ---------------------------------------------------------------------------
-// Love
-// ---------------------------------------------------------------------------
 
 void LastFmScrobbler::love()
 {

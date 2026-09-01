@@ -51,7 +51,7 @@ void ListenBrainzScrobbler::loadSettings()
 {
     QSettings s("Meloville", "Meloville");
     s.beginGroup(QLatin1String(kSettingsGroup));
-    token_    = s.value(QStringLiteral("userToken")).toString();
+    token_ = s.value(QStringLiteral("userToken")).toString();
     username_ = s.value(QStringLiteral("username")).toString();
     s.endGroup();
     authenticated_ = !token_.isEmpty() && !username_.isEmpty();
