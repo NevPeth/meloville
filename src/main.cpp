@@ -5,6 +5,7 @@
 #include "mainwindow.h"
 #include "svgimageprovider.h"
 #include "seticons.h"
+#include "youtuberesolver.h"
 
 /*
     Just sets up the mainWindow to be called from the main.qml (unlike their name, main.qml is the frontend while mainWindow is the backend logic).
@@ -23,6 +24,10 @@ int main(int argc, char *argv[])
     // Although this is the main.cpp, all music player logic and 
     // really the "backend" of this code is mainwindow.cpp
     engine.rootContext()->setContextProperty("backend", &mainWindow);
+
+    YouTubeResolver youtubeResolver;
+
+    engine.rootContext()->setContextProperty("youtubeResolver",&youtubeResolver);
 
     auto* provider = new SvgImageProvider();
 

@@ -813,11 +813,17 @@ void MainWindow::openSongContextMenu(int visibleIndex, int x, int y)
 {
     if (visibleIndex < 0 || visibleIndex >= visibleSongs.size())
         return;
+
+    int libraryIndex = visibleSongs[visibleIndex];
+    if (libraryIndex < 0 || libraryIndex >= library.size())
+        return;
+
+    const SongData& song = library[libraryIndex];
     
     updatePlaylistNames();
     
     // Ask QML to open the popup with the visible index and position
-    emit openContextMenuRequested(visibleIndex, x, y);
+    emit openContextMenuRequested(visibleIndex, x, y, song.title, song.artist);
 }
 
 void MainWindow::addToPlaylist(int visibleIndex, const QString& playlistName)

@@ -11,6 +11,8 @@ Popup {
     property var playlistModel: []
     property bool showRemoveAction: false
     property string filterText: ""
+    property string currentSongArtist: ""
+    property string currentSongTitle: ""
 
     signal addToPlaylist(string playlistName)
     signal removeFromPlaylist()
@@ -73,6 +75,40 @@ Popup {
             Layout.fillWidth: true
             height: 1
             color: "#333333"
+        }
+
+        ItemDelegate {
+            id: shareSongDelegate
+
+            Layout.fillWidth: true
+
+            leftPadding: 24
+            rightPadding: 24
+            topPadding: 8
+            bottomPadding: 8
+
+            font.pixelSize: 14
+            text: "Share song"
+
+            contentItem: Text {
+                text: parent.text
+                font: parent.font
+                elide: Text.ElideRight
+                verticalAlignment: Text.AlignVCenter
+                color: "white"
+            }
+
+            background: Rectangle {
+                color: parent.hovered ? "#222222" : "transparent"
+            }
+
+            onClicked: {
+                youtubeResolver.search(
+                    popup.currentSongArtist,
+                    popup.currentSongTitle
+                )
+                popup.close()
+            }
         }
 
         ItemDelegate {
