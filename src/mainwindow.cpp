@@ -143,7 +143,7 @@ MainWindow::MainWindow(QObject *parent)
     lFmScrobbler = new LastFmScrobbler("e990f4f5655cd2f176e831ffe87ee9d8", "e9fff39f6b35f42e6fa887c7f947883d", this);
 
     connect(lFmScrobbler, &LastFmScrobbler::errorOccurred,
-    this, [this](const QString &msg) {
+        this, [this](const QString &msg) {
         emit scrobblingError(msg);
     });
 
@@ -641,10 +641,14 @@ void MainWindow::playAndPause()
     if (playbackController->player()->playbackState() == QMediaPlayer::PlayingState) {
         playbackController->player()->pause();
         songModel->setPausedState(true);
+        lbzScrobbler->notifySongPaused();
+        lFmScrobbler->notifyPaused();
         setPlaying(false);
     } else {
         playbackController->player()->play();
         songModel->setPausedState(false);
+        lbzScrobbler->notifySongResumed();
+        lFmScrobbler->notifyResumed();
         setPlaying(true);
     }
 }

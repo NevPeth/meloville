@@ -41,8 +41,10 @@ public:
                            const QString &artist,
                            const QString &album,
                            int durationSec);
-    void notifySongScrobble();   // call at the 50 % / 4-min threshold
-    void notifySongStopped();    // call on skip / stop before threshold
+    void notifySongScrobble(); // call at the 50 % / 4-min threshold
+    void notifySongStopped(); // call on skip / stop before threshold
+    void notifySongPaused();
+    void notifySongResumed();
 
 signals:
     void authChanged(); // token validated or cleared
@@ -69,6 +71,10 @@ private:
     ScrobblerCache *cache_;
     QTimer *submitTimer_;
     QTimer *scrobbleTimer_;
+
+    bool paused_ = false;
+    int scrobbleTimerRemainingMs_ = 0; // ms remaining when paused
+    qint64 pauseStartTimestamp_ = 0;
 
     QString token_;
     QString username_;

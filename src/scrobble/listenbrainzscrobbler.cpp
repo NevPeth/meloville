@@ -150,6 +150,27 @@ void ListenBrainzScrobbler::notifySongScrobble()
         submitTimer_->start();
 }
 
+void ListenBrainzScrobbler::notifySongPaused()
+{
+    if (paused_ || currentTitle_.isEmpty()) return;
+    paused_ = true;
+    scrobbleTimerRemainingMs_ = scrobbleTimer_->isActive()
+                                ? scrobbleTimer_->remainingTime()
+                                : 0;
+    scrobbleTimer_->stop();
+}
+
+void ListenBrainzScrobbler::notifySongResumed()
+{
+    if (!paused_ || currentTitle_.isEmpty()) return;
+    paused_ = false;
+    if (!scrobbled_ && scrobbleTimerRemainingMs_ > 0) {
+        scrobbleTimer_->setInterval(scrobbleTimerRemainingMs_);
+        scrobbleTimer_->start();
+        scrobbleTimerRemainingMs_ = 0;
+    }
+}
+
 // ── Network helpers ───────────────────────────────────────────────────────
 
 QNetworkReply *ListenBrainzScrobbler::post(const QString &endpoint,

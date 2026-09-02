@@ -325,6 +325,27 @@ void LastFmScrobbler::notifyStopped()
     playStartTimestamp_ = 0;
 }
 
+void LastFmScrobbler::notifyPaused()
+{
+    if (paused_ || currentTitle_.isEmpty()) return;
+    paused_ = true;
+    scrobbleTimerRemainingMs_ = scrobbleTimer_->isActive()
+                                ? scrobbleTimer_->remainingTime()
+                                : 0;
+    scrobbleTimer_->stop();
+}
+
+void LastFmScrobbler::notifyResumed()
+{
+    if (!paused_ || currentTitle_.isEmpty()) return;
+    paused_ = false;
+    if (!scrobbled_ && scrobbleTimerRemainingMs_ > 0) {
+        scrobbleTimer_->setInterval(scrobbleTimerRemainingMs_);
+        scrobbleTimer_->start();
+        scrobbleTimerRemainingMs_ = 0;
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Now Playing
 // ---------------------------------------------------------------------------

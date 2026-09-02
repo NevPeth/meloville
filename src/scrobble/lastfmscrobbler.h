@@ -51,6 +51,11 @@ public:
 
     // Call when the user stops / the app closes.
     void notifyStopped();
+    
+    //Pause or resume timer. Instead of going off of the position of the progress
+    //bar, to scrobble we need to know how long the song has been playing, hence the timer
+    void notifyPaused();
+    void notifyResumed();
 
     void love(); // loves the currently-playing song (may add later)
 
@@ -117,6 +122,10 @@ private:
     QTimer *submitTimer_; // delayed submit after transient error
     bool submitPending_ = false;
     bool submitError_  = false;
+
+    bool paused_ = false;
+    int scrobbleTimerRemainingMs_ = 0; // ms remaining when paused
+    qint64 pauseStartTimestamp_ = 0;
 
     QList<QNetworkReply *> pendingReplies_;
 
