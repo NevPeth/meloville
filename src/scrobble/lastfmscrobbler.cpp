@@ -146,6 +146,7 @@ void LastFmScrobbler::loadSession()
     s.beginGroup(QStringLiteral("LastFm"));
     username_   = s.value(QStringLiteral("username")).toString();
     sessionKey_ = s.value(QStringLiteral("session_key")).toString();
+    scrobbleTimerRemainingMs_ = s.value(QStringLiteral("scrobble_timer_remaining_ms"), 0).toInt();
     s.endGroup();
 }
 
@@ -153,9 +154,29 @@ void LastFmScrobbler::saveSession()
 {
     QSettings s("Meloville", "Meloville");
     s.beginGroup(QStringLiteral("LastFm"));
-    s.setValue(QStringLiteral("username"),    username_);
+    s.setValue(QStringLiteral("username"), username_);
     s.setValue(QStringLiteral("session_key"), sessionKey_);
+    const int remaining = scrobbleTimer_->isActive()
+                          ? scrobbleTimer_->remainingTime()
+                          : scrobbleTimerRemainingMs_;
+    s.setValue(QStringLiteral("scrobble_timer_remaining_ms"), remaining);
     s.endGroup();
+}
+
+// Timer starts only when notifyResumed() is called.
+// scrobbleTimerRemainingMs_ was already loaded from QSettings in loadSession().
+void LastFmScrobbler::startScrobbleFromBoot(const QString &title,
+                                             const QString &artist,
+                                             const QString &album,
+                                             int durationSeconds)
+{
+    currentTitle_ = title;
+    currentArtist_ = artist;
+    currentAlbum_ = album;
+    currentDurationSec_ = durationSeconds;
+    playStartTimestamp_ = QDateTime::currentSecsSinceEpoch();
+    scrobbled_ = false;
+    paused_ = true;
 }
 
 void LastFmScrobbler::logout()

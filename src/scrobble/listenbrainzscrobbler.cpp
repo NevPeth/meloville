@@ -53,6 +53,7 @@ void ListenBrainzScrobbler::loadSettings()
     s.beginGroup(QLatin1String(kSettingsGroup));
     token_ = s.value(QStringLiteral("userToken")).toString();
     username_ = s.value(QStringLiteral("username")).toString();
+    scrobbleTimerRemainingMs_ = s.value(QStringLiteral("scrobble_timer_remaining_ms"), 0).toInt();
     s.endGroup();
     authenticated_ = !token_.isEmpty() && !username_.isEmpty();
 }
@@ -63,7 +64,26 @@ void ListenBrainzScrobbler::saveSettings()
     s.beginGroup(QLatin1String(kSettingsGroup));
     s.setValue(QStringLiteral("userToken"), token_);
     s.setValue(QStringLiteral("username"),  username_);
+    // Save remaining ms so we can resume the scrobble timer after a cold boot.
+    const int remaining = scrobbleTimer_->isActive() ? scrobbleTimer_->remainingTime() : scrobbleTimerRemainingMs_;
+    s.setValue(QStringLiteral("scrobble_timer_remaining_ms"), remaining);
     s.endGroup();
+}
+
+// scrobbleTimerRemainingMs_ already loaded from QSettings in loadSettings().
+// notifyResumed() will start the timer when the user hits play.
+void ListenBrainzScrobbler::startScrobbleFromBoot(const QString &title,
+                                                   const QString &artist,
+                                                   const QString &album,
+                                                   int durationSec)
+{
+    currentTitle_ = title;
+    currentArtist_ = artist;
+    currentAlbum_ = album;
+    currentDurationNsec_ = static_cast<qint64>(durationSec) * 1'000'000'000LL;
+    currentTimestamp_ = static_cast<quint64>(QDateTime::currentSecsSinceEpoch());
+    scrobbled_ = false;
+    paused_ = true;
 }
 
 bool ListenBrainzScrobbler::isAuthenticated() const

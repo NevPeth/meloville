@@ -49,6 +49,11 @@ public:
                            const QString &album,
                            int durationSeconds);
 
+    void startScrobbleFromBoot(const QString &title,
+                               const QString &artist,
+                               const QString &album,
+                               int durationSeconds);
+
     // Call when the user stops / the app closes.
     void notifyStopped();
     
@@ -56,6 +61,8 @@ public:
     //bar, to scrobble we need to know how long the song has been playing, hence the timer
     void notifyPaused();
     void notifyResumed();
+
+    void saveSession();
 
     void love(); // loves the currently-playing song (may add later)
 
@@ -83,7 +90,6 @@ private:
 
     // ---------- Session ----------
     void loadSession();
-    void saveSession();
     void requestSession(const QString &token);
 
     // ---------- Scrobbling ----------
@@ -121,7 +127,7 @@ private:
     QTimer *scrobbleTimer_; // fires when scrobble threshold reached
     QTimer *submitTimer_; // delayed submit after transient error
     bool submitPending_ = false;
-    bool submitError_  = false;
+    bool submitError_ = false;
 
     bool paused_ = false;
     int scrobbleTimerRemainingMs_ = 0; // ms remaining when paused

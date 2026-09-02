@@ -1431,6 +1431,11 @@ void MainWindow::saveSessionState()
         }
     }
     settings.setValue("session/nextUp", QJsonDocument(nextUpArr).toJson(QJsonDocument::Compact));
+
+    if (lFmScrobbler)
+        lFmScrobbler->saveSession();
+    if (lbzScrobbler)
+        lbzScrobbler->saveSettings();
 }
 
 void MainWindow::loadSessionState()
@@ -1526,21 +1531,11 @@ void MainWindow::loadSessionState()
         // After restoring session, notify the scrobbler so it tracks this song.
         if (lFmScrobbler && currentLibraryIndex >= 0 && currentLibraryIndex < library.size()) {
             const SongData &song = library[currentLibraryIndex];
-            int remainingSec = song.duration - static_cast<int>(savedPos / 1000);
-            if (remainingSec > 0) {
-                lFmScrobbler->notifySongStarted(
-                    song.title,
-                    song.artist,
-                    song.album,
-                    remainingSec
-                );
-            }
+            lFmScrobbler->startScrobbleFromBoot(song.title, song.artist, song.album, song.duration);
         }
         if (lbzScrobbler && currentLibraryIndex >= 0 && currentLibraryIndex < library.size()) {
             const SongData &song = library[currentLibraryIndex];
-            int remainingSec = song.duration - static_cast<int>(savedPos / 1000);
-            if (remainingSec > 0)
-                lbzScrobbler->notifySongStarted(song.title, song.artist, song.album, remainingSec);
+            lbzScrobbler->startScrobbleFromBoot(song.title, song.artist, song.album, song.duration);
         }
         emit sessionRestored(savedPos);
     });

@@ -41,10 +41,17 @@ public:
                            const QString &artist,
                            const QString &album,
                            int durationSec);
+
+    void startScrobbleFromBoot(const QString &title,
+                               const QString &artist,
+                               const QString &album,
+                               int durationSeconds);
+    
     void notifySongScrobble(); // call at the 50 % / 4-min threshold
     void notifySongStopped(); // call on skip / stop before threshold
     void notifySongPaused();
     void notifySongResumed();
+    void saveSettings();
 
 signals:
     void authChanged(); // token validated or cleared
@@ -65,7 +72,6 @@ private:
                               qint64 durationNsec) const;
     void validateToken();
     void loadSettings();
-    void saveSettings();
 
     QNetworkAccessManager *nam_;
     ScrobblerCache *cache_;
