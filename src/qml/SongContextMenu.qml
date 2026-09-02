@@ -18,6 +18,14 @@ Popup {
     signal removeFromPlaylist()
     signal editSong()
 
+    Connections {
+        target: youtubeResolver
+
+        function onLinkCopied() {
+            popup.close()
+        }
+    }
+
     width: 210
     implicitHeight: columnLayout.implicitHeight
     padding: 0
@@ -107,7 +115,6 @@ Popup {
                     popup.currentSongArtist,
                     popup.currentSongTitle
                 )
-                popup.close()
             }
         }
 

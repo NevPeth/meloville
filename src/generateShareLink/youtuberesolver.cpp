@@ -12,183 +12,174 @@
 #include <QUrl>
 #include <QUrlQuery>
 #include <QProcess>
+#include <QMimeData>
 
-namespace
-{
+namespace{
+    constexpr int MaxRedirects = 5;
 
-constexpr int MaxRedirects = 5;
+    // search parameter for "Videos only".
+    constexpr auto VideoSearchParams = "EgIQAfABAQ==";
 
-// search parameter for "Videos only".
-constexpr auto VideoSearchParams = "EgIQAfABAQ==";
-
-// Recursively search a JSON object/array for the first video ID.
-//
-// YouTube has changed the shape of search results several times.
-// Older responses use:
-//
-//   videoRenderer.videoId
-//
-// Newer responses can use:
-//
-//   lockupViewModel.contentId
-//   lockupViewModel.contentType == LOCKUP_CONTENT_TYPE_VIDEO
-//
-QString findFirstVideoId(const QJsonValue &value)
-{
-    if (value.isObject())
+    // Recursively search a JSON object/array for the first video ID.
+    //
+    // YouTube has changed the shape of search results several times.
+    // Older responses use:
+    //
+    //   videoRenderer.videoId
+    //
+    // Newer responses can use:
+    //
+    //   lockupViewModel.contentId
+    //   lockupViewModel.contentType == LOCKUP_CONTENT_TYPE_VIDEO
+    //
+    QString findFirstVideoId(const QJsonValue &value)
     {
-        const QJsonObject object = value.toObject();
-
-        // Traditional search result.
-        const QJsonValue videoRendererValue = object.value("videoRenderer");
-        if (videoRendererValue.isObject())
+        if (value.isObject())
         {
-            const QString videoId =
-                videoRendererValue.toObject().value("videoId").toString();
+            const QJsonObject object = value.toObject();
 
-            if (!videoId.isEmpty())
-                return videoId;
-        }
-
-        // Newer YouTube "lockupViewModel".
-        const QJsonValue lockupValue = object.value("lockupViewModel");
-        if (lockupValue.isObject())
-        {
-            const QJsonObject lockup = lockupValue.toObject();
-
-            if (lockup.value("contentType").toString()
-                == "LOCKUP_CONTENT_TYPE_VIDEO")
+            // Traditional search result.
+            const QJsonValue videoRendererValue = object.value("videoRenderer");
+            if (videoRendererValue.isObject())
             {
                 const QString videoId =
-                    lockup.value("contentId").toString();
+                    videoRendererValue.toObject().value("videoId").toString();
 
                 if (!videoId.isEmpty())
                     return videoId;
             }
 
-            // Some responses nest the actual model further down.
-            const QString nestedId = findFirstVideoId(lockupValue);
-            if (!nestedId.isEmpty())
-                return nestedId;
-        }
+            // Newer YouTube "lockupViewModel".
+            const QJsonValue lockupValue = object.value("lockupViewModel");
+            if (lockupValue.isObject())
+            {
+                const QJsonObject lockup = lockupValue.toObject();
 
-        for (auto it = object.constBegin(); it != object.constEnd(); ++it)
+                if (lockup.value("contentType").toString()
+                    == "LOCKUP_CONTENT_TYPE_VIDEO")
+                {
+                    const QString videoId =
+                        lockup.value("contentId").toString();
+
+                    if (!videoId.isEmpty())
+                        return videoId;
+                }
+
+                // Some responses nest the actual model further down.
+                const QString nestedId = findFirstVideoId(lockupValue);
+                if (!nestedId.isEmpty())
+                    return nestedId;
+            }
+
+            for (auto it = object.constBegin(); it != object.constEnd(); ++it)
+            {
+                const QString result = findFirstVideoId(it.value());
+
+                if (!result.isEmpty())
+                    return result;
+            }
+        }
+        else if (value.isArray())
         {
-            const QString result = findFirstVideoId(it.value());
+            const QJsonArray array = value.toArray();
 
-            if (!result.isEmpty())
-                return result;
+            for (const QJsonValue &entry : array)
+            {
+                const QString result = findFirstVideoId(entry);
+
+                if (!result.isEmpty())
+                    return result;
+            }
         }
+
+        return {};
     }
-    else if (value.isArray())
+
+    // Extract a quoted value from ytInitialPlayerResponse / ytcfg.
+    // For example:
+    // "INNERTUBE_API_KEY":"xxxxxxxx"
+    QString extractYtConfigValue(const QString &html, const QString &name)
     {
-        const QJsonArray array = value.toArray();
+        const QString escapedName = QRegularExpression::escape(name);
 
-        for (const QJsonValue &entry : array)
-        {
-            const QString result = findFirstVideoId(entry);
+        const QString pattern =
+            QStringLiteral(R"((?:"|')%1(?:"|')\s*:\s*(?:"|')([^"']+)(?:"|'))")
+                .arg(escapedName);
 
-            if (!result.isEmpty())
-                return result;
-        }
+        const QRegularExpression regex(pattern);
+        const QRegularExpressionMatch match = regex.match(html);
+
+        if (!match.hasMatch())
+            return {};
+
+        return match.captured(1);
     }
 
-    return {};
-}
-
-// Extract a quoted value from ytInitialPlayerResponse / ytcfg.
-//
-// For example:
-//
-// "INNERTUBE_API_KEY":"xxxxxxxx"
-//
-// or:
-//
-// 'INNERTUBE_API_KEY': 'xxxxxxxx'
-//
-QString extractYtConfigValue(const QString &html, const QString &name)
-{
-    const QString escapedName = QRegularExpression::escape(name);
-
-    const QString pattern =
-        QStringLiteral(R"((?:"|')%1(?:"|')\s*:\s*(?:"|')([^"']+)(?:"|'))")
-            .arg(escapedName);
-
-    const QRegularExpression regex(pattern);
-    const QRegularExpressionMatch match = regex.match(html);
-
-    if (!match.hasMatch())
-        return {};
-
-    return match.captured(1);
-}
-
-// Find a useful YouTube initial-data JSON block if it exists.
-//
-// This is not the primary search mechanism; the Innertube API response is.
-// This helper is here mainly to make the implementation tolerant of changes
-// to YouTube's surrounding HTML.
-QByteArray extractInitialData(const QString &html)
-{
-    const QString marker = QStringLiteral("ytInitialData =");
-
-    const qsizetype markerPos = html.indexOf(marker);
-
-    if (markerPos < 0)
-        return {};
-
-    const qsizetype objectStart = html.indexOf('{', markerPos);
-
-    if (objectStart < 0)
-        return {};
-
-    int depth = 0;
-    bool inString = false;
-    bool escaped = false;
-
-    for (qsizetype i = objectStart; i < html.size(); ++i)
+    // Find a useful YouTube initial-data JSON block if it exists.
+    //
+    // This is not the primary search mechanism; the Innertube API response is.
+    // This helper is here mainly to make the implementation tolerant of changes
+    // to YouTube's surrounding HTML.
+    QByteArray extractInitialData(const QString &html)
     {
-        const QChar c = html.at(i);
+        const QString marker = QStringLiteral("ytInitialData =");
 
-        if (inString)
-        {
-            if (escaped)
-            {
-                escaped = false;
+        const qsizetype markerPos = html.indexOf(marker);
+
+        if (markerPos < 0)
+            return {};
+
+        const qsizetype objectStart = html.indexOf('{', markerPos);
+
+        if (objectStart < 0)
+            return {};
+
+        int depth = 0;
+        bool inString = false;
+        bool escaped = false;
+
+        for (qsizetype i = objectStart; i < html.size(); ++i){
+            const QChar c = html.at(i);
+
+            if (inString){
+                if (escaped)
+                    escaped = false;
+                else if (c == '\\')
+                    escaped = true;
+                else if (c == '"')
+                    inString = false;
+
+                continue;
             }
-            else if (c == '\\')
-            {
-                escaped = true;
-            }
-            else if (c == '"')
-            {
-                inString = false;
+
+            if (c == '"'){
+                inString = true;
+                continue;
             }
 
-            continue;
+            if (c == '{'){
+                ++depth;
+            }
+            else if (c == '}'){
+                --depth;
+                if (depth == 0)
+                    return html.mid(objectStart, i - objectStart + 1).toUtf8();
+            }
         }
-
-        if (c == '"')
-        {
-            inString = true;
-            continue;
-        }
-
-        if (c == '{')
-        {
-            ++depth;
-        }
-        else if (c == '}')
-        {
-            --depth;
-
-            if (depth == 0)
-                return html.mid(objectStart, i - objectStart + 1).toUtf8();
-        }
+        return {};
     }
 
-    return {};
-}
+    void copyToClipboard(const QString &text)
+    {
+        auto *clipboard = QGuiApplication::clipboard();
+        if (!clipboard)
+            return;
+
+        auto *mimeData = new QMimeData;
+        mimeData->setText(text);
+
+        clipboard->setMimeData(mimeData, QClipboard::Clipboard);
+    }
 
 } // namespace
 
@@ -202,19 +193,12 @@ void YouTubeResolver::search(const QString &artist, const QString &title)
     m_artist = artist.trimmed();
     m_title = title.trimmed();
 
-    if (m_artist.isEmpty() || m_title.isEmpty())
-    {
+    if (m_artist.isEmpty() || m_title.isEmpty()){
         emit error(QStringLiteral("Artist and title are required."));
         return;
     }
 
     /*
-     * Match yt-dlp's basic search strategy:
-     *
-     *     ytsearch1:"artist title"
-     *
-     * yt-dlp ultimately sends the query to YouTube's Innertube search API.
-     *
      * We first load YouTube itself so that we can obtain the current
      * INNERTUBE_API_KEY and INNERTUBE client configuration instead of
      * baking those values into the application.
@@ -395,120 +379,67 @@ void YouTubeResolver::handleHtml(const QString &html)
     QNetworkReply *reply =
         m_networkManager.post(request, payload);
 
-    connect(
-        reply,
-        &QNetworkReply::finished,
-        this,
-        [this, reply]()
-        {
-            reply->deleteLater();
+    connect(reply, &QNetworkReply::finished, this, [this, reply](){
+        reply->deleteLater();
 
-            if (reply->error() != QNetworkReply::NoError)
-            {
-                emit error(
-                    QStringLiteral("YouTube search failed: %1")
-                        .arg(reply->errorString()));
-                return;
-            }
+        if (reply->error() != QNetworkReply::NoError){
+            emit error(
+                QStringLiteral("YouTube search failed: %1")
+                    .arg(reply->errorString()));
+            return;
+        }
 
-            const QByteArray data = reply->readAll();
+        const QByteArray data = reply->readAll();
 
-            QJsonParseError parseError;
-            const QJsonDocument document =
-                QJsonDocument::fromJson(data, &parseError);
+        QJsonParseError parseError;
+        const QJsonDocument document = QJsonDocument::fromJson(data, &parseError);
 
-            if (parseError.error != QJsonParseError::NoError)
-            {
-                emit error(
-                    QStringLiteral(
-                        "Could not parse YouTube's search response: %1")
-                        .arg(parseError.errorString()));
-                return;
-            }
+        if (parseError.error != QJsonParseError::NoError){
+            emit error(
+                QStringLiteral(
+                    "Could not parse YouTube's search response: %1")
+                    .arg(parseError.errorString()));
+            return;
+        }
 
-            /*
-             * Search for the first actual VIDEO result.
-             *
-             * This deliberately walks the whole response rather than
-             * assuming a fixed sectionListRenderer path. YouTube has
-             * changed the response hierarchy several times, which is one
-             * reason yt-dlp has generalized traversal logic around these
-             * renderers.
-             */
-            const QString videoId =
-                findFirstVideoId(document.object());
+        // Searches for the first actual video result
+        const QString videoId = findFirstVideoId(document.object());
 
-            if (videoId.isEmpty())
-            {
-                /*
-                 * As a fallback, try ytInitialData if YouTube happened to
-                 * return a normal search page structure in the response.
-                 */
-                const QByteArray initialData =
-                    extractInitialData(QString::fromUtf8(data));
+        if (videoId.isEmpty()){
+            // As a fallback it tries ytInitialData if YouTube happened to return a normal search page structure
+            const QByteArray initialData = extractInitialData(QString::fromUtf8(data));
 
-                if (!initialData.isEmpty())
+            if (!initialData.isEmpty()){
+                const QJsonDocument fallbackDocument =
+                    QJsonDocument::fromJson(initialData);
+
+                if (!fallbackDocument.isNull())
                 {
-                    const QJsonDocument fallbackDocument =
-                        QJsonDocument::fromJson(initialData);
+                    const QString fallbackId =
+                        findFirstVideoId(fallbackDocument.object());
 
-                    if (!fallbackDocument.isNull())
+                    if (!fallbackId.isEmpty())
                     {
-                        const QString fallbackId =
-                            findFirstVideoId(fallbackDocument.object());
+                        const QString url =
+                            QStringLiteral(
+                                "https://www.youtube.com/watch?v=%1")
+                                .arg(fallbackId);
 
-                        if (!fallbackId.isEmpty())
-                        {
-                            const QString url =
-                                QStringLiteral(
-                                    "https://www.youtube.com/watch?v=%1")
-                                    .arg(fallbackId);
-
-                            QClipboard *clipboard =
-                                QGuiApplication::clipboard();
-
-                            if (!clipboard)
-                            {
-                                emit error(
-                                    QStringLiteral(
-                                        "No system clipboard is available."));
-                                return;
-                            }
-
-                            clipboard->setText(url);
-                            emit linkCopied();
-                            return;
-                        }
+                        copyToClipboard(url);
+                        emit linkCopied();
+                        return;
                     }
                 }
-
-                emit error(
-                    QStringLiteral(
-                        "No YouTube video was found for \"%1\" by \"%2\".")
-                        .arg(m_title, m_artist));
-                return;
             }
 
-            const QString youtubeUrl =
-                QStringLiteral(
-                    "https://www.youtube.com/watch?v=%1")
-                    .arg(videoId);
+            emit error(QStringLiteral("No YouTube video was found for \"%1\" by \"%2\".").arg(m_title, m_artist));
+            return;
+        }
 
-            qDebug() << "YouTubeResolver: Found video ID" << youtubeUrl;
+        const QString youtubeUrl = QStringLiteral("https://www.youtube.com/watch?v=%1").arg(videoId);
 
-            QClipboard *clipboard = QGuiApplication::clipboard();
+        copyToClipboard(youtubeUrl);
 
-            if (!clipboard)
-            {
-                qDebug() << "Clipboard error";
-                emit error(
-                    QStringLiteral(
-                        "No system clipboard is available."));
-                return;
-            }
-
-            clipboard->setText(youtubeUrl);
-
-            emit linkCopied();
-        });
+        emit linkCopied();
+    });
 }
