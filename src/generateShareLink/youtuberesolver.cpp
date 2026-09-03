@@ -13,6 +13,7 @@
 #include <QUrlQuery>
 #include <QProcess>
 #include <QMimeData>
+#include <QTimer>
 
 namespace{
     constexpr int MaxRedirects = 5;
@@ -194,7 +195,7 @@ void YouTubeResolver::search(const QString &artist, const QString &title)
     m_title = title.trimmed();
 
     if (m_artist.isEmpty() || m_title.isEmpty()){
-        emit error(QStringLiteral("Artist and title are required."));
+        emit failedToCopyLink();
         return;
     }
 
@@ -216,7 +217,7 @@ void YouTubeResolver::doRequest(const QUrl &url, int redirectsLeft)
 {
     if (!url.isValid())
     {
-        emit error(QStringLiteral("Invalid YouTube URL."));
+        emit failedToCopyLink();
         return;
     }
 
@@ -239,6 +240,13 @@ void YouTubeResolver::doRequest(const QUrl &url, int redirectsLeft)
 
     QNetworkReply *reply = m_networkManager.get(request);
 
+    auto *timer = new QTimer(reply); // parented to reply so it's cleaned up automatically
+    timer->setSingleShot(true);
+    connect(timer, &QTimer::timeout, this, [this, reply]() {
+        reply->abort(); // triggers reply->error() == QNetworkReply::OperationCanceledError
+    });
+    timer->start(RequestTimeoutMs);
+
     connect(
         reply,
         &QNetworkReply::finished,
@@ -249,9 +257,7 @@ void YouTubeResolver::doRequest(const QUrl &url, int redirectsLeft)
 
             if (reply->error() != QNetworkReply::NoError)
             {
-                emit error(
-                    QStringLiteral("YouTube request failed: %1")
-                        .arg(reply->errorString()));
+                emit failedToCopyLink();
                 return;
             }
 
@@ -271,7 +277,7 @@ void YouTubeResolver::doRequest(const QUrl &url, int redirectsLeft)
 
             if (data.isEmpty())
             {
-                emit error(QStringLiteral("YouTube returned an empty response."));
+                emit failedToCopyLink();
                 return;
             }
 
@@ -281,27 +287,18 @@ void YouTubeResolver::doRequest(const QUrl &url, int redirectsLeft)
 
 void YouTubeResolver::handleHtml(const QString &html)
 {
-    /*
-     * yt-dlp reads the current YouTube ytcfg and obtains the Innertube
-     * client configuration from it. The current source uses a WEB client
-     * for normal YouTube search. See yt-dlp's youtube/_base.py.
-     */
 
-    const QString apiKey =
-        extractYtConfigValue(html, QStringLiteral("INNERTUBE_API_KEY"));
+    const QString apiKey = extractYtConfigValue(html, QStringLiteral("INNERTUBE_API_KEY"));
 
     if (apiKey.isEmpty())
     {
-        emit error(
-            QStringLiteral(
-                "Could not find YouTube's Innertube API key."));
+        emit failedToCopyLink();
         return;
     }
 
-    QString clientVersion =
-        extractYtConfigValue(
-            html,
-            QStringLiteral("INNERTUBE_CLIENT_VERSION"));
+    QString clientVersion = extractYtConfigValue(
+                                        html,
+                                        QStringLiteral("INNERTUBE_CLIENT_VERSION"));
 
     /*
      * YouTube normally exposes the client version in ytcfg. This fallback
@@ -376,16 +373,21 @@ void YouTubeResolver::handleHtml(const QString &html)
             "AppleWebKit/537.36 (KHTML, like Gecko) "
             "Chrome/140.0.0.0 Safari/537.36"));
 
-    QNetworkReply *reply =
-        m_networkManager.post(request, payload);
+    QNetworkReply *reply = m_networkManager.post(request, payload);
+
+    auto *timer = new QTimer(reply); // parented to reply so it's cleaned up automatically
+    timer->setSingleShot(true);
+    connect(timer, &QTimer::timeout, this, [this, reply]() {
+        reply->abort(); // triggers reply->error() == QNetworkReply::OperationCanceledError
+    });
+    timer->start(RequestTimeoutMs);
 
     connect(reply, &QNetworkReply::finished, this, [this, reply](){
+
         reply->deleteLater();
 
         if (reply->error() != QNetworkReply::NoError){
-            emit error(
-                QStringLiteral("YouTube search failed: %1")
-                    .arg(reply->errorString()));
+            emit failedToCopyLink();
             return;
         }
 
@@ -395,10 +397,7 @@ void YouTubeResolver::handleHtml(const QString &html)
         const QJsonDocument document = QJsonDocument::fromJson(data, &parseError);
 
         if (parseError.error != QJsonParseError::NoError){
-            emit error(
-                QStringLiteral(
-                    "Could not parse YouTube's search response: %1")
-                    .arg(parseError.errorString()));
+            emit failedToCopyLink();
             return;
         }
 
@@ -432,7 +431,7 @@ void YouTubeResolver::handleHtml(const QString &html)
                 }
             }
 
-            emit error(QStringLiteral("No YouTube video was found for \"%1\" by \"%2\".").arg(m_title, m_artist));
+            emit failedToCopyLink();
             return;
         }
 

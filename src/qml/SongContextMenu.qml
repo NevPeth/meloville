@@ -13,6 +13,7 @@ Popup {
     property string filterText: ""
     property string currentSongArtist: ""
     property string currentSongTitle: ""
+    property string shareState: "idle"  // "idle" | "fetching" | "copied" | "failed" (for the "Share song" action)
 
     signal addToPlaylist(string playlistName)
     signal removeFromPlaylist()
@@ -22,9 +23,27 @@ Popup {
         target: youtubeResolver
 
         function onLinkCopied() {
-            popup.close()
+            popup.shareState = "copied"
+            autoCloseTimer.start()
         }
     }
+
+    Connections {
+        target: youtubeResolver
+
+        function onFailedToCopyLink() {
+            popup.shareState = "failed"
+            autoCloseTimer.start()
+        }
+    }
+
+    Timer {
+        id: autoCloseTimer
+        interval: 500
+        onTriggered: popup.close()
+    }
+
+    onClosed: popup.shareState = "idle"
 
     width: 210
     implicitHeight: columnLayout.implicitHeight
@@ -87,34 +106,105 @@ Popup {
 
         ItemDelegate {
             id: shareSongDelegate
-
             Layout.fillWidth: true
-
             leftPadding: 24
             rightPadding: 24
             topPadding: 8
             bottomPadding: 8
-
             font.pixelSize: 14
-            text: "Share song"
+            enabled: popup.shareState === "idle"
 
-            contentItem: Text {
-                text: parent.text
-                font: parent.font
-                elide: Text.ElideRight
-                verticalAlignment: Text.AlignVCenter
-                color: "white"
+            contentItem: RowLayout {
+                spacing: 8
+
+                // Spinner (only visible while fetching)
+                Item {
+                    width: 14
+                    height: 14
+                    visible: popup.shareState === "fetching"
+
+                    Canvas {
+                        id: spinnerCanvas
+                        anchors.fill: parent
+                        antialiasing: true
+
+                        // t goes 0 → 1 continuously, driving everything
+                        property real t: 0
+
+                        onPaint: {
+                            var ctx = getContext("2d")
+                            ctx.reset()
+
+                            var cx = width / 2
+                            var cy = height / 2
+                            var r  = width / 2 - 1.0   // radius, inset by stroke/2
+
+                            // --- Replicate the CSS dash keyframe exactly ---
+                            // At t=0:   dashoffset=187  → arc ≈ 0  (tiny sliver)
+                            // At t=0.5: dashoffset=~47  → arc ≈ 270° (3/4 circle)
+                            // At t=1:   dashoffset=187  → arc ≈ 0  (tiny sliver)
+                            // Arc fraction: offset/187 → sweep = (1 - frac) * 2π
+                            // Using ease-in-out sine to match CSS ease-in-out
+                            var ease = t < 0.5
+                                ? 2 * t * t
+                                : 1 - Math.pow(-2 * t + 2, 2) / 2  // ease-in-out quad
+
+                            // sweep oscillates 5° → 270° → 5°
+                            var minSweep = 5  * Math.PI / 180
+                            var maxSweep = 270 * Math.PI / 180
+                            var sweep = minSweep + (maxSweep - minSweep) * Math.sin(ease * Math.PI)
+
+                            // The arc also self-rotates 0→135° in first half, 135→450° total
+                            // This keeps the HEAD advancing while the tail chases
+                            var arcSelfRotate = (ease * 450) * Math.PI / 180
+
+                            // Container rotation: 0 → 270° per cycle (linear)
+                            var containerRot = t * 270 * Math.PI / 180
+
+                            // Start at top (−π/2) + both rotations
+                            var startAngle = -Math.PI / 2 + containerRot + arcSelfRotate
+                            var endAngle   = startAngle + sweep
+
+                            ctx.beginPath()
+                            ctx.arc(cx, cy, r, startAngle, endAngle, false)
+                            ctx.strokeStyle  = "white"
+                            ctx.lineWidth    = 1.5
+                            ctx.lineCap      = "round"
+                            ctx.stroke()
+                        }
+
+                        NumberAnimation on t {
+                            from: 0
+                            to: 1
+                            duration: 1400   // matches the canonical 1.4s
+                            loops: Animation.Infinite
+                            running: popup.shareState === "fetching"
+                        }
+
+                        onTChanged: requestPaint()
+                    }
+                }
+
+                Text {
+                    text: popup.shareState === "idle"    ? "Share song"
+                        : popup.shareState === "fetching" ? "Fetching song..."
+                        : popup.shareState === "copied"   ? "Link copied!"
+                        :                                   "Failed to fetch link"
+                    color: popup.shareState === "copied"  ? "#1db954"
+                        : popup.shareState === "failed"  ? "#e05555"
+                        : "white"
+                    font: shareSongDelegate.font
+                    Layout.fillWidth: true
+                }
             }
 
             background: Rectangle {
-                color: parent.hovered ? "#222222" : "transparent"
+                color: parent.hovered && popup.shareState === "idle" ? "#222222" : "transparent"
             }
 
             onClicked: {
-                youtubeResolver.search(
-                    popup.currentSongArtist,
-                    popup.currentSongTitle
-                )
+                popup.shareState = "fetching"
+                youtubeResolver.search(popup.currentSongArtist, popup.currentSongTitle)
             }
         }
 
