@@ -69,6 +69,9 @@ qt_add_executable(meloville
     scrobble/listenbrainzscrobbler.h
     scrobble/listenbrainzscrobbler.cpp
 
+    generateShareLink/youtuberesolver.h
+    generateShareLink/youtuberesolver.cpp
+
     resources.qrc
 )
 
@@ -93,6 +96,7 @@ target_include_directories(meloville PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/albumLogic
     ${CMAKE_CURRENT_SOURCE_DIR}/listenAlongServer
     ${CMAKE_CURRENT_SOURCE_DIR}/scrobble
+    ${CMAKE_CURRENT_SOURCE_DIR}/generateShareLink
 )
 
 # Installation

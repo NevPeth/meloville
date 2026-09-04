@@ -220,7 +220,7 @@ signals:
     void viewingPlaylistChanged();
     void playlistNamesChanged();
     void isInPlaylistViewChanged();
-    void openContextMenuRequested(int visibleIndex, int x, int y);
+    void openContextMenuRequested(int visibleIndex, int x, int y, const QString& title, const QString& artist);
     void jumpToSongIndex(int visibleIndex);
     void dragReorderAllowedChanged();
     void editSongRequested(int libraryIndex,const QString& filePath,const QString& coverPath,

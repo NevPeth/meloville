@@ -254,11 +254,13 @@ ApplicationWindow {
     Connections {
         target: backend
 
-        function onOpenContextMenuRequested(visibleIndex, x, y) {
+        function onOpenContextMenuRequested(visibleIndex, x, y, title, artist) {
             contextMenu.currentVisibleIndex = visibleIndex
             contextMenu.playlistModel = backend.playlistNames
             contextMenu.showRemoveAction = backend.isInPlaylistView
             contextMenu.filterText = ""
+            contextMenu.currentSongTitle = title
+            contextMenu.currentSongArtist = artist
 
             var local = appWindow.contentItem.mapFromGlobal(x, y)
 
@@ -2060,7 +2062,7 @@ ApplicationWindow {
         }
     }
 
-    // // ── Resize handles (frameless window) ──────────────────────────
+    // ── Resize handles (frameless window) ──────────────────────────
     Repeater {
         model: [
             // edges
