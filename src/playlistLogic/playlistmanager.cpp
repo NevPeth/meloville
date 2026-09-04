@@ -259,13 +259,14 @@ void PlaylistManager::loadPlaylists(
             playlistSong.artist = obj["artist"].toString();
             playlistSong.coverPath = obj["coverPath"].toString();
 
-            songs.append(playlistSong);
-
             QString key = playlistSong.title.toLower() + '\t' + playlistSong.artist.toLower();
             int found = songLookup.value(key, -1);
 
-            if (found >= 0)
+            if (found >= 0){
                 indices.append(found);
+                playlistSong.coverPath = library[found].coverPath;
+            }
+            songs.append(playlistSong);
         }
 
         playlistDefinitions[playlist] = songs;
