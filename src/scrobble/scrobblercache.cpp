@@ -189,6 +189,8 @@ void ScrobblerCache::Flush(ScrobblerCacheItemPtrList items)
     for (auto &item : items)
         scrobbler_cache_.removeAll(item);
 
+    WriteCache();
+
     if (!timer_flush_->isActive())
         timer_flush_->start();
 }
