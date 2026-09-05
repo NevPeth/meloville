@@ -265,8 +265,8 @@ void PlaylistManager::loadPlaylists(
             if (found >= 0){
                 indices.append(found);
                 playlistSong.coverPath = library[found].coverPath;
+                songs.append(playlistSong);
             }
-            songs.append(playlistSong);
         }
 
         playlistDefinitions[playlist] = songs;
