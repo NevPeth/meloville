@@ -795,6 +795,7 @@ ApplicationWindow {
                                         verticalAlignment: TextInput.AlignVCenter
                                         color: "white"
                                         font.pixelSize: 13
+                                        clip: true
                                         onTextEdited: backend.filterSongsAndAlbums(text)
 
                                         Text {
@@ -863,6 +864,7 @@ ApplicationWindow {
                                         color: "white"
                                         font.pixelSize: 13
                                         text: heroSharedSearchText
+                                        clip: true
                                         onTextEdited: {
                                             heroSharedSearchText = text
                                             backend.filterSongsAndAlbums(text)
@@ -1144,6 +1146,7 @@ ApplicationWindow {
                                             font.pixelSize: 13
 
                                             text: heroSharedSearchText
+                                            clip: true
 
                                             onTextEdited: {
                                                 heroSharedSearchText = text
