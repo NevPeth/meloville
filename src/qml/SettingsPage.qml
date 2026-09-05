@@ -543,12 +543,6 @@ Item {
                                 onToggledChanged2: function(val) { backend.setCloseToTray(val) }
                             }
 
-                            Rectangle {
-                                Layout.fillWidth: true
-                                height: 1
-                                color: "#1a1a1a"
-                            }
-
                             ToggleRow {
                                 label: "Custom window positioning and resizing"
                                 description: "While active the window will move by dragging the library/album header or playlist/album descriptors. In big picture mode, dragging the cover art will move the window."
@@ -881,7 +875,19 @@ Item {
 
                             SectionHeader {
                                 title: "Scrobbling"
-                                subtitle: "Track your listening history on Last.fm. Songs are scrobbled after you've listened to at least half the track or four minutes, whichever comes first."
+                                subtitle: "Track your listening history on Last.fm and Listenbrainz. Songs are scrobbled after you've listened to at least half the track or four minutes, whichever comes first."
+                            }
+
+                            // Sub-header
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 4
+                                Text {
+                                    text: "Last.fm"
+                                    color: "white"
+                                    font.pixelSize: 16
+                                    font.bold: true
+                                }
                             }
 
                             // ── Status card ───────────────────────────────────────────────
@@ -982,8 +988,6 @@ Item {
                                 }
                             }
 
-                            Rectangle { Layout.fillWidth: true; height: 1; color: "#1a1a1a" }
-
                             // ── Scrobble timing reference ─────────────────────────────────
                             ColumnLayout {
                                 Layout.fillWidth: true
@@ -1027,8 +1031,6 @@ Item {
                                     }
                                 }
                             }
-
-                            Rectangle { Layout.fillWidth: true; height: 1; color: "#1a1a1a" }
 
                             // ── Action button ─────────────────────────────────────────────
                             RowLayout {
@@ -1082,7 +1084,11 @@ Item {
                                 }
                             }
 
-                            Item { height: 24 }
+                            Item { height: 12 }
+
+                            Rectangle { Layout.fillWidth: true; height: 1; color: "#222222"; Layout.topMargin: 6 }
+
+                            Item { height: 12 }
 
                             // ── ListenBrainz ──────────────────────────────────────────────────────
                             ColumnLayout {
@@ -1106,7 +1112,6 @@ Item {
                                         wrapMode: Text.WordWrap
                                         Layout.fillWidth: true
                                     }
-                                    Rectangle { Layout.fillWidth: true; height: 1; color: "#222222"; Layout.topMargin: 6 }
                                 }
 
                                 // Status card
