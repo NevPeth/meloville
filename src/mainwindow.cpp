@@ -935,9 +935,16 @@ void MainWindow::saveSongEdits(
         for (int &index : unplayedIndices) index = remapIndex(index);
         for (int &index : currentViewSongs) index = remapIndex(index);
 
+        if (currentLibraryIndex >= 0)
+            currentLibraryIndex = remapIndex(currentLibraryIndex);
+
+        if (!isInPlaylistView && !isInAlbumView && !isInAlbumsGridView) {
+            currentViewSongs.clear();
+            for (int i = 0; i < library.size(); ++i)
+                currentViewSongs.push_back(i);
+        }
+
         if (wasCurrentSong) {
-            currentLibraryIndex = newLibraryIndex;
-            songModel->setPlayingIndex(currentLibraryIndex);
             emit currentLibraryIndexChanged();
         }
     } 
@@ -1053,6 +1060,9 @@ void MainWindow::saveSongEdits(
     if (currentLibraryIndex >= 0) {
         currentPlaybackIndex = libraryIndexToPlaybackPos.value(currentLibraryIndex, -1);
     }
+
+    if (wasCurrentSong)
+        songModel->setPlayingIndex(currentLibraryIndex);
 
     emit songCoverUpdated(currentLibraryIndex, selectedImagePath);
     saveLibrary();
