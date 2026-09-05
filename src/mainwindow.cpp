@@ -937,6 +937,7 @@ void MainWindow::saveSongEdits(
 
         if (wasCurrentSong) {
             currentLibraryIndex = newLibraryIndex;
+            songModel->setPlayingIndex(currentLibraryIndex);
             emit currentLibraryIndexChanged();
         }
     } 
@@ -1052,8 +1053,6 @@ void MainWindow::saveSongEdits(
     if (currentLibraryIndex >= 0) {
         currentPlaybackIndex = libraryIndexToPlaybackPos.value(currentLibraryIndex, -1);
     }
-
-    songModel->setPlayingIndex(libraryIndex);
 
     emit songCoverUpdated(currentLibraryIndex, selectedImagePath);
     saveLibrary();
