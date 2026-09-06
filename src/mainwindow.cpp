@@ -1273,6 +1273,10 @@ void MainWindow::saveSongEdits(
     if (wasCurrentSong)
         songModel->setPlayingIndex(currentLibraryIndex);
 
+    int visibleIndex = songModel->visibleRowForLibraryIndex(newLibraryIndex);
+    if (visibleIndex > -1)
+        emit jumpToSongIndex(visibleIndex);
+
     emit songCoverUpdated(currentLibraryIndex, selectedImagePath);
     saveLibrary();
 }
