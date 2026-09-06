@@ -563,6 +563,19 @@ Item {
                                 color: "#1a1a1a"
                             }
 
+                            ToggleRow {
+                                label: "Hide share song option"
+                                description: "Will hide the \"Share song\" option in the three dots menu"
+                                toggled: backend.hideShare
+                                onToggledChanged2: function(val) { backend.setHideShare(val) }
+                            }
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                height: 1
+                                color: "#1a1a1a"
+                            }
+
                             // Music folder
                             RowLayout {
                                 Layout.fillWidth: true

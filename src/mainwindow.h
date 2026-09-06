@@ -47,7 +47,6 @@ class MainWindow : public QObject
     Q_PROPERTY(bool shuffleMode READ getShuffleMode NOTIFY shuffleModeChanged)
     Q_PROPERTY(int volume READ getVolume WRITE setVolume NOTIFY volumeChanged)
     Q_PROPERTY(bool playing READ getPlaying NOTIFY playingChanged)
-    Q_PROPERTY(qreal delegateHeight READ getDelegateHeight WRITE setDelegateHeight NOTIFY delegateHeightChanged)
     
     Q_PROPERTY(QString viewingPlaylist READ getViewingPlaylist NOTIFY viewingPlaylistChanged)
     Q_PROPERTY(PlaylistManager* playlistManager READ getPlaylistManager CONSTANT)
@@ -63,13 +62,18 @@ class MainWindow : public QObject
     Q_PROPERTY(QString viewingAlbumCover READ getViewingAlbumCover NOTIFY albumViewStateChanged)
     Q_PROPERTY(QObject* albumModel READ getAlbumModel CONSTANT)
 
+    // Settings
     Q_PROPERTY(QString currentMusicFolder READ getMusicFolder NOTIFY musicFolderChanged)
+    Q_PROPERTY(qreal delegateHeight READ getDelegateHeight WRITE setDelegateHeight NOTIFY delegateHeightChanged)
     Q_PROPERTY(bool isCompact READ getIsCompact WRITE setCompactMode NOTIFY isCompactChanged)
     Q_PROPERTY(bool playlistRenewal READ getPlaylistRenewal WRITE setPlaylistRenewalMode NOTIFY playlistRenewalChanged)
     Q_PROPERTY(bool closeToTray READ getCloseToTray WRITE setCloseToTray NOTIFY closeToTrayChanged)
     Q_PROPERTY(bool customResizing READ getCustomResizing WRITE setCustomResizing NOTIFY customResizingChanged)
     Q_PROPERTY(bool nativeResizing READ getNativeResizing WRITE setNativeResizing NOTIFY nativeResizingChanged)
+    Q_PROPERTY(bool nativeResizing READ getNativeResizing WRITE setNativeResizing NOTIFY nativeResizingChanged)
+    Q_PROPERTY(bool hideShare READ getHideShare WRITE setHideShare NOTIFY hideShareChanged)
 
+    // Scrobbling
     Q_PROPERTY(bool scrobblingAuthenticated READ getScrobblingAuthenticated NOTIFY scrobblingAuthChanged)
     Q_PROPERTY(QString scrobblingUsername READ getScrobblingUsername NOTIFY scrobblingAuthChanged)
     Q_PROPERTY(bool lbzAuthenticated READ getLbzAuthenticated NOTIFY lbzAuthChanged)
@@ -112,6 +116,7 @@ public:
     Q_INVOKABLE void stopListenAlongServer();
     Q_INVOKABLE bool isListenAlongRunning() const;
     Q_INVOKABLE QString readFileAsString(const QString& path) const;
+    // Settings
     Q_INVOKABLE void selectMusicFolder();
     Q_INVOKABLE void setDelegateHeight(qreal h);
     Q_INVOKABLE void setCompactMode(bool compact);
@@ -119,6 +124,8 @@ public:
     Q_INVOKABLE void setCloseToTray(bool close);
     Q_INVOKABLE void setCustomResizing(bool custom);
     Q_INVOKABLE void setNativeResizing(bool native);
+    Q_INVOKABLE void setHideShare(bool share);
+    // Scrobling
     Q_INVOKABLE void scrobblerAuthenticate();
     Q_INVOKABLE void scrobblerLogout();
     Q_INVOKABLE void lbzSetToken(const QString &token);
@@ -170,11 +177,6 @@ public:
     QString getViewingAlbumArtist() const { return viewingAlbumArtist; }
     QString getViewingAlbumCover() const { return viewingAlbumCoverPath; }
     QObject* getAlbumModel() const { return albumModel; }
-    // Scrobble getters
-    bool getScrobblingAuthenticated() const { return lFmScrobbler && lFmScrobbler->isAuthenticated(); }
-    QString getScrobblingUsername() const { return lFmScrobbler ? lFmScrobbler->username() : QString(); }
-    bool getLbzAuthenticated() const { return lbzScrobbler && lbzScrobbler->isAuthenticated(); }
-    QString getLbzUsername() const { return lbzScrobbler ? lbzScrobbler->username() : QString(); }
     // Values retrieved in settings
     QString getMusicFolder() const { return currentMusicFolder; }
     qreal getDelegateHeight() const { return delegateHeight; }
@@ -183,6 +185,12 @@ public:
     bool getCloseToTray() const { return closeToTray; }
     bool getCustomResizing() const { return customResizing; }
     bool getNativeResizing() const { return nativeResizing; }
+    bool getHideShare() const { return hideShare; }
+    // Scrobble getters
+    bool getScrobblingAuthenticated() const { return lFmScrobbler && lFmScrobbler->isAuthenticated(); }
+    QString getScrobblingUsername() const { return lFmScrobbler ? lFmScrobbler->username() : QString(); }
+    bool getLbzAuthenticated() const { return lbzScrobbler && lbzScrobbler->isAuthenticated(); }
+    QString getLbzUsername() const { return lbzScrobbler ? lbzScrobbler->username() : QString(); }
 
 public slots:
     void onScanProgress(int current, int total);
@@ -229,9 +237,11 @@ signals:
     void albumViewStateChanged();
     void returnedToLibrary();
     void sessionRestored(qint64 position);
+    // Listen Along
     void listenAlongUrlsReady(QStringList urls);
     void listenAlongStopped();
     void listenAlongListenerCountChanged(int count);
+    // Settings
     void musicFolderChanged(const QString &path);
     void delegateHeightChanged();
     void isCompactChanged();
@@ -239,6 +249,8 @@ signals:
     void closeToTrayChanged();
     void customResizingChanged();
     void nativeResizingChanged();
+    void hideShareChanged();
+    // Scrobbling
     void scrobblingAuthChanged();
     void scrobblingError(const QString &message);
     void lbzAuthChanged();
@@ -303,6 +315,7 @@ private:
     bool closeToTray = false;
     bool customResizing = true;
     bool nativeResizing = false;
+    bool hideShare = false;
 };
 
 #endif // MAINWINDOW_H

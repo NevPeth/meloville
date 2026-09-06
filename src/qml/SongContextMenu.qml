@@ -113,6 +113,7 @@ Popup {
             bottomPadding: 8
             font.pixelSize: 14
             enabled: popup.shareState === "idle"
+            visible: !backend.hideShare
 
             contentItem: RowLayout {
                 spacing: 8

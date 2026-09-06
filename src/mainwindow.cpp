@@ -198,6 +198,8 @@ bool MainWindow::songTitleLess(const SongData &a, const SongData &b)
     return QString::compare(a.title, b.title, Qt::CaseInsensitive) < 0;
 }
 
+// Starts dialog to start the process of loading all the songs which actually loads in the 
+// library scanner (located in the scanningLogic folder)
 void MainWindow::openFolder()
 {
     QString folder = QFileDialog::getExistingDirectory(nullptr, "Open Music Folder", "");
@@ -325,13 +327,16 @@ void MainWindow::saveLibrary()
 }
 
 /*
-Loads library but there are a lot of things to consider.
-    - Did user add new songs?
-        - Did you sort them properly in the list?
-    - Did the user remove a song?
-        - Did you remove it from the library put the rest of the songs back?
-    - Did the user add new lyrics files?
-    - Did the user remove lyrics files?
+    When the program loads after the first music folder selections it
+    basically checks for new/removed songs and adds and removes them, respectively.
+
+    The following is just a guide of things I need to remember when coding this:
+        - Did user add new songs?
+            - Did you sort them properly in the list?
+        - Did the user remove a song?
+            - Did you remove it from the library put the rest of the songs back?
+        - Did the user add new lyrics files?
+        - Did the user remove lyrics files?
 */ 
 void MainWindow::loadLibrary()
 {
@@ -457,47 +462,199 @@ void MainWindow::loadLibrary()
     }
 }
 
-void MainWindow::playSongAtVisibleIndex(int visibleIndex)
+void MainWindow::saveWindowGeometry(int x, int y, int w, int h)
 {
-    if (visibleIndex < 0 || visibleIndex >= visibleSongs.size())
+    QSettings settings("Meloville", "Meloville");
+    settings.setValue("window/geometry", QRect(x, y, w, h));
+}
+
+QRect MainWindow::loadWindowGeometry() const
+{
+    QSettings settings("Meloville", "Meloville");
+    return settings.value("window/geometry", QRect(100, 100, 1280, 720)).toRect();
+}
+
+void MainWindow::saveSessionAndWindow(int x, int y, int w, int h)
+{
+    saveWindowGeometry(x, y, w, h);
+    saveSessionState();
+}
+// Just saves currently playing song and settings for next boot
+void MainWindow::saveSessionState()
+{
+    QSettings settings("Meloville", "Meloville");
+
+    if (currentLibraryIndex < 0 || currentLibraryIndex >= library.size()) {
+        settings.remove("session");
+        return;
+    }
+
+    const SongData &song = library[currentLibraryIndex];
+
+    settings.setValue("session/position", playbackController->player()->position());
+    settings.setValue("session/title", song.title);
+    settings.setValue("session/artist", song.artist);
+    settings.setValue("session/coverPath", song.coverPath);
+    settings.setValue("session/duration", song.duration);
+    settings.setValue("session/wasPlaying", playbackController->isPlaying());
+    settings.setValue("session/shuffleMode", shuffleMode);
+    settings.setValue("session/repeatMode", repeatMode);
+    settings.setValue("session/currentlyPlayingPlaylist", currentlyPlayingPlaylist);
+    settings.setValue("session/currentlyPlayingAlbum", currentlyPlayingAlbum);
+    settings.setValue("session/currentlyPlayingAlbumArtist", currentlyPlayingAlbumArtist);
+    settings.setValue("session/currentlyPlayingAlbumCoverPath", currentlyPlayingAlbumCoverPath);
+    settings.setValue("ui/delegateHeight", delegateHeight);
+    settings.setValue("ui/isCompact", isCompact);
+    settings.setValue("ui/playlistRenewal", playlistRenewal);
+    settings.setValue("ui/closeToTray", closeToTray);
+    settings.setValue("ui/customResizing", customResizing);
+    settings.setValue("ui/nativeResizing", nativeResizing);
+    settings.setValue("ui/hideShare", hideShare);
+
+    QJsonArray playbackArr;
+    for (int idx : currentPlaybackSongs) {
+        if (idx >= 0 && idx < library.size()) {
+            QJsonObject o;
+            o["title"]  = library[idx].title;
+            o["artist"] = library[idx].artist;
+            playbackArr.append(o);
+        }
+    }
+    settings.setValue("session/currentPlaybackSongs", QJsonDocument(playbackArr).toJson(QJsonDocument::Compact));
+
+    QJsonArray historyArr;
+    for (int idx : playHistory) {
+        if (idx >= 0 && idx < library.size()) {
+            QJsonObject o;
+            o["title"]  = library[idx].title;
+            o["artist"] = library[idx].artist;
+            historyArr.append(o);
+        }
+    }
+    settings.setValue("session/playHistory", QJsonDocument(historyArr).toJson(QJsonDocument::Compact));
+
+    QJsonArray nextUpArr;
+    for (int i = 0; i < nextUp.size(); ++i) {
+        int idx = nextUp[i];
+        if (idx >= 0 && idx < library.size()) {
+            QJsonObject o;
+            o["title"]  = library[idx].title;
+            o["artist"] = library[idx].artist;
+            nextUpArr.append(o);
+        }
+    }
+    settings.setValue("session/nextUp", QJsonDocument(nextUpArr).toJson(QJsonDocument::Compact));
+
+    if (lFmScrobbler)
+        lFmScrobbler->saveSession();
+    if (lbzScrobbler)
+        lbzScrobbler->saveSettings();
+}
+
+void MainWindow::loadSessionState()
+{
+    QSettings settings("Meloville", "Meloville");
+
+    delegateHeight = settings.value("ui/delegateHeight", 62.0).toReal();
+    isCompact = settings.value("ui/isCompact", false).toBool();
+    playlistRenewal = settings.value("ui/playlistRenewal", true).toBool();
+    closeToTray = settings.value("ui/closeToTray", false).toBool();
+    customResizing = settings.value("ui/customResizing", true).toBool();
+    nativeResizing = settings.value("ui/nativeResizing", false).toBool();
+    hideShare = settings.value("ui/hideShare", false).toBool();
+
+    QString savedTitle  = settings.value("session/title",  QString()).toString();
+    QString savedArtist = settings.value("session/artist", QString()).toString();
+    if (savedTitle.isEmpty())
         return;
 
-    int libraryIndex = visibleSongs[visibleIndex];
-    currentPlaybackSongs = currentViewSongs;
+    // Binary search for now until I make it constant time, but I just rehashed the logic from my playlist to at least not be O(n*m) and instead O(log(n)*m)
+    auto resolveIndex = [&](const QString &title, const QString &artist) -> int {
+        int lo = 0, hi = library.size() - 1, found = -1;
+        while (lo <= hi) {
+            int mid = lo + (hi - lo) / 2;
+            int cmp = QString::compare(library[mid].title, title, Qt::CaseInsensitive);
+            if (cmp < 0) lo = mid + 1;
+            else if (cmp > 0) hi = mid - 1;
+            else {
+                for (int i = mid; i >= lo && QString::compare(library[i].title, title, Qt::CaseInsensitive) == 0; --i)
+                    if (library[i].artist.compare(artist, Qt::CaseInsensitive) == 0) { found = i; break; }
+                if (found < 0)
+                    for (int i = mid + 1; i <= hi && QString::compare(library[i].title, title, Qt::CaseInsensitive) == 0; ++i)
+                        if (library[i].artist.compare(artist, Qt::CaseInsensitive) == 0) { found = i; break; }
+                break;
+            }
+        }
+        return found;
+    };
+
+    int libraryIndex = resolveIndex(savedTitle, savedArtist);
+    if (libraryIndex < 0)
+        return;
+
+    shuffleMode = settings.value("session/shuffleMode", false).toBool();
+    repeatMode  = settings.value("session/repeatMode",  false).toBool();
+    mpris->getPlayer()->updateShuffle(shuffleMode);
+    mpris->getPlayer()->updateLoopStatus(repeatMode);
+
+    currentlyPlayingPlaylist = settings.value("session/currentlyPlayingPlaylist", QString()).toString();
+    currentlyPlayingAlbum = settings.value("session/currentlyPlayingAlbum", QString()).toString();
+    currentlyPlayingAlbumArtist = settings.value("session/currentlyPlayingAlbumArtist", QString()).toString();
+    currentlyPlayingAlbumCoverPath = settings.value("session/currentlyPlayingAlbumCoverPath", QString()).toString();
+
+    auto restoreList = [&](const QString &key) -> QVector<int> {
+        QVector<int> result;
+        QJsonArray arr = QJsonDocument::fromJson(settings.value(key).toByteArray()).array();
+        for (const QJsonValue &v : arr) {
+            QJsonObject o = v.toObject();
+            int idx = resolveIndex(o["title"].toString(), o["artist"].toString());
+            if (idx >= 0)
+                result.append(idx);
+        }
+        return result;
+    };
+
+    currentPlaybackSongs = restoreList("session/currentPlaybackSongs");
+    if (currentPlaybackSongs.isEmpty())
+        for (int i = 0; i < library.size(); ++i)
+            currentPlaybackSongs.append(i);
+
     rebuildPlaybackMap();
-    currentVisibleIndex = visibleIndex;
-    currentLibraryIndex = libraryIndex;
+
+    playHistory = restoreList("session/playHistory");
+
+    QVector<int> nextUpVec = restoreList("session/nextUp");
+    while (!nextUp.isEmpty()) nextUp.pop();
+    for (int idx : nextUpVec)
+        nextUp.push(idx);
+
+    const SongData &song = library[libraryIndex];
+    playbackController->player()->setSource(QUrl::fromLocalFile(song.filePath));
+
+    currentLibraryIndex  = libraryIndex;
+    currentPlaybackIndex = libraryIndexToPlaybackPos.value(libraryIndex, -1);
+    songModel->setPlayingIndex(libraryIndex);
+    songModel->setPausedState(true);
+
     emit currentLibraryIndexChanged();
+    emit currentSongChanged();
 
-    if (isInPlaylistView) {
-        currentlyPlayingPlaylist = viewingPlaylist;
-        if (playlistRenewal)
-            playlistManager->changePlaylistToTop(viewingPlaylist);
-        currentlyPlayingAlbum.clear();
-        currentlyPlayingAlbumArtist.clear();
-        currentlyPlayingAlbumCoverPath.clear();
-    } else if (isInAlbumView) {
-        currentlyPlayingAlbum = viewingAlbum;
-        currentlyPlayingAlbumArtist  = viewingAlbumArtist;
-        currentlyPlayingAlbumCoverPath = viewingAlbumCoverPath;
-        currentlyPlayingPlaylist.clear();
-    } else {
-        currentlyPlayingPlaylist.clear();
-        currentlyPlayingAlbum.clear();
-        currentlyPlayingAlbumArtist.clear();
-        currentlyPlayingAlbumCoverPath.clear();
-    }
-    
-    while (!playHistory.isEmpty())
-        playHistory.pop_back();
-
-    while (!nextUp.isEmpty())
-        nextUp.pop();
-
-    rebuildShufflePool();
-
-    playSong(libraryIndex);
+    qint64 savedPos = settings.value("session/position", 0).toLongLong();
+    QTimer::singleShot(300, this, [this, savedPos]() {
+        playbackController->player()->setPosition(savedPos);
+        // After restoring session, notify the scrobbler so it tracks this song.
+        if (lFmScrobbler && currentLibraryIndex >= 0 && currentLibraryIndex < library.size()) {
+            const SongData &song = library[currentLibraryIndex];
+            lFmScrobbler->startScrobbleFromBoot(song.title, song.artist, song.album, song.duration);
+        }
+        if (lbzScrobbler && currentLibraryIndex >= 0 && currentLibraryIndex < library.size()) {
+            const SongData &song = library[currentLibraryIndex];
+            lbzScrobbler->startScrobbleFromBoot(song.title, song.artist, song.album, song.duration);
+        }
+        emit sessionRestored(savedPos);
+    });
 }
+// ---------------- END OF JSON MANAGMENT FOR SAVING AND LOADING THINGS -----------------------
 
 void MainWindow::playSong(int libraryIndex)
 {
@@ -542,6 +699,58 @@ void MainWindow::playSong(int libraryIndex)
     }
 }
 
+void MainWindow::playSongAtVisibleIndex(int visibleIndex)
+{
+    if (visibleIndex < 0 || visibleIndex >= visibleSongs.size())
+        return;
+
+    int libraryIndex = visibleSongs[visibleIndex];
+    currentPlaybackSongs = currentViewSongs;
+    rebuildPlaybackMap();
+    currentVisibleIndex = visibleIndex;
+    currentLibraryIndex = libraryIndex;
+    emit currentLibraryIndexChanged();
+
+    // clears other idenitfying info from memory
+    // and replaces it with the current info needed for the
+    // saveSongEdits and jumpToCurrent song to work correctly
+    if (isInPlaylistView) { 
+        currentlyPlayingPlaylist = viewingPlaylist;
+        if (playlistRenewal)
+            playlistManager->changePlaylistToTop(viewingPlaylist);
+        currentlyPlayingAlbum.clear();
+        currentlyPlayingAlbumArtist.clear();
+        currentlyPlayingAlbumCoverPath.clear();
+    } else if (isInAlbumView) {
+        currentlyPlayingAlbum = viewingAlbum;
+        currentlyPlayingAlbumArtist  = viewingAlbumArtist;
+        currentlyPlayingAlbumCoverPath = viewingAlbumCoverPath;
+        currentlyPlayingPlaylist.clear();
+    } else {
+        currentlyPlayingPlaylist.clear();
+        currentlyPlayingAlbum.clear();
+        currentlyPlayingAlbumArtist.clear();
+        currentlyPlayingAlbumCoverPath.clear();
+    }
+    
+    while (!playHistory.isEmpty())
+        playHistory.pop_back();
+
+    while (!nextUp.isEmpty())
+        nextUp.pop();
+
+    rebuildShufflePool();
+
+    playSong(libraryIndex);
+}
+
+// This is very important since it builds a map for the current playback to
+// the library so that we don't need to keep doing an .indexOf call.
+
+// You might ask, wouldn't it be better to rewrite this whole program and
+// just use the name and artist of the song to identify it so we don't need
+// any of this uselessly compilicated building of maps? Yes. If you want to
+// try it at this point, go for it. I will not be doing that.
 void MainWindow::rebuildPlaybackMap()
 {
     libraryIndexToPlaybackPos.clear();
@@ -1365,196 +1574,6 @@ void MainWindow::returnFromAlbumToGrid(){
     leaveAlbumView();
     goToAlbums();
 }
-void MainWindow::saveWindowGeometry(int x, int y, int w, int h)
-{
-    QSettings settings("Meloville", "Meloville");
-    settings.setValue("window/geometry", QRect(x, y, w, h));
-}
-
-QRect MainWindow::loadWindowGeometry() const
-{
-    QSettings settings("Meloville", "Meloville");
-    return settings.value("window/geometry", QRect(100, 100, 1280, 720)).toRect();
-}
-
-void MainWindow::saveSessionAndWindow(int x, int y, int w, int h)
-{
-    saveWindowGeometry(x, y, w, h);
-    saveSessionState();
-}
-
-void MainWindow::saveSessionState()
-{
-    QSettings settings("Meloville", "Meloville");
-
-    if (currentLibraryIndex < 0 || currentLibraryIndex >= library.size()) {
-        settings.remove("session");
-        return;
-    }
-
-    const SongData &song = library[currentLibraryIndex];
-
-    settings.setValue("session/position", playbackController->player()->position());
-    settings.setValue("session/title", song.title);
-    settings.setValue("session/artist", song.artist);
-    settings.setValue("session/coverPath", song.coverPath);
-    settings.setValue("session/duration", song.duration);
-    settings.setValue("session/wasPlaying", playbackController->isPlaying());
-    settings.setValue("session/shuffleMode", shuffleMode);
-    settings.setValue("session/repeatMode", repeatMode);
-    settings.setValue("session/currentlyPlayingPlaylist", currentlyPlayingPlaylist);
-    settings.setValue("session/currentlyPlayingAlbum", currentlyPlayingAlbum);
-    settings.setValue("session/currentlyPlayingAlbumArtist", currentlyPlayingAlbumArtist);
-    settings.setValue("session/currentlyPlayingAlbumCoverPath", currentlyPlayingAlbumCoverPath);
-    settings.setValue("ui/delegateHeight", delegateHeight);
-    settings.setValue("ui/isCompact", isCompact);
-    settings.setValue("ui/playlistRenewal", playlistRenewal);
-    settings.setValue("ui/closeToTray", closeToTray);
-    settings.setValue("ui/customResizing", customResizing);
-    settings.setValue("ui/nativeResizing", nativeResizing);
-
-    QJsonArray playbackArr;
-    for (int idx : currentPlaybackSongs) {
-        if (idx >= 0 && idx < library.size()) {
-            QJsonObject o;
-            o["title"]  = library[idx].title;
-            o["artist"] = library[idx].artist;
-            playbackArr.append(o);
-        }
-    }
-    settings.setValue("session/currentPlaybackSongs", QJsonDocument(playbackArr).toJson(QJsonDocument::Compact));
-
-    QJsonArray historyArr;
-    for (int idx : playHistory) {
-        if (idx >= 0 && idx < library.size()) {
-            QJsonObject o;
-            o["title"]  = library[idx].title;
-            o["artist"] = library[idx].artist;
-            historyArr.append(o);
-        }
-    }
-    settings.setValue("session/playHistory", QJsonDocument(historyArr).toJson(QJsonDocument::Compact));
-
-    QJsonArray nextUpArr;
-    for (int i = 0; i < nextUp.size(); ++i) {
-        int idx = nextUp[i];
-        if (idx >= 0 && idx < library.size()) {
-            QJsonObject o;
-            o["title"]  = library[idx].title;
-            o["artist"] = library[idx].artist;
-            nextUpArr.append(o);
-        }
-    }
-    settings.setValue("session/nextUp", QJsonDocument(nextUpArr).toJson(QJsonDocument::Compact));
-
-    if (lFmScrobbler)
-        lFmScrobbler->saveSession();
-    if (lbzScrobbler)
-        lbzScrobbler->saveSettings();
-}
-
-void MainWindow::loadSessionState()
-{
-    QSettings settings("Meloville", "Meloville");
-
-    delegateHeight = settings.value("ui/delegateHeight", 62.0).toReal();
-    isCompact = settings.value("ui/isCompact", false).toBool();
-    playlistRenewal = settings.value("ui/playlistRenewal", true).toBool();
-    closeToTray = settings.value("ui/closeToTray", false).toBool();
-    customResizing = settings.value("ui/customResizing", true).toBool();
-    nativeResizing = settings.value("ui/nativeResizing", false).toBool();
-
-    QString savedTitle  = settings.value("session/title",  QString()).toString();
-    QString savedArtist = settings.value("session/artist", QString()).toString();
-    if (savedTitle.isEmpty())
-        return;
-
-    // Binary search for now until I make it constant time, but I just rehashed the logic from my playlist to at least not be O(n*m) and instead O(log(n)*m)
-    auto resolveIndex = [&](const QString &title, const QString &artist) -> int {
-        int lo = 0, hi = library.size() - 1, found = -1;
-        while (lo <= hi) {
-            int mid = lo + (hi - lo) / 2;
-            int cmp = QString::compare(library[mid].title, title, Qt::CaseInsensitive);
-            if (cmp < 0) lo = mid + 1;
-            else if (cmp > 0) hi = mid - 1;
-            else {
-                for (int i = mid; i >= lo && QString::compare(library[i].title, title, Qt::CaseInsensitive) == 0; --i)
-                    if (library[i].artist.compare(artist, Qt::CaseInsensitive) == 0) { found = i; break; }
-                if (found < 0)
-                    for (int i = mid + 1; i <= hi && QString::compare(library[i].title, title, Qt::CaseInsensitive) == 0; ++i)
-                        if (library[i].artist.compare(artist, Qt::CaseInsensitive) == 0) { found = i; break; }
-                break;
-            }
-        }
-        return found;
-    };
-
-    int libraryIndex = resolveIndex(savedTitle, savedArtist);
-    if (libraryIndex < 0)
-        return;
-
-    shuffleMode = settings.value("session/shuffleMode", false).toBool();
-    repeatMode  = settings.value("session/repeatMode",  false).toBool();
-    mpris->getPlayer()->updateShuffle(shuffleMode);
-    mpris->getPlayer()->updateLoopStatus(repeatMode);
-
-    currentlyPlayingPlaylist = settings.value("session/currentlyPlayingPlaylist", QString()).toString();
-    currentlyPlayingAlbum = settings.value("session/currentlyPlayingAlbum", QString()).toString();
-    currentlyPlayingAlbumArtist = settings.value("session/currentlyPlayingAlbumArtist", QString()).toString();
-    currentlyPlayingAlbumCoverPath = settings.value("session/currentlyPlayingAlbumCoverPath", QString()).toString();
-
-    auto restoreList = [&](const QString &key) -> QVector<int> {
-        QVector<int> result;
-        QJsonArray arr = QJsonDocument::fromJson(settings.value(key).toByteArray()).array();
-        for (const QJsonValue &v : arr) {
-            QJsonObject o = v.toObject();
-            int idx = resolveIndex(o["title"].toString(), o["artist"].toString());
-            if (idx >= 0)
-                result.append(idx);
-        }
-        return result;
-    };
-
-    currentPlaybackSongs = restoreList("session/currentPlaybackSongs");
-    if (currentPlaybackSongs.isEmpty())
-        for (int i = 0; i < library.size(); ++i)
-            currentPlaybackSongs.append(i);
-
-    rebuildPlaybackMap();
-
-    playHistory = restoreList("session/playHistory");
-
-    QVector<int> nextUpVec = restoreList("session/nextUp");
-    while (!nextUp.isEmpty()) nextUp.pop();
-    for (int idx : nextUpVec)
-        nextUp.push(idx);
-
-    const SongData &song = library[libraryIndex];
-    playbackController->player()->setSource(QUrl::fromLocalFile(song.filePath));
-
-    currentLibraryIndex  = libraryIndex;
-    currentPlaybackIndex = libraryIndexToPlaybackPos.value(libraryIndex, -1);
-    songModel->setPlayingIndex(libraryIndex);
-    songModel->setPausedState(true);
-
-    emit currentLibraryIndexChanged();
-    emit currentSongChanged();
-
-    qint64 savedPos = settings.value("session/position", 0).toLongLong();
-    QTimer::singleShot(300, this, [this, savedPos]() {
-        playbackController->player()->setPosition(savedPos);
-        // After restoring session, notify the scrobbler so it tracks this song.
-        if (lFmScrobbler && currentLibraryIndex >= 0 && currentLibraryIndex < library.size()) {
-            const SongData &song = library[currentLibraryIndex];
-            lFmScrobbler->startScrobbleFromBoot(song.title, song.artist, song.album, song.duration);
-        }
-        if (lbzScrobbler && currentLibraryIndex >= 0 && currentLibraryIndex < library.size()) {
-            const SongData &song = library[currentLibraryIndex];
-            lbzScrobbler->startScrobbleFromBoot(song.title, song.artist, song.album, song.duration);
-        }
-        emit sessionRestored(savedPos);
-    });
-}
 
 void MainWindow::startListenAlongServer(int port)
 {
@@ -1686,7 +1705,9 @@ void MainWindow::setPlaylistRenewalMode(bool renewal){ playlistRenewal = renewal
 void MainWindow::setCloseToTray(bool close){ closeToTray = close; emit closeToTrayChanged(); }
 void MainWindow::setCustomResizing(bool custom){ customResizing = custom; emit customResizingChanged(); }
 void MainWindow::setNativeResizing(bool native){ nativeResizing = native; emit nativeResizingChanged(); }
+void MainWindow::setHideShare(bool share){ hideShare = share; emit hideShareChanged(); }
 
+// Scrobbling Logic
 void MainWindow::scrobblerAuthenticate() {
     if (lFmScrobbler) 
         lFmScrobbler->authenticate();
