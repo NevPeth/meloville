@@ -728,7 +728,7 @@ ApplicationWindow {
                                             backend.loadPlaylistView(model.name)
                                         }
                                         onContainsMouseChanged: {
-                                            if (containsMouse) {
+                                            if (containsMouse && !backend.hidePlaylistName) {
                                                 // Calculate position imperatively at open time
                                                 var mapped = hoverArea.mapToItem(null, 0, 0)  // null = window root
                                                 tooltipPopup.x = mapped.x + hoverArea.width + 4

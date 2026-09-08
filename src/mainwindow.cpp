@@ -503,9 +503,12 @@ void MainWindow::saveSessionState()
     settings.setValue("session/currentlyPlayingAlbum", currentlyPlayingAlbum);
     settings.setValue("session/currentlyPlayingAlbumArtist", currentlyPlayingAlbumArtist);
     settings.setValue("session/currentlyPlayingAlbumCoverPath", currentlyPlayingAlbumCoverPath);
+
+    //Settings
     settings.setValue("ui/delegateHeight", delegateHeight);
     settings.setValue("ui/isCompact", isCompact);
     settings.setValue("ui/playlistRenewal", playlistRenewal);
+    settings.setValue("ui/hidePlaylistName", hidePlaylistName);
     settings.setValue("ui/closeToTray", closeToTray);
     settings.setValue("ui/customResizing", customResizing);
     settings.setValue("ui/nativeResizing", nativeResizing);
@@ -558,6 +561,7 @@ void MainWindow::loadSessionState()
     delegateHeight = settings.value("ui/delegateHeight", 62.0).toReal();
     isCompact = settings.value("ui/isCompact", false).toBool();
     playlistRenewal = settings.value("ui/playlistRenewal", true).toBool();
+    hidePlaylistName = settings.value("ui/hidePlaylistName", false).toBool();
     closeToTray = settings.value("ui/closeToTray", false).toBool();
     customResizing = settings.value("ui/customResizing", true).toBool();
     nativeResizing = settings.value("ui/nativeResizing", false).toBool();
@@ -1707,6 +1711,7 @@ void MainWindow::selectMusicFolder()
 void MainWindow::setDelegateHeight(qreal h){ delegateHeight = h; emit delegateHeightChanged(); }
 void MainWindow::setCompactMode(bool compact){ isCompact = compact; emit isCompactChanged(); }
 void MainWindow::setPlaylistRenewalMode(bool renewal){ playlistRenewal = renewal; emit playlistRenewalChanged(); }
+void MainWindow::setHidePlaylistName(bool hideName){ hidePlaylistName = hideName; emit hidePlaylistNameChanged(); }
 void MainWindow::setCloseToTray(bool close){ closeToTray = close; emit closeToTrayChanged(); }
 void MainWindow::setCustomResizing(bool custom){ customResizing = custom; emit customResizingChanged(); }
 void MainWindow::setNativeResizing(bool native){ nativeResizing = native; emit nativeResizingChanged(); }
