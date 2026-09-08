@@ -640,7 +640,7 @@ ApplicationWindow {
                                 Layout.preferredHeight: 65
                                 Layout.maximumWidth: 65
                                 Layout.maximumHeight: 65
-                                Layout.leftMargin: -2
+                                Layout.leftMargin: -4
                                 Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
 
                                 background: Item {}
@@ -667,7 +667,7 @@ ApplicationWindow {
                                 Layout.maximumHeight: 65
                                 Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
                                 Layout.topMargin: -10
-                                Layout.leftMargin: -2
+                                Layout.leftMargin: -4
 
                                 background: Item {}
 
@@ -689,24 +689,22 @@ ApplicationWindow {
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
                                 Layout.topMargin: 2
-                                Layout.minimumWidth: 60
-                                Layout.maximumWidth: 60
-                                Layout.leftMargin: 8
+                                Layout.minimumWidth: 70
+                                Layout.maximumWidth: 70
+                                Layout.leftMargin: 0
                                 clip: true
                                 spacing: 10
                                 ScrollBar.horizontal: ScrollBar { policy: ScrollBar.AlwaysOff }
                                 
-                                delegate: Rectangle {
-                                    width: 50
+                                delegate: Item {
+                                    width: 70
                                     height: 50
-                                    radius: 4
-                                    color: "transparent"
 
-                                    // Image with rounded corners
                                     Image {
                                         id: playlistImage
-                                        anchors.fill: parent
-                                        anchors.margins: 0
+                                        width: 50
+                                        height: 50
+                                        x: 8
                                         fillMode: Image.PreserveAspectCrop
                                         source: model.imagePath ? model.imagePath : "qrc:/icons/default.svg"
                                         mipmap: true
@@ -720,14 +718,67 @@ ApplicationWindow {
                                             }
                                         }
                                     }
-
-                                    // Click area
+                                    
                                     MouseArea {
+                                        id: hoverArea
                                         anchors.fill: parent
+                                        hoverEnabled: true
                                         onClicked: {
                                             listViewSongs.contentY = 0
                                             backend.loadPlaylistView(model.name)
                                         }
+                                        onContainsMouseChanged: {
+                                            if (containsMouse && !backend.hidePlaylistName) {
+                                                // Calculate position imperatively at open time
+                                                var mapped = hoverArea.mapToItem(null, 0, 0)  // null = window root
+                                                tooltipPopup.x = mapped.x + hoverArea.width + 4
+                                                tooltipPopup.y = (hoverArea.height - tooltipPopup.height) / 2
+                                                tooltipPopup.open()
+                                            } else {
+                                                tooltipPopup.close()
+                                            }
+                                        }
+                                    }
+
+                                    Popup {
+                                        id: tooltipPopup
+                                        width: Math.min(tooltipText.implicitWidth + 25, 3*appWindow.width/4)
+                                        height: tooltipText.implicitHeight + 10
+                                        closePolicy: Popup.NoAutoClose
+                                        clip: true
+                                        background: Rectangle {
+                                            color: "#2d2d2d"
+                                            radius: 5
+                                        }
+
+                                        enter: Transition {
+                                            NumberAnimation { property: "opacity"; from: 0.0; to: 1.0; duration: 100; easing.type: Easing.OutCubic }
+                                        }
+                                        exit: Transition {
+                                            NumberAnimation { property: "opacity"; from: 1.0; to: 0.0; duration: 100; easing.type: Easing.OutCubic }
+                                        }
+
+                                        Text {
+                                            id: tooltipText
+                                            text: model.name
+                                            anchors.left: parent.left
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            color: "#ffffff"
+                                            font.pixelSize: 13
+                                        }
+                                    }
+
+                                    // Indicates currently playing playlist
+                                    Rectangle {
+                                        id: indicator
+                                        width: 8
+                                        radius: 2
+                                        color: "white"
+                                        height: playlistImage.height - 6
+                                        visible: model.name == backend.currentlyPlayingPlaylist
+                                        anchors.left: parent.left
+                                        anchors.leftMargin: -6
+                                        anchors.verticalCenter: parent.verticalCenter
                                     }
                                 }
 

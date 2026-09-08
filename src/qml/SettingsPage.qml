@@ -530,6 +530,13 @@ Item {
                                 onToggledChanged2: function(val) { backend.setPlaylistRenewalMode(val) }
                             }
 
+                            ToggleRow {
+                                label: "Hide playlist name when hovering over them"
+                                description: "Hide the little popup that shows the name of the playlist when hovering over the playlist buttons."
+                                toggled: backend.hidePlaylistName
+                                onToggledChanged2: function(val) { backend.setHidePlaylistName(val) }
+                            }
+
                             Rectangle {
                                 Layout.fillWidth: true
                                 height: 1
