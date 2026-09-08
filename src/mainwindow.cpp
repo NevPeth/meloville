@@ -738,7 +738,8 @@ void MainWindow::playSongAtVisibleIndex(int visibleIndex)
 
     while (!nextUp.isEmpty())
         nextUp.pop();
-
+    
+    emit currentlyPlayingPlaylistChanged();
     rebuildShufflePool();
 
     playSong(libraryIndex);

@@ -54,6 +54,7 @@ class MainWindow : public QObject
     Q_PROPERTY(QStringList playlistNames READ getPlaylistNames NOTIFY playlistNamesChanged)
     Q_PROPERTY(bool isInPlaylistView READ getIsInPlaylistView NOTIFY isInPlaylistViewChanged)
     Q_PROPERTY(bool dragReorderAllowed READ getDragReorderAllowed NOTIFY dragReorderAllowedChanged)
+    Q_PROPERTY(QString currentlyPlayingPlaylist READ getCurrentlyPlayingPlaylist NOTIFY currentlyPlayingPlaylistChanged)
 
     Q_PROPERTY(bool isInAlbumsGridView READ getIsInAlbumsGridView NOTIFY albumViewStateChanged)
     Q_PROPERTY(bool isInAlbumView READ getIsInAlbumView NOTIFY albumViewStateChanged)
@@ -169,6 +170,7 @@ public:
     QString getViewingPlaylist() const { return viewingPlaylist; }
     PlaylistManager* getPlaylistManager() const { return playlistManager; }
     QStringList getPlaylistNames() const { return playlistNames; }
+    QString getCurrentlyPlayingPlaylist() const { return currentlyPlayingPlaylist; }
     bool getIsInPlaylistView() const { return isInPlaylistView; }
     bool getDragReorderAllowed() const { return isInPlaylistView && filterText.isEmpty(); }
     bool getIsInAlbumsGridView() const { return isInAlbumsGridView; }
@@ -228,6 +230,7 @@ signals:
     void viewingPlaylistChanged();
     void playlistNamesChanged();
     void isInPlaylistViewChanged();
+    void currentlyPlayingPlaylistChanged();
     void openContextMenuRequested(int visibleIndex, int x, int y, const QString& title, const QString& artist);
     void jumpToSongIndex(int visibleIndex);
     void dragReorderAllowedChanged();
