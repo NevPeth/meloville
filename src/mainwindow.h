@@ -69,6 +69,7 @@ class MainWindow : public QObject
     Q_PROPERTY(bool isCompact READ getIsCompact WRITE setCompactMode NOTIFY isCompactChanged)
     Q_PROPERTY(bool playlistRenewal READ getPlaylistRenewal WRITE setPlaylistRenewalMode NOTIFY playlistRenewalChanged)
     Q_PROPERTY(bool hidePlaylistName READ getHidePlaylistName WRITE setHidePlaylistName NOTIFY hidePlaylistNameChanged)
+    Q_PROPERTY(bool hidePlaylistIndicator READ getHidePlaylistIndicator WRITE setHidePlaylistIndicator NOTIFY hidePlaylistIndicatorChanged)
     Q_PROPERTY(bool closeToTray READ getCloseToTray WRITE setCloseToTray NOTIFY closeToTrayChanged)
     Q_PROPERTY(bool customResizing READ getCustomResizing WRITE setCustomResizing NOTIFY customResizingChanged)
     Q_PROPERTY(bool nativeResizing READ getNativeResizing WRITE setNativeResizing NOTIFY nativeResizingChanged)
@@ -124,6 +125,7 @@ public:
     Q_INVOKABLE void setCompactMode(bool compact);
     Q_INVOKABLE void setPlaylistRenewalMode(bool renewal);
     Q_INVOKABLE void setHidePlaylistName(bool hideName);
+    Q_INVOKABLE void setHidePlaylistIndicator(bool hideIndicator);
     Q_INVOKABLE void setCloseToTray(bool close);
     Q_INVOKABLE void setCustomResizing(bool custom);
     Q_INVOKABLE void setNativeResizing(bool native);
@@ -187,6 +189,7 @@ public:
     bool getIsCompact() const { return isCompact; }
     bool getPlaylistRenewal() const { return playlistRenewal; }
     bool getHidePlaylistName() const { return hidePlaylistName; }
+    bool getHidePlaylistIndicator() const { return hidePlaylistIndicator; }
     bool getCloseToTray() const { return closeToTray; }
     bool getCustomResizing() const { return customResizing; }
     bool getNativeResizing() const { return nativeResizing; }
@@ -253,6 +256,7 @@ signals:
     void isCompactChanged();
     void playlistRenewalChanged();
     void hidePlaylistNameChanged();
+    void hidePlaylistIndicatorChanged();
     void closeToTrayChanged();
     void customResizingChanged();
     void nativeResizingChanged();
@@ -320,6 +324,7 @@ private:
     bool isCompact = false;
     bool playlistRenewal = true;
     bool hidePlaylistName = false;
+    bool hidePlaylistIndicator = false;
     bool closeToTray = false;
     bool customResizing = true;
     bool nativeResizing = false;

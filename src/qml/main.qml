@@ -775,7 +775,7 @@ ApplicationWindow {
                                         radius: 2
                                         color: "white"
                                         height: playlistImage.height - 6
-                                        visible: model.name == backend.currentlyPlayingPlaylist
+                                        visible: !backend.hidePlaylistIndicator && model.name == backend.currentlyPlayingPlaylist
                                         anchors.left: parent.left
                                         anchors.leftMargin: -6
                                         anchors.verticalCenter: parent.verticalCenter

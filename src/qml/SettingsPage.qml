@@ -537,6 +537,13 @@ Item {
                                 onToggledChanged2: function(val) { backend.setHidePlaylistName(val) }
                             }
 
+                            ToggleRow {
+                                label: "Hide playlist indicator"
+                                description: "Hide the white line of the left of the currently playing playlist."
+                                toggled: backend.hidePlaylistIndicator
+                                onToggledChanged2: function(val) { backend.setHidePlaylistIndicator(val) }
+                            }
+
                             Rectangle {
                                 Layout.fillWidth: true
                                 height: 1

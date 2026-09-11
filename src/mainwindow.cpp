@@ -509,6 +509,7 @@ void MainWindow::saveSessionState()
     settings.setValue("ui/isCompact", isCompact);
     settings.setValue("ui/playlistRenewal", playlistRenewal);
     settings.setValue("ui/hidePlaylistName", hidePlaylistName);
+    settings.setValue("ui/hidePlaylistIndicator", hidePlaylistIndicator);
     settings.setValue("ui/closeToTray", closeToTray);
     settings.setValue("ui/customResizing", customResizing);
     settings.setValue("ui/nativeResizing", nativeResizing);
@@ -562,6 +563,7 @@ void MainWindow::loadSessionState()
     isCompact = settings.value("ui/isCompact", false).toBool();
     playlistRenewal = settings.value("ui/playlistRenewal", true).toBool();
     hidePlaylistName = settings.value("ui/hidePlaylistName", false).toBool();
+    hidePlaylistIndicator = settings.value("ui/hidePlaylistIndicator", false).toBool();
     closeToTray = settings.value("ui/closeToTray", false).toBool();
     customResizing = settings.value("ui/customResizing", true).toBool();
     nativeResizing = settings.value("ui/nativeResizing", false).toBool();
@@ -973,17 +975,12 @@ void MainWindow::loadPlaylistView(const QString& playlistName)
     filterText.clear();
     emit dragReorderAllowedChanged();
     
-    QString coverPath = appDataPath + 
-        playlistManager->playlistImage(
-            playlistName
-        );
+    QString coverPath = appDataPath + playlistManager->playlistImage(playlistName);
 
-    QList<int> songs = playlistManager->getPlaylistSongs(playlistName);
+    QList<int> playlistSongs = playlistManager->getPlaylistSongs(playlistName);
     currentViewSongs.clear();
-    for (int libraryIndex : songs){
-        currentViewSongs.push_back(
-            libraryIndex
-        );
+    for (int libraryIndex : playlistSongs){
+        currentViewSongs.push_back(libraryIndex);
     }
 
     visibleSongs = currentViewSongs;
@@ -1659,6 +1656,7 @@ void MainWindow::setDelegateHeight(qreal h){ delegateHeight = h; emit delegateHe
 void MainWindow::setCompactMode(bool compact){ isCompact = compact; emit isCompactChanged(); }
 void MainWindow::setPlaylistRenewalMode(bool renewal){ playlistRenewal = renewal; emit playlistRenewalChanged(); }
 void MainWindow::setHidePlaylistName(bool hideName){ hidePlaylistName = hideName; emit hidePlaylistNameChanged(); }
+void MainWindow::setHidePlaylistIndicator(bool hideIndicator){ hidePlaylistIndicator = hideIndicator; emit hidePlaylistIndicatorChanged(); }
 void MainWindow::setCloseToTray(bool close){ closeToTray = close; emit closeToTrayChanged(); }
 void MainWindow::setCustomResizing(bool custom){ customResizing = custom; emit customResizingChanged(); }
 void MainWindow::setNativeResizing(bool native){ nativeResizing = native; emit nativeResizingChanged(); }
