@@ -16,7 +16,8 @@ public:
 
     explicit AlbumListModel(QObject *parent = nullptr);
 
-    void setAlbums(const QVector<AlbumInfo> &albums);
+    void setAlbums(const QHash<QString, AlbumInfo> &albums);
+    void setAlbumsFromFilter(const QVector<AlbumInfo> &albums);
     void refreshFilter(); //Filters albums that have more than 1 song in them
     const AlbumInfo &albumAt(int row) const;
 

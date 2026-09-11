@@ -208,7 +208,7 @@ private slots:
     void rebuildShufflePool();
     void rebuildPlaybackMap();
     void updatePlaylistNames();
-    QVector<AlbumInfo> buildAlbumList() const;
+    QHash<QString, AlbumInfo> buildAlbumList() const;
     void leaveAlbumView();
     void saveWindowGeometry(int x, int y, int w, int h);
     void saveSessionState();
@@ -308,7 +308,7 @@ private:
     bool isInAlbumsGridView = false;
     bool isInAlbumView = false;
     AlbumListModel *albumModel = nullptr;
-    QVector<AlbumInfo> allAlbums;
+    QHash<QString, AlbumInfo> allAlbums;
 
     ListenAlongServer *listenAlongServer = nullptr;
 

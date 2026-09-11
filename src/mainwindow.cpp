@@ -926,13 +926,13 @@ void MainWindow::filterSongsAndAlbums(const QString& text)
             albumModel->setAlbums(allAlbums);
         } else {
             QVector<AlbumInfo> filtered;
-            for (const AlbumInfo& album : allAlbums) {
+            for (const AlbumInfo& album : std::as_const(allAlbums)) {
                 QString searchable = (album.title + " " + album.artist).toLower();
                 if (searchable.contains(search)) {
                     filtered.push_back(album);
                 }
             }
-            albumModel->setAlbums(filtered);
+            albumModel->setAlbumsFromFilter(filtered);
         }
     }
     else{
@@ -1189,25 +1189,11 @@ void MainWindow::saveSongEdits(
     // Rebuild the currently visible view.
     if (isInAlbumView) {
         currentViewSongs.clear();
-
-        for (const AlbumInfo &albumInfo : allAlbums) {
-            if (albumInfo.title.compare(
-                    viewingAlbum,
-                    Qt::CaseInsensitive) != 0)
-                continue;
-
-            if (artistKey(albumInfo.artist) !=
-                artistKey(viewingAlbumArtist))
-                continue;
-
-            currentViewSongs = albumInfo.libraryIndices;
-
-            viewingAlbumArtist = albumInfo.artist;
-            viewingAlbumCoverPath = albumInfo.coverPath;
-
-            break;
-        }
-
+        QString key = viewingAlbum.trimmed().toLower() + " - " + artistKey(viewingAlbumArtist);
+        const AlbumInfo &album = allAlbums[key];
+        currentViewSongs = album.libraryIndices;
+        viewingAlbumArtist = album.artist;
+        viewingAlbumCoverPath = album.coverPath;
         std::sort(
             currentViewSongs.begin(),
             currentViewSongs.end(),
@@ -1433,11 +1419,9 @@ void MainWindow::editCurrentSong(int visibleIndex)
     );
 }
 
-QVector<AlbumInfo> MainWindow::buildAlbumList() const
+QHash<QString, AlbumInfo> MainWindow::buildAlbumList() const
 {
-    // key: (albumTitle.toLower(), artistKey) -> index into result
-    QHash<QPair<QString, QString>, int> indexMap;
-    QVector<AlbumInfo> result;
+    QHash<QString, AlbumInfo> result;
 
     for (int libraryIndex = 0; libraryIndex < library.size(); ++libraryIndex) {
         const SongData &song = library[libraryIndex];
@@ -1445,52 +1429,26 @@ QVector<AlbumInfo> MainWindow::buildAlbumList() const
         if (song.album.isEmpty())
             continue;
 
-        QString albumKey = song.album.trimmed().toLower();
-        QString artKey = artistKey(song.artist);
-        auto key = qMakePair(albumKey, artKey);
-
-        auto it = indexMap.find(key);
-
-        if (it == indexMap.end()) {
+        QString albumArtist = song.album.trimmed().toLower() + " - " + artistKey(song.artist);
+        if(result.contains(albumArtist)){
+            AlbumInfo &info = result[albumArtist];
+            info.libraryIndices.append(libraryIndex);
+            info.songCount += 1;
+            if (song.artist.length() < info.artist.length())
+                info.artist = song.artist;
+            if (info.coverPath.isEmpty() && !song.coverPath.isEmpty())
+                info.coverPath = song.coverPath;
+        }
+        else{
             AlbumInfo info;
             info.title = song.album;
             info.artist = song.artist;
             info.coverPath = song.coverPath;
             info.libraryIndices.append(libraryIndex);
             info.songCount = 1;
-
-            indexMap.insert(key, result.size());
-            result.append(info);
-        } else {
-            AlbumInfo &album = result[it.value()];
-
-            album.libraryIndices.append(libraryIndex);
-            album.songCount = album.libraryIndices.size();
-
-            // Prefer shorter display name.
-            if (song.artist.length() < album.artist.length())
-                album.artist = song.artist;
-
-            // Preserve your old behavior of taking the first non-empty cover.
-            if (album.coverPath.isEmpty() && !song.coverPath.isEmpty())
-                album.coverPath = song.coverPath;
+            result[albumArtist] = info;
         }
     }
-
-    for (AlbumInfo &album : result)
-        album.songCount = album.libraryIndices.size();
-
-    std::sort(
-        result.begin(),
-        result.end(),
-        [](const AlbumInfo &a, const AlbumInfo &b) {
-            return QString::compare(
-                a.title,
-                b.title,
-                Qt::CaseInsensitive
-            ) < 0;
-        }
-    );
 
     return result;
 }
@@ -1543,24 +1501,13 @@ void MainWindow::loadAlbumView(QString albumName,
     currentViewSongs.clear();
 
     // AlbumInfo already contains the library indices.
-    for (const AlbumInfo &album : allAlbums) {
-        if (album.title.compare(albumName, Qt::CaseInsensitive) != 0)
-            continue;
+    QString key = albumName.trimmed().toLower() + " - " + artistKey(artist);
+    const AlbumInfo &album = allAlbums[key];
+    currentViewSongs = album.libraryIndices;
+    viewingAlbumArtist = album.artist;
+    viewingAlbumCoverPath = album.coverPath;
 
-        if (artistKey(album.artist) != artistKey(artist))
-            continue;
-
-        currentViewSongs = album.libraryIndices;
-
-        // Use the canonical album metadata.
-        viewingAlbumArtist = album.artist;
-        viewingAlbumCoverPath = album.coverPath;
-
-        break;
-    }
-
-    // AlbumInfo stores library indices, but the album should still
-    // be displayed in track-number order.
+    // AlbumInfo stores library indices, but they are not sorted by trackNumber
     std::sort(
         currentViewSongs.begin(),
         currentViewSongs.end(),
