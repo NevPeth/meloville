@@ -311,6 +311,7 @@ void MainWindow::saveLibrary()
         obj["coverPath"] = song.coverPath;
         obj["duration"] = song.duration;
         obj["trackNumber"] = song.trackNumber;
+        obj["year"] = song.year;
         arr.append(obj);
     }
 
@@ -367,6 +368,7 @@ void MainWindow::loadLibrary()
         s.coverPath = obj["coverPath"].toString();
         s.duration = obj["duration"].toInt();
         s.trackNumber = obj["trackNumber"].toInt();
+        s.year = obj["year"].toInt();
         library.append(s);
     }
 
@@ -1077,6 +1079,7 @@ void MainWindow::saveSongEdits(
     const QString& artist,
     const QString& album,
     int trackNumber,
+    int year,
     const QString& imagePath
 )
 {
@@ -1096,14 +1099,21 @@ void MainWindow::saveSongEdits(
     }
 
     // Save metadata
-    MetadataReader::saveTagsToFile(songFilePath, title, artist, album, trackNumber, selectedImagePath);
+    MetadataReader::saveTagsToFile(songFilePath, title, artist, album, trackNumber, year, selectedImagePath);
 
     // Construct the finalized SongData.
     SongData newSong = oldSong;
     newSong.title = title;
     newSong.artist = artist;
     newSong.album = album;
-    newSong.trackNumber = trackNumber;
+    if(trackNumber != 0)
+        newSong.trackNumber = trackNumber;
+    else
+        newSong.trackNumber = oldSong.trackNumber;
+    if(year != 0)
+        newSong.year = year;
+    else
+        newSong.year = oldSong.year;
     newSong.coverPath = selectedImagePath;
 
     const bool titleChanged = oldSong.title != title;
@@ -1198,8 +1208,7 @@ void MainWindow::saveSongEdits(
             currentViewSongs.begin(),
             currentViewSongs.end(),
             [this](int a, int b) {
-                return library[a].trackNumber <
-                       library[b].trackNumber;
+                return library[a].trackNumber < library[b].trackNumber;
             }
         );
 
@@ -1415,7 +1424,8 @@ void MainWindow::editCurrentSong(int visibleIndex)
         song.title,
         song.artist,
         song.album,
-        song.trackNumber
+        song.trackNumber,
+        song.year
     );
 }
 

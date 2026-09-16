@@ -2081,10 +2081,10 @@ ApplicationWindow {
             Connections {
                 target: backend
                 function onEditSongRequested(libraryIndex, filePath, coverPath,
-                                            title, artist, album, trackNumber) {
+                                            title, artist, album, trackNumber, year) {
                     editSongDialog.openEdit(
                         libraryIndex, filePath, coverPath,
-                        title, artist, album, trackNumber
+                        title, artist, album, trackNumber, year
                     )
                     editSongDialog.visible = true
                 }
