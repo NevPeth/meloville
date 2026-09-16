@@ -999,10 +999,13 @@ void MainWindow::returnToLibrary(){
     emit viewingPlaylistChanged();
     isInPlaylistView = false;
     emit isInPlaylistViewChanged();
+    isInArtistView = false;
+    viewingArtist = QString();
     filterText.clear();
     emit dragReorderAllowedChanged();
 
     isInAlbumsGridView = false;
+    viewingAlbum = QString();
     leaveAlbumView();
     emit albumViewStateChanged();
 
@@ -1447,6 +1450,17 @@ QHash<QString, AlbumInfo> MainWindow::buildAlbumList() const
         }
     }
 
+    // Sorts each album's songs by track number
+    for (AlbumInfo &info : result) {
+        std::sort(
+            info.libraryIndices.begin(),
+            info.libraryIndices.end(),
+            [this](int a, int b) {
+                return library[a].trackNumber < library[b].trackNumber;
+            }
+        );
+    }
+
     return result;
 }
 
@@ -1474,6 +1488,47 @@ void MainWindow::leaveAlbumView()
 }
 
 void MainWindow::loadAlbumView(QString albumName,
+                               QString artist,
+                               QString coverPath)
+{
+    if (isInPlaylistView) {
+        isInPlaylistView = false;
+        viewingPlaylist.clear();
+        emit viewingPlaylistChanged();
+        emit isInPlaylistViewChanged();
+    }
+
+    isInAlbumsGridView = false;
+
+    viewingAlbum = albumName;
+    viewingAlbumArtist = artist;
+    viewingAlbumCoverPath = coverPath;
+    isInAlbumView = true;
+
+    filterText.clear();
+    emit dragReorderAllowedChanged();
+    emit albumViewStateChanged();
+
+    currentViewSongs.clear();
+
+    // AlbumInfo already contains the library indices.
+    QString key = albumName.trimmed().toLower() + " - " + artistKey(artist);
+    const AlbumInfo &album = allAlbums[key];
+    currentViewSongs = album.libraryIndices;
+    viewingAlbumArtist = album.artist;
+    viewingAlbumCoverPath = album.coverPath;
+
+    visibleSongs = currentViewSongs;
+
+    songModel->setSongs(
+        &library,
+        &visibleSongs
+    );
+
+    rebuildShufflePool();
+}
+
+void MainWindow::loadArtistView(QString albumName,
                                QString artist,
                                QString coverPath)
 {
