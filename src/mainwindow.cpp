@@ -274,6 +274,8 @@ void MainWindow::onScanFinished(const QVector<SongData>& songs, const QString& f
     allAlbums = buildAlbumList();
     albumModel->setAlbums(allAlbums);
 
+    artistDiscography = buildArtistList();
+
     // Switch UI state
     scanning = false;
     emit scanningChanged();
@@ -458,6 +460,8 @@ void MainWindow::loadLibrary()
 
     allAlbums = buildAlbumList();
     albumModel->setAlbums(allAlbums);
+
+    artistDiscography = buildArtistList();
 
     if (addedAny || removedAny || addedLyrics) {
         saveLibrary();
@@ -1193,6 +1197,8 @@ void MainWindow::saveSongEdits(
     allAlbums = buildAlbumList();
     albumModel->setAlbums(allAlbums);
 
+    artistDiscography = buildArtistList();
+
     if (wasCurrentSong)
         emit currentSongChanged();
 
@@ -1350,8 +1356,6 @@ void MainWindow::reorderPlaylist(int from, int to)
 
     if (currentLibraryIndex >= 0)
         currentPlaybackIndex = libraryIndexToPlaybackPos.value(currentLibraryIndex, -1);
-
-    rebuildShufflePool();
 }
 
 void MainWindow::editPlaylist(
@@ -1448,6 +1452,9 @@ QHash<QString, AlbumInfo> MainWindow::buildAlbumList() const
                 info.artist = song.artist;
             if (info.coverPath.isEmpty() && !song.coverPath.isEmpty())
                 info.coverPath = song.coverPath;
+            if (info.releaseYear < song.year){
+                info.releaseYear = song.year;
+            }
         }
         else{
             AlbumInfo info;
@@ -1456,6 +1463,7 @@ QHash<QString, AlbumInfo> MainWindow::buildAlbumList() const
             info.coverPath = song.coverPath;
             info.libraryIndices.append(libraryIndex);
             info.songCount = 1;
+            info.releaseYear = song.year;
             result[albumArtist] = info;
         }
     }
@@ -1467,6 +1475,33 @@ QHash<QString, AlbumInfo> MainWindow::buildAlbumList() const
             info.libraryIndices.end(),
             [this](int a, int b) {
                 return library[a].trackNumber < library[b].trackNumber;
+            }
+        );
+    }
+
+    return result;
+}
+
+QHash<QString, QVector<AlbumInfo>> MainWindow::buildArtistList() const {
+    QHash<QString, QVector<AlbumInfo>> result;
+    for(const AlbumInfo &info : allAlbums){
+        if(result.contains(info.artist)){
+            result[info.artist].append(info);
+        }
+        else{
+            QVector<AlbumInfo> list;
+            list.append(info);
+            result[info.artist] = list;
+        }
+    }
+
+    // Sort each artist's albums by release year
+    for (QVector<AlbumInfo> &albums : result) {
+        std::sort(
+            albums.begin(),
+            albums.end(),
+            [](const AlbumInfo &a, const AlbumInfo &b) {
+                return a.releaseYear < b.releaseYear;
             }
         );
     }
@@ -1534,13 +1569,9 @@ void MainWindow::loadAlbumView(QString albumName,
         &library,
         &visibleSongs
     );
-
-    rebuildShufflePool();
 }
 
-void MainWindow::loadArtistView(QString albumName,
-                               QString artist,
-                               QString coverPath)
+void MainWindow::loadArtistView(QString artistName)
 {
     if (isInPlaylistView) {
         isInPlaylistView = false;
@@ -1551,41 +1582,12 @@ void MainWindow::loadArtistView(QString albumName,
 
     isInAlbumsGridView = false;
 
-    viewingAlbum = albumName;
-    viewingAlbumArtist = artist;
-    viewingAlbumCoverPath = coverPath;
-    isInAlbumView = true;
+    viewingArtist = artistName;
 
     filterText.clear();
-    emit dragReorderAllowedChanged();
     emit albumViewStateChanged();
 
     currentViewSongs.clear();
-
-    // AlbumInfo already contains the library indices.
-    QString key = albumName.trimmed().toLower() + " - " + artistKey(artist);
-    const AlbumInfo &album = allAlbums[key];
-    currentViewSongs = album.libraryIndices;
-    viewingAlbumArtist = album.artist;
-    viewingAlbumCoverPath = album.coverPath;
-
-    // AlbumInfo stores library indices, but they are not sorted by trackNumber
-    std::sort(
-        currentViewSongs.begin(),
-        currentViewSongs.end(),
-        [this](int a, int b) {
-            return library[a].trackNumber < library[b].trackNumber;
-        }
-    );
-
-    visibleSongs = currentViewSongs;
-
-    songModel->setSongs(
-        &library,
-        &visibleSongs
-    );
-
-    rebuildShufflePool();
 }
 
 void MainWindow::returnFromAlbumToGrid(){
@@ -1689,6 +1691,8 @@ void MainWindow::selectMusicFolder()
 
         allAlbums = buildAlbumList();
         albumModel->setAlbums(allAlbums);
+
+        artistDiscography = buildArtistList();
 
         scanning = false;
         emit scanningChanged();
