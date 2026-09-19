@@ -149,11 +149,11 @@ public:
     }
     QString getCurrentSongTitle() const {
         if (currentLibraryIndex < 0 || currentLibraryIndex >= library.size()) return QString();
-        return library[currentLibraryIndex].title.toHtmlEscaped();
+        return library[currentLibraryIndex].title;
     }
     QString getCurrentSongArtist() const {
         if (currentLibraryIndex < 0 || currentLibraryIndex >= library.size()) return QString();
-        return library[currentLibraryIndex].artist.toHtmlEscaped();
+        return library[currentLibraryIndex].artist;
     }
     QString getCurrentSongCoverPath() const {
         if (currentLibraryIndex < 0 || currentLibraryIndex >= library.size()) return QString();
