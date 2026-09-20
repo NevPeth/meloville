@@ -733,16 +733,26 @@ void MainWindow::playSongAtVisibleIndex(int visibleIndex)
         currentlyPlayingAlbum.clear();
         currentlyPlayingAlbumArtist.clear();
         currentlyPlayingAlbumCoverPath.clear();
+        currentlyPlayingArtist.clear();
     } else if (isInAlbumView) {
         currentlyPlayingAlbum = viewingAlbum;
         currentlyPlayingAlbumArtist  = viewingAlbumArtist;
         currentlyPlayingAlbumCoverPath = viewingAlbumCoverPath;
         currentlyPlayingPlaylist.clear();
+        currentlyPlayingArtist.clear();
+    } else if (isInArtistView) {
+        currentlyPlayingArtist = viewingArtist;
+        currentlyPlayingAlbum.clear();
+        currentlyPlayingAlbumArtist.clear();
+        currentlyPlayingAlbumCoverPath.clear();
+        currentlyPlayingPlaylist.clear();
     } else {
+        // Clear all previous strings so nothing gets accidently messed up
         currentlyPlayingPlaylist.clear();
         currentlyPlayingAlbum.clear();
         currentlyPlayingAlbumArtist.clear();
         currentlyPlayingAlbumCoverPath.clear();
+        currentlyPlayingArtist.clear();
     }
     
     while (!playHistory.isEmpty())
@@ -977,6 +987,8 @@ void MainWindow::loadPlaylistView(const QString& playlistName)
     isInAlbumsGridView = false;
     leaveAlbumView();
     emit albumViewStateChanged();
+
+    isInArtistView = false;
     
     filterText.clear();
     emit dragReorderAllowedChanged();
@@ -1328,6 +1340,8 @@ void MainWindow::jumpToCurrentSong()
         loadPlaylistView(currentlyPlayingPlaylist);
     else if(!currentlyPlayingAlbum.isEmpty())
         loadAlbumView(currentlyPlayingAlbum, currentlyPlayingAlbumArtist, currentlyPlayingAlbumCoverPath);
+    else if(!currentlyPlayingArtist.isEmpty())
+        loadArtistView(currentlyPlayingArtist);
     else
         returnToLibrary();
 
@@ -1580,14 +1594,29 @@ void MainWindow::loadArtistView(QString artistName)
         emit isInPlaylistViewChanged();
     }
 
+    viewingAlbum = QString();
+    viewingAlbumArtist = QString();
+    viewingAlbumCoverPath = QString();
+    isInAlbumView = false;
+
     isInAlbumsGridView = false;
 
     viewingArtist = artistName;
+    isInArtistView = true;
 
     filterText.clear();
+    emit dragReorderAllowedChanged();
     emit albumViewStateChanged();
 
     currentViewSongs.clear();
+    QVector<AlbumInfo> artistAlbums = artistDiscography[artistName];
+    for(const AlbumInfo& info : artistAlbums){
+        QVector<int> indices = info.libraryIndices;
+        for(int i : indices)
+            currentViewSongs.push_back(i);
+    }
+    visibleSongs = currentViewSongs;
+    songModel->setSongs(&library, &visibleSongs);
 }
 
 void MainWindow::returnFromAlbumToGrid(){

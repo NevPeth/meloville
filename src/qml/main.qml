@@ -529,6 +529,18 @@ ApplicationWindow {
                                 color: "#b3b3b3"
                                 font.pixelSize: Math.round(12 * delegateScale)
                                 elide: Text.ElideRight
+                                font.underline: artistMouseArea1.containsMouse
+
+                                MouseArea {
+                                    id: artistMouseArea1
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        listViewSongs.contentY = 0
+                                        backend.loadArtistView(model.artist)
+                                    }
+                                }
                             }
                         }
 
@@ -557,6 +569,18 @@ ApplicationWindow {
                                 font.pixelSize: Math.round(12 * delegateScale)
                                 elide: Text.ElideRight
                                 width: parent.width - parent.children[0].width - parent.children[1].implicitWidth
+                                font.underline: artistMouseArea2.containsMouse
+
+                                MouseArea {
+                                    id: artistMouseArea2
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        listViewSongs.contentY = 0
+                                        backend.loadArtistView(model.artist)
+                                    }
+                                }
                             }
                         }
 
