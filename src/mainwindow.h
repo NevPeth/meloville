@@ -112,7 +112,7 @@ public:
     Q_INVOKABLE void editCurrentSong(int visibleIndex);
     Q_INVOKABLE void goToAlbums();
     Q_INVOKABLE void loadAlbumView(QString albumName, QString artist, QString coverPath);
-    Q_INVOKABLE void loadArtistView(QString artist);
+    Q_INVOKABLE void loadArtistView(QString rawArtistName);
     Q_INVOKABLE void returnFromAlbumToGrid();
     Q_INVOKABLE QRect loadWindowGeometry() const;
     Q_INVOKABLE void  saveSessionAndWindow(int x, int y, int w, int h);

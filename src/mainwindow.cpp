@@ -1080,13 +1080,27 @@ void MainWindow::addToPlaylist(int visibleIndex, const QString& playlistName)
 static QString artistKey(const QString &artist)
 {
     QString low = artist.trimmed().toLower();
-    // Walk until we hit a non-letter that isn't part of the name itself
-    for (int i = 0; i < low.length(); ++i) {
-        if (!low[i].isLetter()) {
-            return low.left(i).trimmed();
-        }
+
+    // Delimiters to split on (word-boundary checked for "and")
+    // We'll find the earliest occurrence of any delimiter
+    int splitPos = low.length();
+
+    // Single-character delimiters
+    for (QChar delim : {',', ';', '('}) {
+        int pos = low.indexOf(delim);
+        if (pos != -1 && pos < splitPos)
+            splitPos = pos;
     }
-    return low;
+
+    // Multi-character / word delimiters
+    const QStringList wordDelims = { "feat", " and ", " & " };
+    for (const QString &delim : wordDelims) {
+        int pos = low.indexOf(delim);
+        if (pos != -1 && pos < splitPos)
+            splitPos = pos;
+    }
+
+    return low.left(splitPos).trimmed();
 }
 
 void MainWindow::saveSongEdits(
@@ -1499,13 +1513,14 @@ QHash<QString, AlbumInfo> MainWindow::buildAlbumList() const
 QHash<QString, QVector<AlbumInfo>> MainWindow::buildArtistList() const {
     QHash<QString, QVector<AlbumInfo>> result;
     for(const AlbumInfo &info : allAlbums){
-        if(result.contains(info.artist)){
-            result[info.artist].append(info);
+        QString artistIdentifier = artistKey(info.artist);
+        if(result.contains(artistIdentifier)){
+            result[artistIdentifier].append(info);
         }
         else{
             QVector<AlbumInfo> list;
             list.append(info);
-            result[info.artist] = list;
+            result[artistIdentifier] = list;
         }
     }
 
@@ -1515,7 +1530,7 @@ QHash<QString, QVector<AlbumInfo>> MainWindow::buildArtistList() const {
             albums.begin(),
             albums.end(),
             [](const AlbumInfo &a, const AlbumInfo &b) {
-                return a.releaseYear < b.releaseYear;
+                return a.releaseYear > b.releaseYear;
             }
         );
     }
@@ -1585,8 +1600,9 @@ void MainWindow::loadAlbumView(QString albumName,
     );
 }
 
-void MainWindow::loadArtistView(QString artistName)
+void MainWindow::loadArtistView(QString rawArtistName)
 {
+    QString artistName = artistKey(rawArtistName);
     if (isInPlaylistView) {
         isInPlaylistView = false;
         viewingPlaylist.clear();

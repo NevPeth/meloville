@@ -524,7 +524,7 @@ ApplicationWindow {
                                 elide: Text.ElideRight
                             }
                             Text {
-                                width: parent.width
+                                width: Math.min(implicitWidth, parent.width)
                                 text: model.artist
                                 color: "#b3b3b3"
                                 font.pixelSize: Math.round(12 * delegateScale)
