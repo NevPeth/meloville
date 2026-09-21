@@ -509,6 +509,7 @@ void MainWindow::saveSessionState()
     settings.setValue("session/currentlyPlayingAlbum", currentlyPlayingAlbum);
     settings.setValue("session/currentlyPlayingAlbumArtist", currentlyPlayingAlbumArtist);
     settings.setValue("session/currentlyPlayingAlbumCoverPath", currentlyPlayingAlbumCoverPath);
+    settings.setValue("session/currentlyPlayingArtist", currentlyPlayingArtist);
 
     //Settings
     settings.setValue("ui/delegateHeight", delegateHeight);
@@ -613,6 +614,7 @@ void MainWindow::loadSessionState()
     currentlyPlayingAlbum = settings.value("session/currentlyPlayingAlbum", QString()).toString();
     currentlyPlayingAlbumArtist = settings.value("session/currentlyPlayingAlbumArtist", QString()).toString();
     currentlyPlayingAlbumCoverPath = settings.value("session/currentlyPlayingAlbumCoverPath", QString()).toString();
+    currentlyPlayingArtist = settings.value("session/currentlyPlayingArtist", QString()).toString();
 
     auto restoreList = [&](const QString &key) -> QVector<int> {
         QVector<int> result;
