@@ -535,7 +535,6 @@ ApplicationWindow {
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
                                     onClicked: {
-                                        listViewSongs.contentY = 0
                                         backend.loadArtistView(model.artist)
                                     }
                                 }

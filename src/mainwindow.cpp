@@ -1584,6 +1584,13 @@ void MainWindow::loadAlbumView(QString albumName,
 void MainWindow::loadArtistView(QString rawArtistName)
 {
     QString artistName = artistKey(rawArtistName);
+    viewingArtist = rawArtistName;
+    isInArtistView = true;
+    qDebug() << rawArtistName << " " << artistName;
+    if (!artistDiscography.contains(artistName)) {
+        qDebug() << "Artist Not Found";
+        return;
+    }
     QVector<AlbumInfo> artistAlbums = artistDiscography[artistName];
     viewingArtistCoverPath = artistAlbums[0].coverPath;
     if (isInPlaylistView) {
@@ -1598,8 +1605,7 @@ void MainWindow::loadArtistView(QString rawArtistName)
 
     isInAlbumsGridView = false;
 
-    viewingArtist = artistName;
-    isInArtistView = true;
+    
 
     filterText.clear();
     emit dragReorderAllowedChanged();
