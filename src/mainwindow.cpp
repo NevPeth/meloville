@@ -1453,8 +1453,18 @@ QHash<QString, AlbumInfo> MainWindow::buildAlbumList() const
     for (int libraryIndex = 0; libraryIndex < library.size(); ++libraryIndex) {
         const SongData &song = library[libraryIndex];
 
-        if (song.album.isEmpty())
+        if (song.album.isEmpty()){
+            QString albumArtist = song.title.trimmed().toLower() + " - " + artistKey(song.artist);
+            AlbumInfo info;
+            info.title = song.title;
+            info.artist = song.artist;
+            info.coverPath = song.coverPath;
+            info.libraryIndices.append(libraryIndex);
+            info.songCount = 1;
+            info.releaseYear = song.year;
+            result[albumArtist] = info;
             continue;
+        }
 
         QString albumArtist = song.album.trimmed().toLower() + " - " + artistKey(song.artist);
         if(result.contains(albumArtist)){
@@ -1584,8 +1594,6 @@ void MainWindow::loadAlbumView(QString albumName,
 void MainWindow::loadArtistView(QString rawArtistName)
 {
     QString artistName = artistKey(rawArtistName);
-    viewingArtist = rawArtistName;
-    isInArtistView = true;
     qDebug() << rawArtistName << " " << artistName;
     if (!artistDiscography.contains(artistName)) {
         qDebug() << "Artist Not Found";
@@ -1604,8 +1612,8 @@ void MainWindow::loadArtistView(QString rawArtistName)
     isInAlbumView = false;
 
     isInAlbumsGridView = false;
-
-    
+    viewingArtist = rawArtistName;
+    isInArtistView = true;
 
     filterText.clear();
     emit dragReorderAllowedChanged();
