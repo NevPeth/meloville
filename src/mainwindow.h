@@ -65,7 +65,8 @@ class MainWindow : public QObject
     Q_PROPERTY(QObject* albumModel READ getAlbumModel CONSTANT)
 
     Q_PROPERTY(bool isInArtistView READ getIsInArtistView NOTIFY viewStateChanged)
-    Q_PROPERTY(QString currentlyPlayingArtistCoverPath READ getCurrentlyPlayingArtistCoverPath NOTIFY viewStateChanged)
+    Q_PROPERTY(QString viewingArtist READ getViewingArtist NOTIFY viewStateChanged)
+    Q_PROPERTY(QString viewingArtistCoverPath READ getViewingArtistCoverPath NOTIFY viewStateChanged)
 
     // Settings
     Q_PROPERTY(QString currentMusicFolder READ getMusicFolder NOTIFY musicFolderChanged)
@@ -190,7 +191,8 @@ public:
     QString getViewingAlbumCover() const { return viewingAlbumCoverPath; }
     QObject* getAlbumModel() const { return albumModel; }
     bool getIsInArtistView() const { return isInArtistView; }
-    QString getCurrentlyPlayingArtistCoverPath() const { return currentlyPlayingArtistCoverPath; }
+    QString getViewingArtist() const { return viewingArtist; }
+    QString getViewingArtistCoverPath() const { return viewingArtistCoverPath; }
     // Values retrieved in settings
     QString getMusicFolder() const { return currentMusicFolder; }
     qreal getDelegateHeight() const { return delegateHeight; }

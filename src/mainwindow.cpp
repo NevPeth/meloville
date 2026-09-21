@@ -1584,6 +1584,8 @@ void MainWindow::loadAlbumView(QString albumName,
 void MainWindow::loadArtistView(QString rawArtistName)
 {
     QString artistName = artistKey(rawArtistName);
+    QVector<AlbumInfo> artistAlbums = artistDiscography[artistName];
+    viewingArtistCoverPath = artistAlbums[0].coverPath;
     if (isInPlaylistView) {
         isInPlaylistView = false;
         viewingPlaylist.clear();
@@ -1604,8 +1606,7 @@ void MainWindow::loadArtistView(QString rawArtistName)
     emit viewStateChanged();
 
     currentViewSongs.clear();
-    QVector<AlbumInfo> artistAlbums = artistDiscography[artistName];
-    viewingArtistCoverPath = artistAlbums[0].coverPath;
+    
     for(const AlbumInfo& info : artistAlbums){
         QVector<int> indices = info.libraryIndices;
         for(int i : indices)

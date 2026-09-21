@@ -826,7 +826,7 @@ ApplicationWindow {
                             Layout.preferredHeight: 50
                             Layout.minimumHeight: 50
                             Layout.maximumHeight: 50
-                            visible: !backend.isInPlaylistView && !backend.isInAlbumView
+                            visible: !backend.isInPlaylistView && !backend.isInAlbumView && !backend.isInArtistView
                             color: "transparent"
 
                             DragHandler {
@@ -893,7 +893,7 @@ ApplicationWindow {
                             id: stickyBar
 
                             // Only relevant when in playlist view
-                            visible: (backend.isInPlaylistView || backend.isInAlbumView)
+                            visible: (backend.isInPlaylistView || backend.isInAlbumView || backend.isInArtistView)
 
                             parent: mainPageRoot
                             x: frameSidebar.width
@@ -914,7 +914,13 @@ ApplicationWindow {
                                 spacing: 12
 
                                 Text {
-                                    text: backend.isInPlaylistView ? backend.viewingPlaylist : backend.viewingAlbumName
+                                    text: {
+                                        if(backend.isInPlaylistView)
+                                            return backend.viewingPlaylist;
+                                        if(backend.isInAlbumView)
+                                            return backend.viewingAlbumName;
+                                        return backend.viewingArtist;
+                                    }
                                     color: "white"
                                     font.pixelSize: 16
                                     font.bold: true
@@ -946,7 +952,13 @@ ApplicationWindow {
                                         Text {
                                             anchors.fill: parent
                                             verticalAlignment: Text.AlignVCenter
-                                            text: backend.isInPlaylistView ?"Search playlist..." : "Search albums..."
+                                            text: {
+                                                if(backend.isInPlaylistView)
+                                                    return "Search playlist..."
+                                                if(backend.isInAlbumView)
+                                                    return "Search albums..."
+                                                return "Search discography..."
+                                            }
                                             color: "#666666"
                                             font.pixelSize: 13
                                             visible: stickySearchField.text.length === 0 && !stickySearchField.activeFocus
@@ -1044,7 +1056,7 @@ ApplicationWindow {
                             // This is the "hero" or "playlistInfo" so to speak when in playlist or album view
                             // Made it it called "hero" since there's no good specific name as it displays
                             // both playlist and album info
-                            header: (backend.isInPlaylistView || backend.isInAlbumView) ? heroComponent : null
+                            header: (backend.isInPlaylistView || backend.isInAlbumView || backend.isInArtistView) ? heroComponent : null
 
                             Component {
                                 id: heroComponent
@@ -1063,14 +1075,30 @@ ApplicationWindow {
                                     // Resolve cover/title/subtitle from whichever context is active
                                     readonly property bool inPlaylist: backend.isInPlaylistView
                                     readonly property string heroCoverSource: {
+                                        var cover = "";
                                         if (inPlaylist)
-                                            return backend.viewingPlaylistCover ? "file://" + backend.viewingPlaylistCover : "qrc:/icons/default.svg"
-                                        var cover = backend.viewingAlbumCover
+                                            cover = backend.viewingPlaylistCover
+                                        else if(backend.isInAlbumView)
+                                            cover = backend.viewingAlbumCover
+                                        else
+                                            cover = backend.viewingArtistCoverPath
                                         return cover ? "file://" + cover : "qrc:/icons/default.svg"
                                     }
-                                    readonly property string heroLabel:     inPlaylist ? "Playlist" : "Album"
-                                    readonly property string heroTitle:     inPlaylist ? backend.viewingPlaylist : backend.viewingAlbumName
-                                    readonly property string heroSubtitle:  inPlaylist ? "" : backend.viewingAlbumArtist
+                                    readonly property string heroLabel: {
+                                        if(inPlaylist)
+                                            return "Playlist"
+                                        if(backend.isInAlbumView)
+                                            return "Album"
+                                        return "Artist"
+                                    }
+                                    readonly property string heroTitle: {
+                                        if(inPlaylist)
+                                            return backend.viewingPlaylist
+                                        if(backend.isInAlbumView)
+                                            return backend.viewingAlbumName
+                                        return backend.viewingArtist
+                                    }
+                                    readonly property string heroSubtitle: (inPlaylist || backend.isInArtistView) ? "" : backend.viewingAlbumArtist
                                     property bool coverHovered: false
                                     property bool coverLocked: false
 
