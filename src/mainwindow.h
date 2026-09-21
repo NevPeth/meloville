@@ -48,20 +48,24 @@ class MainWindow : public QObject
     Q_PROPERTY(int volume READ getVolume WRITE setVolume NOTIFY volumeChanged)
     Q_PROPERTY(bool playing READ getPlaying NOTIFY playingChanged)
     
-    Q_PROPERTY(QString viewingPlaylist READ getViewingPlaylist NOTIFY viewingPlaylistChanged)
+    Q_PROPERTY(QString viewingPlaylist READ getViewingPlaylist NOTIFY viewStateChanged)
+    Q_PROPERTY(QString viewingPlaylistCover READ getViewingPlaylistCover NOTIFY viewStateChanged)
     Q_PROPERTY(PlaylistManager* playlistManager READ getPlaylistManager CONSTANT)
     Q_PROPERTY(PlaylistModel* playlistModel READ getPlaylistModel CONSTANT)
-    Q_PROPERTY(QStringList playlistNames READ getPlaylistNames NOTIFY playlistNamesChanged)
-    Q_PROPERTY(bool isInPlaylistView READ getIsInPlaylistView NOTIFY isInPlaylistViewChanged)
+    Q_PROPERTY(QStringList playlistNames READ getPlaylistNames NOTIFY viewStateChanged)
+    Q_PROPERTY(bool isInPlaylistView READ getIsInPlaylistView NOTIFY viewStateChanged)
     Q_PROPERTY(bool dragReorderAllowed READ getDragReorderAllowed NOTIFY dragReorderAllowedChanged)
     Q_PROPERTY(QString currentlyPlayingPlaylist READ getCurrentlyPlayingPlaylist NOTIFY currentlyPlayingPlaylistChanged)
 
-    Q_PROPERTY(bool isInAlbumsGridView READ getIsInAlbumsGridView NOTIFY albumViewStateChanged)
-    Q_PROPERTY(bool isInAlbumView READ getIsInAlbumView NOTIFY albumViewStateChanged)
-    Q_PROPERTY(QString viewingAlbumName READ getViewingAlbum NOTIFY albumViewStateChanged)
-    Q_PROPERTY(QString viewingAlbumArtist READ getViewingAlbumArtist NOTIFY albumViewStateChanged)
-    Q_PROPERTY(QString viewingAlbumCover READ getViewingAlbumCover NOTIFY albumViewStateChanged)
+    Q_PROPERTY(bool isInAlbumsGridView READ getIsInAlbumsGridView NOTIFY viewStateChanged)
+    Q_PROPERTY(bool isInAlbumView READ getIsInAlbumView NOTIFY viewStateChanged)
+    Q_PROPERTY(QString viewingAlbumName READ getViewingAlbum NOTIFY viewStateChanged)
+    Q_PROPERTY(QString viewingAlbumArtist READ getViewingAlbumArtist NOTIFY viewStateChanged)
+    Q_PROPERTY(QString viewingAlbumCover READ getViewingAlbumCover NOTIFY viewStateChanged)
     Q_PROPERTY(QObject* albumModel READ getAlbumModel CONSTANT)
+
+    Q_PROPERTY(bool isInArtistView READ getIsInArtistView NOTIFY viewStateChanged)
+    Q_PROPERTY(QString currentlyPlayingArtistCoverPath READ getCurrentlyPlayingArtistCoverPath NOTIFY viewStateChanged)
 
     // Settings
     Q_PROPERTY(QString currentMusicFolder READ getMusicFolder NOTIFY musicFolderChanged)
@@ -173,6 +177,7 @@ public:
     void setPlaying(bool p);
     // Playlist and Album Stuff
     QString getViewingPlaylist() const { return viewingPlaylist; }
+    QString getViewingPlaylistCover() const { return playlistManager->fullImagePath(viewingPlaylist); }
     PlaylistManager* getPlaylistManager() const { return playlistManager; }
     QStringList getPlaylistNames() const { return playlistNames; }
     QString getCurrentlyPlayingPlaylist() const { return currentlyPlayingPlaylist; }
@@ -184,6 +189,8 @@ public:
     QString getViewingAlbumArtist() const { return viewingAlbumArtist; }
     QString getViewingAlbumCover() const { return viewingAlbumCoverPath; }
     QObject* getAlbumModel() const { return albumModel; }
+    bool getIsInArtistView() const { return isInArtistView; }
+    QString getCurrentlyPlayingArtistCoverPath() const { return currentlyPlayingArtistCoverPath; }
     // Values retrieved in settings
     QString getMusicFolder() const { return currentMusicFolder; }
     qreal getDelegateHeight() const { return delegateHeight; }
@@ -220,7 +227,6 @@ private slots:
     void loadSessionState();
 
 signals:
-    void playlistChanged();
     void libraryLoaded();
     void progressChanged();
     void statusMessageChanged();
@@ -235,9 +241,6 @@ signals:
     void shuffleModeChanged();
     void volumeChanged(int vol);
     void playingChanged(bool playing);
-    void viewingPlaylistChanged();
-    void playlistNamesChanged();
-    void isInPlaylistViewChanged();
     void currentlyPlayingPlaylistChanged();
     void openContextMenuRequested(int visibleIndex, int x, int y, const QString& title, const QString& artist);
     void jumpToSongIndex(int visibleIndex);
@@ -245,7 +248,7 @@ signals:
     void editSongRequested(int libraryIndex,const QString& filePath,const QString& coverPath,
                         const QString& title,const QString& artist,const QString& album, int trackNumber, int year);
     void songCoverUpdated(int libraryIndex, const QString& newCoverPath);
-    void albumViewStateChanged();
+    void viewStateChanged();
     void returnedToLibrary();
     void sessionRestored(qint64 position);
     // Listen Along
@@ -317,7 +320,9 @@ private:
     QHash<QString, AlbumInfo> allAlbums;
 
     QString currentlyPlayingArtist;
+    QString currentlyPlayingArtistCoverPath;
     QString viewingArtist;
+    QString viewingArtistCoverPath;
     bool isInArtistView = false;
     // All artist songs sorted, grouped by albums
     QHash<QString, QVector<AlbumInfo>> artistDiscography;

@@ -726,33 +726,24 @@ void MainWindow::playSongAtVisibleIndex(int visibleIndex)
     // clears other idenitfying info from memory
     // and replaces it with the current info needed for the
     // saveSongEdits and jumpToCurrent song to work correctly
+    currentlyPlayingPlaylist.clear();
+    currentlyPlayingAlbum.clear();
+    currentlyPlayingAlbumArtist.clear();
+    currentlyPlayingAlbumCoverPath.clear();
+    currentlyPlayingArtist.clear();
+    currentlyPlayingArtistCoverPath.clear();
+    
     if (isInPlaylistView) { 
         currentlyPlayingPlaylist = viewingPlaylist;
         if (playlistRenewal)
             playlistManager->changePlaylistToTop(viewingPlaylist);
-        currentlyPlayingAlbum.clear();
-        currentlyPlayingAlbumArtist.clear();
-        currentlyPlayingAlbumCoverPath.clear();
-        currentlyPlayingArtist.clear();
     } else if (isInAlbumView) {
         currentlyPlayingAlbum = viewingAlbum;
         currentlyPlayingAlbumArtist  = viewingAlbumArtist;
         currentlyPlayingAlbumCoverPath = viewingAlbumCoverPath;
-        currentlyPlayingPlaylist.clear();
-        currentlyPlayingArtist.clear();
     } else if (isInArtistView) {
         currentlyPlayingArtist = viewingArtist;
-        currentlyPlayingAlbum.clear();
-        currentlyPlayingAlbumArtist.clear();
-        currentlyPlayingAlbumCoverPath.clear();
-        currentlyPlayingPlaylist.clear();
-    } else {
-        // Clear all previous strings so nothing gets accidently messed up
-        currentlyPlayingPlaylist.clear();
-        currentlyPlayingAlbum.clear();
-        currentlyPlayingAlbumArtist.clear();
-        currentlyPlayingAlbumCoverPath.clear();
-        currentlyPlayingArtist.clear();
+        currentlyPlayingArtistCoverPath = viewingArtistCoverPath;
     }
     
     while (!playHistory.isEmpty())
@@ -981,12 +972,10 @@ void MainWindow::loadPlaylistView(const QString& playlistName)
 {
     isInPlaylistView = true;
     viewingPlaylist = playlistName;
-    emit viewingPlaylistChanged();
-    emit isInPlaylistViewChanged();
 
     isInAlbumsGridView = false;
     leaveAlbumView();
-    emit albumViewStateChanged();
+    emit viewStateChanged();
 
     isInArtistView = false;
     
@@ -1014,9 +1003,7 @@ void MainWindow::loadPlaylistView(const QString& playlistName)
 void MainWindow::returnToLibrary(){
     currentViewSongs.clear();
     viewingPlaylist = QString();
-    emit viewingPlaylistChanged();
     isInPlaylistView = false;
-    emit isInPlaylistViewChanged();
     isInArtistView = false;
     viewingArtist = QString();
     filterText.clear();
@@ -1025,7 +1012,7 @@ void MainWindow::returnToLibrary(){
     isInAlbumsGridView = false;
     viewingAlbum = QString();
     leaveAlbumView();
-    emit albumViewStateChanged();
+    emit viewStateChanged();
 
     for (int i = 0; i < library.size(); i++){
         currentViewSongs.push_back(i);
@@ -1262,7 +1249,7 @@ void MainWindow::saveSongEdits(
             rebuildShufflePool();
         }
 
-        emit albumViewStateChanged();
+        emit viewStateChanged();
     }
     else if (isInAlbumsGridView) {
         filterSongsAndAlbums(filterText);
@@ -1342,7 +1329,7 @@ void MainWindow::removeFromCurrentPlaylist(int visibleIndex)
 void MainWindow::updatePlaylistNames()
 {
     playlistNames = playlistManager->playlistNames();
-    emit playlistNamesChanged();
+    emit viewStateChanged();
 }
 
 void MainWindow::jumpToCurrentSong()
@@ -1418,12 +1405,10 @@ void MainWindow::editPlaylist(
         loadPlaylistView(newName);
     } else {
         viewingPlaylist = newName;
-        emit viewingPlaylistChanged();
     }
 
     updatePlaylistNames();
-    emit playlistChanged();
-    emit isInPlaylistViewChanged();
+    emit viewStateChanged();
 }
 
 void MainWindow::deletePlaylist(const QString& playlistName)
@@ -1434,7 +1419,7 @@ void MainWindow::deletePlaylist(const QString& playlistName)
         returnToLibrary();
     } else {
         updatePlaylistNames();
-        emit viewingPlaylistChanged();
+        emit viewStateChanged();
     }
 }
 
@@ -1541,15 +1526,13 @@ QHash<QString, QVector<AlbumInfo>> MainWindow::buildArtistList() const {
 void MainWindow::goToAlbums(){
     currentViewSongs.clear();
     viewingPlaylist = QString();
-    emit viewingPlaylistChanged();
     isInPlaylistView = false;
-    emit isInPlaylistViewChanged();
     filterText.clear();
     emit dragReorderAllowedChanged();
 
     leaveAlbumView();
     isInAlbumsGridView = true;
-    emit albumViewStateChanged();
+    emit viewStateChanged();
 }
 
 void MainWindow::leaveAlbumView()
@@ -1558,7 +1541,7 @@ void MainWindow::leaveAlbumView()
     viewingAlbum.clear();
     viewingAlbumArtist.clear();
     viewingAlbumCoverPath.clear();
-    emit albumViewStateChanged();
+    emit viewStateChanged();
 }
 
 void MainWindow::loadAlbumView(QString albumName,
@@ -1568,8 +1551,6 @@ void MainWindow::loadAlbumView(QString albumName,
     if (isInPlaylistView) {
         isInPlaylistView = false;
         viewingPlaylist.clear();
-        emit viewingPlaylistChanged();
-        emit isInPlaylistViewChanged();
     }
 
     isInAlbumsGridView = false;
@@ -1581,7 +1562,7 @@ void MainWindow::loadAlbumView(QString albumName,
 
     filterText.clear();
     emit dragReorderAllowedChanged();
-    emit albumViewStateChanged();
+    emit viewStateChanged();
 
     currentViewSongs.clear();
 
@@ -1606,8 +1587,6 @@ void MainWindow::loadArtistView(QString rawArtistName)
     if (isInPlaylistView) {
         isInPlaylistView = false;
         viewingPlaylist.clear();
-        emit viewingPlaylistChanged();
-        emit isInPlaylistViewChanged();
     }
 
     viewingAlbum = QString();
@@ -1622,10 +1601,11 @@ void MainWindow::loadArtistView(QString rawArtistName)
 
     filterText.clear();
     emit dragReorderAllowedChanged();
-    emit albumViewStateChanged();
+    emit viewStateChanged();
 
     currentViewSongs.clear();
     QVector<AlbumInfo> artistAlbums = artistDiscography[artistName];
+    viewingArtistCoverPath = artistAlbums[0].coverPath;
     for(const AlbumInfo& info : artistAlbums){
         QVector<int> indices = info.libraryIndices;
         for(int i : indices)

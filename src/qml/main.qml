@@ -297,8 +297,6 @@ ApplicationWindow {
             onExitBigPicture: stackView.pop()
         }
     }
-    property string currentPlaylistName: ""
-    property string currentPlaylistCover: ""
     property string heroSharedSearchText: ""
     property real delegateHeight: backend.delegateHeight
     property real delegateScale: delegateHeight / 62
@@ -916,7 +914,7 @@ ApplicationWindow {
                                 spacing: 12
 
                                 Text {
-                                    text: backend.isInPlaylistView ? currentPlaylistName : backend.viewingAlbumName
+                                    text: backend.isInPlaylistView ? backend.viewingPlaylist : backend.viewingAlbumName
                                     color: "white"
                                     font.pixelSize: 16
                                     font.bold: true
@@ -1066,12 +1064,12 @@ ApplicationWindow {
                                     readonly property bool inPlaylist: backend.isInPlaylistView
                                     readonly property string heroCoverSource: {
                                         if (inPlaylist)
-                                            return currentPlaylistCover ? "file://" + currentPlaylistCover : "qrc:/icons/default.svg"
+                                            return backend.viewingPlaylistCover ? "file://" + backend.viewingPlaylistCover : "qrc:/icons/default.svg"
                                         var cover = backend.viewingAlbumCover
                                         return cover ? "file://" + cover : "qrc:/icons/default.svg"
                                     }
                                     readonly property string heroLabel:     inPlaylist ? "Playlist" : "Album"
-                                    readonly property string heroTitle:     inPlaylist ? currentPlaylistName : backend.viewingAlbumName
+                                    readonly property string heroTitle:     inPlaylist ? backend.viewingPlaylist : backend.viewingAlbumName
                                     readonly property string heroSubtitle:  inPlaylist ? "" : backend.viewingAlbumArtist
                                     property bool coverHovered: false
                                     property bool coverLocked: false
@@ -1149,7 +1147,7 @@ ApplicationWindow {
                                             onClicked: {
                                                 if (collectionHero.inPlaylist) {
                                                     heroCover.coverLocked = true
-                                                    playlistDialog.openEdit(currentPlaylistName, currentPlaylistCover)
+                                                    playlistDialog.openEdit(backend.viewingPlaylist, backend.viewingPlaylistCover)
                                                 }
                                             }
                                         }
@@ -1183,7 +1181,7 @@ ApplicationWindow {
                                                 cursorShape: Qt.PointingHandCursor
                                                 onClicked: {
                                                     if (collectionHero.inPlaylist)
-                                                        playlistDialog.openEdit(currentPlaylistName, currentPlaylistCover)
+                                                        playlistDialog.openEdit(backend.viewingPlaylist, backend.viewingPlaylistCover)
                                                 }
                                             }
                                         }
@@ -2074,30 +2072,6 @@ ApplicationWindow {
                                 ]
                             }
                         }
-                    }
-                }
-            }
-
-            Connections {
-                target: backend
-                function onPlaylistNamesChanged() {
-                    if (backend.playlistManager) {
-                        currentPlaylistCover = backend.playlistManager.fullImagePath(backend.viewingPlaylist)
-                    } else {
-                        currentPlaylistCover = ""
-                    }
-                }
-            }
-
-            Connections {
-                target: backend
-                function onIsInPlaylistViewChanged() {
-                    currentPlaylistName = backend.viewingPlaylist
-                    heroSharedSearchText = ""
-                    if (backend.playlistManager) {
-                        currentPlaylistCover = backend.playlistManager.fullImagePath(backend.viewingPlaylist)
-                    } else {
-                        currentPlaylistCover = ""
                     }
                 }
             }
