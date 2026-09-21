@@ -1112,7 +1112,7 @@ ApplicationWindow {
                                         layer.effect: OpacityMask {
                                             maskSource: Rectangle {
                                                 width: heroCover.width; height: heroCover.height
-                                                radius: 8
+                                                radius: backend.isInArtistView ? heroCover.width/2 : 8
                                             }
                                         }
 
@@ -1258,9 +1258,13 @@ ApplicationWindow {
                                                 anchors.fill: parent
                                                 verticalAlignment: Text.AlignVCenter
 
-                                                text: backend.isInPlaylistView
-                                                    ? "Search playlist..."
-                                                    : "Search albums..."
+                                                text: {
+                                                    if(backend.isInPlaylistView)
+                                                        return "Search playlist..."
+                                                    if(backend.isInAlbumView)
+                                                        return "Search albums..."
+                                                    return "Search discography..."
+                                                }
 
                                                 color: "#666666"
                                                 font.pixelSize: 13
