@@ -1596,7 +1596,6 @@ void MainWindow::loadAlbumView(QString albumName,
 void MainWindow::loadArtistView(QString rawArtistName)
 {
     QString artistName = artistKey(rawArtistName);
-    qDebug() << rawArtistName << " " << artistName;
     if (!artistDiscography.contains(artistName)) {
         qDebug() << "Artist Not Found";
         return;
@@ -1619,17 +1618,20 @@ void MainWindow::loadArtistView(QString rawArtistName)
 
     filterText.clear();
     emit dragReorderAllowedChanged();
-    emit viewStateChanged();
 
     currentViewSongs.clear();
     
     for(const AlbumInfo& info : artistAlbums){
+        if(info.artist.length() < viewingArtist.length()){
+            viewingArtist = info.artist;
+        }
         QVector<int> indices = info.libraryIndices;
         for(int i : indices)
             currentViewSongs.push_back(i);
     }
     visibleSongs = currentViewSongs;
     songModel->setSongs(&library, &visibleSongs);
+    emit viewStateChanged();
 }
 
 void MainWindow::returnFromAlbumToGrid(){
