@@ -565,7 +565,7 @@ ApplicationWindow {
                                 color: "#b3b3b3"
                                 font.pixelSize: Math.round(12 * delegateScale)
                                 elide: Text.ElideRight
-                                width: parent.width - parent.children[0].width - parent.children[1].implicitWidth
+                                width: Math.min(implicitWidth, parent.width)
                                 font.underline: artistMouseArea2.containsMouse
 
                                 MouseArea {
@@ -574,7 +574,6 @@ ApplicationWindow {
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
                                     onClicked: {
-                                        listViewSongs.contentY = 0
                                         backend.loadArtistView(model.artist)
                                     }
                                 }
@@ -1195,7 +1194,7 @@ ApplicationWindow {
                                             font.letterSpacing: 1.5
                                         }
                                         Text {
-                                            width: parent.width
+                                            width: Math.min(implicitWidth, parent.width)
                                             text: collectionHero.heroTitle
                                             color: "white"
                                             font.pixelSize: 28
