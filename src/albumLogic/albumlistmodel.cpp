@@ -5,12 +5,10 @@ AlbumListModel::AlbumListModel(QObject *parent)
 {
 }
 
-void AlbumListModel::setAlbums(const QHash<QString, AlbumInfo> &albums)
+void AlbumListModel::setAlbums(const QVector<AlbumInfo> &albums)
 {
     m_source.clear();
-    for (auto it = albums.begin(); it != albums.end(); ++it){
-        m_source.append(it.value());
-    }
+    m_source = albums;
     std::sort(m_source.begin(), m_source.end(), [](const AlbumInfo &a, const AlbumInfo &b) {
         return QString::compare(a.title, b.title, Qt::CaseInsensitive) < 0;
     });

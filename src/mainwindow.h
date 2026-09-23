@@ -221,7 +221,7 @@ private slots:
     void rebuildShufflePool();
     void rebuildPlaybackMap();
     void updatePlaylistNames();
-    QHash<QString, AlbumInfo> buildAlbumList() const;
+    QVector<AlbumInfo> buildAlbumList();
     QHash<QString, QVector<AlbumInfo>> buildArtistList() const;
     void leaveAlbumView();
     void saveWindowGeometry(int x, int y, int w, int h);
@@ -319,7 +319,8 @@ private:
     bool isInAlbumsGridView = false;
     bool isInAlbumView = false;
     AlbumListModel *albumModel = nullptr;
-    QHash<QString, AlbumInfo> allAlbums;
+    QVector<AlbumInfo> allAlbums;
+    QHash<QString, int> albumsHash;
 
     QString currentlyPlayingArtist;
     QString currentlyPlayingArtistCoverPath;
