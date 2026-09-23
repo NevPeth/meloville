@@ -1577,6 +1577,7 @@ void MainWindow::loadAlbumView(QString albumName,
     viewingAlbumArtist = artist;
     viewingAlbumCoverPath = coverPath;
     isInAlbumView = true;
+    isInArtistView = false;
 
     filterText.clear();
     emit dragReorderAllowedChanged();
