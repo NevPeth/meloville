@@ -977,9 +977,9 @@ void MainWindow::loadPlaylistView(const QString& playlistName)
 
     isInAlbumsGridView = false;
     leaveAlbumView();
-    emit viewStateChanged();
 
     isInArtistView = false;
+    emit viewStateChanged();
     
     filterText.clear();
     emit dragReorderAllowedChanged();

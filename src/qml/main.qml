@@ -1213,13 +1213,24 @@ ApplicationWindow {
                                         }
                                         // Artist subtitle — only shown for albums
                                         Text {
-                                            width: parent.width
+                                            width: Math.min(implicitWidth, parent.width)
                                             text: collectionHero.heroSubtitle
                                             color: "#b3b3b3"
                                             font.pixelSize: 15
                                             font.weight: Font.DemiBold
                                             visible: collectionHero.heroSubtitle !== ""
                                             elide: Text.ElideRight
+                                            font.underline: artistMouseArea3.containsMouse
+
+                                            MouseArea {
+                                                id: artistMouseArea3
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: {
+                                                    backend.loadArtistView(collectionHero.heroSubtitle)
+                                                }
+                                            }
                                         }
                                     }
                                     Rectangle {
@@ -1590,6 +1601,17 @@ ApplicationWindow {
                                             color: "#b3b3b3"
                                             font.pixelSize: 11
                                             wrapMode: Text.NoWrap
+                                            font.underline: artistMouseArea4.containsMouse
+
+                                            MouseArea {
+                                                id: artistMouseArea4
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: {
+                                                    backend.loadArtistView(artistText.text)
+                                                }
+                                            }
 
                                             property bool overflows: contentWidth > artistClip.width
                                             property real loopUnit: contentWidth + artistClip.loopGap
@@ -1611,7 +1633,6 @@ ApplicationWindow {
                                                 x: artistText.loopUnit
                                                 text: artistText.text
                                                 color: artistText.color
-                                                font: artistText.font
                                                 wrapMode: Text.NoWrap
                                                 visible: artistText.overflows
                                             }
