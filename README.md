@@ -40,7 +40,7 @@
 * A playlist and album system that is based on song titles and artists, not filenames, so even renaming files or switching them to different will keep your playlists and albums perfectly intact.
 * Smart album sorting where even if a song has "Artist feat Other Artist" it will still correctly be sorted into the album from "Artist"
     * <small>May seem obvious but for songs that have the same album name, differentiating them is something often mislooked from other applications, especially if you don't have a database to check against</small>
-* Songs are sorted by artists, in album order.
+* When clicking on an artists' name, their discography is sorted in album order.
 * Synced Lyrics Support
     * <small>Only works with .lrc files and must be the same name as music file. Just have the .lrc be somewhere in the music folder and it will automatically find it on relaunch.</small>
 * Making auto-generated covers for playlists based on top four song covers
