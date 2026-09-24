@@ -20,6 +20,10 @@
 
 <img width="2880" height="1800" alt="albums" src="https://github.com/user-attachments/assets/8c8c441c-a79a-4db4-9e49-53b95e94cfd9" />
 
+### Artist View
+
+<img width="2880" height="1800" alt="Screenshot From 2026-09-24 07-52-30" src="https://github.com/user-attachments/assets/0aa69bc5-19d0-4487-af18-97bd5f72b40a" />
+
 ## Features
 
 * Native Linux support
