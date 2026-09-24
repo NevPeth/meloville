@@ -274,6 +274,8 @@ void MainWindow::onScanFinished(const QVector<SongData>& songs, const QString& f
     allAlbums = buildAlbumList();
     albumModel->setAlbums(allAlbums);
 
+    artistDiscography = buildArtistList();
+
     // Switch UI state
     scanning = false;
     emit scanningChanged();
@@ -311,6 +313,7 @@ void MainWindow::saveLibrary()
         obj["coverPath"] = song.coverPath;
         obj["duration"] = song.duration;
         obj["trackNumber"] = song.trackNumber;
+        obj["year"] = song.year;
         arr.append(obj);
     }
 
@@ -367,6 +370,7 @@ void MainWindow::loadLibrary()
         s.coverPath = obj["coverPath"].toString();
         s.duration = obj["duration"].toInt();
         s.trackNumber = obj["trackNumber"].toInt();
+        s.year = obj["year"].toInt();
         library.append(s);
     }
 
@@ -457,6 +461,8 @@ void MainWindow::loadLibrary()
     allAlbums = buildAlbumList();
     albumModel->setAlbums(allAlbums);
 
+    artistDiscography = buildArtistList();
+
     if (addedAny || removedAny || addedLyrics) {
         saveLibrary();
     }
@@ -503,6 +509,7 @@ void MainWindow::saveSessionState()
     settings.setValue("session/currentlyPlayingAlbum", currentlyPlayingAlbum);
     settings.setValue("session/currentlyPlayingAlbumArtist", currentlyPlayingAlbumArtist);
     settings.setValue("session/currentlyPlayingAlbumCoverPath", currentlyPlayingAlbumCoverPath);
+    settings.setValue("session/currentlyPlayingArtist", currentlyPlayingArtist);
 
     //Settings
     settings.setValue("ui/delegateHeight", delegateHeight);
@@ -607,6 +614,7 @@ void MainWindow::loadSessionState()
     currentlyPlayingAlbum = settings.value("session/currentlyPlayingAlbum", QString()).toString();
     currentlyPlayingAlbumArtist = settings.value("session/currentlyPlayingAlbumArtist", QString()).toString();
     currentlyPlayingAlbumCoverPath = settings.value("session/currentlyPlayingAlbumCoverPath", QString()).toString();
+    currentlyPlayingArtist = settings.value("session/currentlyPlayingArtist", QString()).toString();
 
     auto restoreList = [&](const QString &key) -> QVector<int> {
         QVector<int> result;
@@ -720,23 +728,24 @@ void MainWindow::playSongAtVisibleIndex(int visibleIndex)
     // clears other idenitfying info from memory
     // and replaces it with the current info needed for the
     // saveSongEdits and jumpToCurrent song to work correctly
+    currentlyPlayingPlaylist.clear();
+    currentlyPlayingAlbum.clear();
+    currentlyPlayingAlbumArtist.clear();
+    currentlyPlayingAlbumCoverPath.clear();
+    currentlyPlayingArtist.clear();
+    currentlyPlayingArtistCoverPath.clear();
+    
     if (isInPlaylistView) { 
         currentlyPlayingPlaylist = viewingPlaylist;
         if (playlistRenewal)
             playlistManager->changePlaylistToTop(viewingPlaylist);
-        currentlyPlayingAlbum.clear();
-        currentlyPlayingAlbumArtist.clear();
-        currentlyPlayingAlbumCoverPath.clear();
     } else if (isInAlbumView) {
         currentlyPlayingAlbum = viewingAlbum;
         currentlyPlayingAlbumArtist  = viewingAlbumArtist;
         currentlyPlayingAlbumCoverPath = viewingAlbumCoverPath;
-        currentlyPlayingPlaylist.clear();
-    } else {
-        currentlyPlayingPlaylist.clear();
-        currentlyPlayingAlbum.clear();
-        currentlyPlayingAlbumArtist.clear();
-        currentlyPlayingAlbumCoverPath.clear();
+    } else if (isInArtistView) {
+        currentlyPlayingArtist = viewingArtist;
+        currentlyPlayingArtistCoverPath = viewingArtistCoverPath;
     }
     
     while (!playHistory.isEmpty())
@@ -928,7 +937,7 @@ void MainWindow::filterSongsAndAlbums(const QString& text)
             albumModel->setAlbums(allAlbums);
         } else {
             QVector<AlbumInfo> filtered;
-            for (const AlbumInfo& album : std::as_const(allAlbums)) {
+            for (const AlbumInfo& album : allAlbums) {
                 QString searchable = (album.title + " " + album.artist).toLower();
                 if (searchable.contains(search)) {
                     filtered.push_back(album);
@@ -965,12 +974,12 @@ void MainWindow::loadPlaylistView(const QString& playlistName)
 {
     isInPlaylistView = true;
     viewingPlaylist = playlistName;
-    emit viewingPlaylistChanged();
-    emit isInPlaylistViewChanged();
 
     isInAlbumsGridView = false;
     leaveAlbumView();
-    emit albumViewStateChanged();
+
+    isInArtistView = false;
+    emit viewStateChanged();
     
     filterText.clear();
     emit dragReorderAllowedChanged();
@@ -996,15 +1005,16 @@ void MainWindow::loadPlaylistView(const QString& playlistName)
 void MainWindow::returnToLibrary(){
     currentViewSongs.clear();
     viewingPlaylist = QString();
-    emit viewingPlaylistChanged();
     isInPlaylistView = false;
-    emit isInPlaylistViewChanged();
+    isInArtistView = false;
+    viewingArtist = QString();
     filterText.clear();
     emit dragReorderAllowedChanged();
 
     isInAlbumsGridView = false;
+    viewingAlbum = QString();
     leaveAlbumView();
-    emit albumViewStateChanged();
+    emit viewStateChanged();
 
     for (int i = 0; i < library.size(); i++){
         currentViewSongs.push_back(i);
@@ -1059,13 +1069,27 @@ void MainWindow::addToPlaylist(int visibleIndex, const QString& playlistName)
 static QString artistKey(const QString &artist)
 {
     QString low = artist.trimmed().toLower();
-    // Walk until we hit a non-letter that isn't part of the name itself
-    for (int i = 0; i < low.length(); ++i) {
-        if (!low[i].isLetter()) {
-            return low.left(i).trimmed();
-        }
+
+    // Delimiters to split on (word-boundary checked for "and")
+    // We'll find the earliest occurrence of any delimiter
+    int splitPos = low.length();
+
+    // Single-character delimiters
+    for (QChar delim : {',', ';', '('}) {
+        int pos = low.indexOf(delim);
+        if (pos != -1 && pos < splitPos)
+            splitPos = pos;
     }
-    return low;
+
+    // Multi-character / word delimiters
+    const QStringList wordDelims = { "feat", " and ", " & " };
+    for (const QString &delim : wordDelims) {
+        int pos = low.indexOf(delim);
+        if (pos != -1 && pos < splitPos)
+            splitPos = pos;
+    }
+
+    return low.left(splitPos).trimmed();
 }
 
 void MainWindow::saveSongEdits(
@@ -1074,6 +1098,7 @@ void MainWindow::saveSongEdits(
     const QString& artist,
     const QString& album,
     int trackNumber,
+    int year,
     const QString& imagePath
 )
 {
@@ -1093,14 +1118,21 @@ void MainWindow::saveSongEdits(
     }
 
     // Save metadata
-    MetadataReader::saveTagsToFile(songFilePath, title, artist, album, trackNumber, selectedImagePath);
+    MetadataReader::saveTagsToFile(songFilePath, title, artist, album, trackNumber, year, selectedImagePath);
 
     // Construct the finalized SongData.
     SongData newSong = oldSong;
     newSong.title = title;
     newSong.artist = artist;
     newSong.album = album;
-    newSong.trackNumber = trackNumber;
+    if(trackNumber != 0)
+        newSong.trackNumber = trackNumber;
+    else
+        newSong.trackNumber = oldSong.trackNumber;
+    if(year != 0)
+        newSong.year = year;
+    else
+        newSong.year = oldSong.year;
     newSong.coverPath = selectedImagePath;
 
     const bool titleChanged = oldSong.title != title;
@@ -1180,6 +1212,8 @@ void MainWindow::saveSongEdits(
     allAlbums = buildAlbumList();
     albumModel->setAlbums(allAlbums);
 
+    artistDiscography = buildArtistList();
+
     if (wasCurrentSong)
         emit currentSongChanged();
 
@@ -1187,7 +1221,7 @@ void MainWindow::saveSongEdits(
     if (isInAlbumView) {
         currentViewSongs.clear();
         QString key = viewingAlbum.trimmed().toLower() + " - " + artistKey(viewingAlbumArtist);
-        const AlbumInfo &album = allAlbums[key];
+        const AlbumInfo &album = allAlbums[albumsHash[key]];
         currentViewSongs = album.libraryIndices;
         viewingAlbumArtist = album.artist;
         viewingAlbumCoverPath = album.coverPath;
@@ -1195,8 +1229,7 @@ void MainWindow::saveSongEdits(
             currentViewSongs.begin(),
             currentViewSongs.end(),
             [this](int a, int b) {
-                return library[a].trackNumber <
-                       library[b].trackNumber;
+                return library[a].trackNumber < library[b].trackNumber;
             }
         );
 
@@ -1218,7 +1251,7 @@ void MainWindow::saveSongEdits(
             rebuildShufflePool();
         }
 
-        emit albumViewStateChanged();
+        emit viewStateChanged();
     }
     else if (isInAlbumsGridView) {
         filterSongsAndAlbums(filterText);
@@ -1298,7 +1331,7 @@ void MainWindow::removeFromCurrentPlaylist(int visibleIndex)
 void MainWindow::updatePlaylistNames()
 {
     playlistNames = playlistManager->playlistNames();
-    emit playlistNamesChanged();
+    emit viewStateChanged();
 }
 
 void MainWindow::jumpToCurrentSong()
@@ -1310,6 +1343,8 @@ void MainWindow::jumpToCurrentSong()
         loadPlaylistView(currentlyPlayingPlaylist);
     else if(!currentlyPlayingAlbum.isEmpty())
         loadAlbumView(currentlyPlayingAlbum, currentlyPlayingAlbumArtist, currentlyPlayingAlbumCoverPath);
+    else if(!currentlyPlayingArtist.isEmpty())
+        loadArtistView(currentlyPlayingArtist);
     else
         returnToLibrary();
 
@@ -1338,8 +1373,6 @@ void MainWindow::reorderPlaylist(int from, int to)
 
     if (currentLibraryIndex >= 0)
         currentPlaybackIndex = libraryIndexToPlaybackPos.value(currentLibraryIndex, -1);
-
-    rebuildShufflePool();
 }
 
 void MainWindow::editPlaylist(
@@ -1374,12 +1407,10 @@ void MainWindow::editPlaylist(
         loadPlaylistView(newName);
     } else {
         viewingPlaylist = newName;
-        emit viewingPlaylistChanged();
     }
 
     updatePlaylistNames();
-    emit playlistChanged();
-    emit isInPlaylistViewChanged();
+    emit viewStateChanged();
 }
 
 void MainWindow::deletePlaylist(const QString& playlistName)
@@ -1390,7 +1421,7 @@ void MainWindow::deletePlaylist(const QString& playlistName)
         returnToLibrary();
     } else {
         updatePlaylistNames();
-        emit viewingPlaylistChanged();
+        emit viewStateChanged();
     }
 }
 
@@ -1412,29 +1443,47 @@ void MainWindow::editCurrentSong(int visibleIndex)
         song.title,
         song.artist,
         song.album,
-        song.trackNumber
+        song.trackNumber,
+        song.year
     );
 }
 
-QHash<QString, AlbumInfo> MainWindow::buildAlbumList() const
+QVector<AlbumInfo> MainWindow::buildAlbumList()
 {
-    QHash<QString, AlbumInfo> result;
+    QVector<AlbumInfo> result;
+    albumsHash.clear();
+    int hashIndex = 0;
 
     for (int libraryIndex = 0; libraryIndex < library.size(); ++libraryIndex) {
         const SongData &song = library[libraryIndex];
 
-        if (song.album.isEmpty())
+        if (song.album.isEmpty()){
+            QString albumArtist = song.title.trimmed().toLower() + " - " + artistKey(song.artist);
+            AlbumInfo info;
+            info.title = song.title;
+            info.artist = song.artist;
+            info.coverPath = song.coverPath;
+            info.libraryIndices.append(libraryIndex);
+            info.songCount = 1;
+            info.releaseYear = song.year;
+            result.append(info);
+            albumsHash[albumArtist] = hashIndex;
+            hashIndex++;
             continue;
+        }
 
         QString albumArtist = song.album.trimmed().toLower() + " - " + artistKey(song.artist);
-        if(result.contains(albumArtist)){
-            AlbumInfo &info = result[albumArtist];
+        if(albumsHash.contains(albumArtist)){
+            AlbumInfo &info = result[albumsHash[albumArtist]];
             info.libraryIndices.append(libraryIndex);
             info.songCount += 1;
             if (song.artist.length() < info.artist.length())
                 info.artist = song.artist;
             if (info.coverPath.isEmpty() && !song.coverPath.isEmpty())
                 info.coverPath = song.coverPath;
+            if (info.releaseYear < song.year){
+                info.releaseYear = song.year;
+            }
         }
         else{
             AlbumInfo info;
@@ -1443,8 +1492,50 @@ QHash<QString, AlbumInfo> MainWindow::buildAlbumList() const
             info.coverPath = song.coverPath;
             info.libraryIndices.append(libraryIndex);
             info.songCount = 1;
-            result[albumArtist] = info;
+            info.releaseYear = song.year;
+            result.append(info);
+            albumsHash[albumArtist] = hashIndex;
+            hashIndex++;
         }
+    }
+
+    // Sorts each album's songs by track number
+    for (AlbumInfo &info : result) {
+        std::stable_sort(
+            info.libraryIndices.begin(),
+            info.libraryIndices.end(),
+            [this](int a, int b) {
+                return library[a].trackNumber < library[b].trackNumber;
+            }
+        );
+    }
+
+    return result;
+}
+
+QHash<QString, QVector<AlbumInfo>> MainWindow::buildArtistList() const {
+    QHash<QString, QVector<AlbumInfo>> result;
+    for(const AlbumInfo &info : allAlbums){
+        QString artistIdentifier = artistKey(info.artist);
+        if(result.contains(artistIdentifier)){
+            result[artistIdentifier].append(info);
+        }
+        else{
+            QVector<AlbumInfo> list;
+            list.append(info);
+            result[artistIdentifier] = list;
+        }
+    }
+
+    // Sort each artist's albums by release year
+    for (QVector<AlbumInfo> &albums : result) {
+        std::stable_sort(
+            albums.begin(),
+            albums.end(),
+            [](const AlbumInfo &a, const AlbumInfo &b) {
+                return a.releaseYear > b.releaseYear;
+            }
+        );
     }
 
     return result;
@@ -1453,15 +1544,13 @@ QHash<QString, AlbumInfo> MainWindow::buildAlbumList() const
 void MainWindow::goToAlbums(){
     currentViewSongs.clear();
     viewingPlaylist = QString();
-    emit viewingPlaylistChanged();
     isInPlaylistView = false;
-    emit isInPlaylistViewChanged();
     filterText.clear();
     emit dragReorderAllowedChanged();
 
     leaveAlbumView();
     isInAlbumsGridView = true;
-    emit albumViewStateChanged();
+    emit viewStateChanged();
 }
 
 void MainWindow::leaveAlbumView()
@@ -1470,7 +1559,7 @@ void MainWindow::leaveAlbumView()
     viewingAlbum.clear();
     viewingAlbumArtist.clear();
     viewingAlbumCoverPath.clear();
-    emit albumViewStateChanged();
+    emit viewStateChanged();
 }
 
 void MainWindow::loadAlbumView(QString albumName,
@@ -1480,8 +1569,6 @@ void MainWindow::loadAlbumView(QString albumName,
     if (isInPlaylistView) {
         isInPlaylistView = false;
         viewingPlaylist.clear();
-        emit viewingPlaylistChanged();
-        emit isInPlaylistViewChanged();
     }
 
     isInAlbumsGridView = false;
@@ -1490,28 +1577,20 @@ void MainWindow::loadAlbumView(QString albumName,
     viewingAlbumArtist = artist;
     viewingAlbumCoverPath = coverPath;
     isInAlbumView = true;
+    isInArtistView = false;
 
     filterText.clear();
     emit dragReorderAllowedChanged();
-    emit albumViewStateChanged();
+    emit viewStateChanged();
 
     currentViewSongs.clear();
 
     // AlbumInfo already contains the library indices.
     QString key = albumName.trimmed().toLower() + " - " + artistKey(artist);
-    const AlbumInfo &album = allAlbums[key];
+    const AlbumInfo &album = allAlbums[albumsHash[key]];
     currentViewSongs = album.libraryIndices;
     viewingAlbumArtist = album.artist;
     viewingAlbumCoverPath = album.coverPath;
-
-    // AlbumInfo stores library indices, but they are not sorted by trackNumber
-    std::sort(
-        currentViewSongs.begin(),
-        currentViewSongs.end(),
-        [this](int a, int b) {
-            return library[a].trackNumber < library[b].trackNumber;
-        }
-    );
 
     visibleSongs = currentViewSongs;
 
@@ -1519,8 +1598,47 @@ void MainWindow::loadAlbumView(QString albumName,
         &library,
         &visibleSongs
     );
+}
 
-    rebuildShufflePool();
+void MainWindow::loadArtistView(QString rawArtistName)
+{
+    QString artistName = artistKey(rawArtistName);
+    if (!artistDiscography.contains(artistName)) {
+        qDebug() << "Artist Not Found";
+        return;
+    }
+    QVector<AlbumInfo> artistAlbums = artistDiscography[artistName];
+    viewingArtistCoverPath = artistAlbums[0].coverPath;
+    if (isInPlaylistView) {
+        isInPlaylistView = false;
+        viewingPlaylist.clear();
+    }
+
+    viewingAlbum = QString();
+    viewingAlbumArtist = QString();
+    viewingAlbumCoverPath = QString();
+    isInAlbumView = false;
+
+    isInAlbumsGridView = false;
+    viewingArtist = rawArtistName;
+    isInArtistView = true;
+
+    filterText.clear();
+    emit dragReorderAllowedChanged();
+
+    currentViewSongs.clear();
+    
+    for(const AlbumInfo& info : artistAlbums){
+        if(info.artist.length() < viewingArtist.length()){
+            viewingArtist = info.artist;
+        }
+        QVector<int> indices = info.libraryIndices;
+        for(int i : indices)
+            currentViewSongs.push_back(i);
+    }
+    emit viewStateChanged();
+    visibleSongs = currentViewSongs;
+    songModel->setSongs(&library, &visibleSongs);
 }
 
 void MainWindow::returnFromAlbumToGrid(){
@@ -1624,6 +1742,8 @@ void MainWindow::selectMusicFolder()
 
         allAlbums = buildAlbumList();
         albumModel->setAlbums(allAlbums);
+
+        artistDiscography = buildArtistList();
 
         scanning = false;
         emit scanningChanged();

@@ -13,6 +13,7 @@ Item {
     property string editArtist: ""
     property string editAlbum: ""
     property int editTrackNumber: 0
+    property int editYear: 0
     property string editCoverPath: ""
 
     signal accepted()
@@ -28,7 +29,7 @@ Item {
         return path
     }
 
-    function openEdit(index, filePath, coverPath, title, artist, album, trackNumber) {
+    function openEdit(index, filePath, coverPath, title, artist, album, trackNumber, year) {
         libraryIndex = index
         songFilePath = filePath
         editCoverPath = coverPath
@@ -36,6 +37,7 @@ Item {
         editArtist = artist
         editAlbum = album
         editTrackNumber = trackNumber
+        editYear = year
         selectedImagePath = ""
         root.visible = true
     }
@@ -46,6 +48,7 @@ Item {
         artistInput.text = ""
         albumInput.text = ""
         trackInput.text = ""
+        yearInput.text = ""
         root.visible = false
     }
 
@@ -55,6 +58,7 @@ Item {
             artistInput.text = editArtist
             albumInput.text = editAlbum
             trackInput.text = editTrackNumber > 0 ? editTrackNumber.toString() : ""
+            yearInput.text = editYear > 0 ? editYear.toString() : ""
             selectedImagePath = ""
             titleInput.forceActiveFocus()
             titleInput.selectAll()
@@ -265,7 +269,32 @@ Item {
                 }
             }
 
-            Item { Layout.fillHeight: true } // spacer
+            // ── Row 3: Year Released ───────────────────────────────────
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 16
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 4
+
+                    Text {
+                        text: "Year Released"
+                        color: "white"
+                        font.pixelSize: 14
+                    }
+                    TextField {
+                        id: yearInput
+                        Layout.fillWidth: true
+                        placeholderText: "2006" //cause I was born in '06 baby
+                        color: "white"
+                        selectByMouse: true
+                        background: Rectangle { color: "#222222"; radius: 6 }
+                    }
+                }
+            }
+
+            Item { Layout.fillHeight: true }
 
             // ── Action buttons ────────────────────────────────────────────────
             RowLayout {
@@ -281,11 +310,11 @@ Item {
                         radius: 10
                     }
                     contentItem: Text {
-                        text:                "Cancel"
-                        color:               "white"
-                        font.bold:           true
+                        text: "Cancel"
+                        color: "white"
+                        font.bold: true
                         horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment:   Text.AlignVCenter
+                        verticalAlignment: Text.AlignVCenter
                     }
                     onClicked: {
                         root.rejected()
@@ -303,11 +332,11 @@ Item {
                         radius: 10
                     }
                     contentItem: Text {
-                        text:                saveButton.text
-                        color:               "black"
-                        font.bold:           true
+                        text: saveButton.text
+                        color: "black"
+                        font.bold: true
                         horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment:   Text.AlignVCenter
+                        verticalAlignment: Text.AlignVCenter
                     }
                     onClicked: {
                         if (titleInput.text.trim() === "") return
@@ -333,6 +362,7 @@ Item {
                             artistInput.text.trim(),
                             albumInput.text.trim(),
                             parseInt(trackInput.text) || 0,
+                            parseInt(yearInput.text) || 0,
                             cleanImagePath
                         )
 

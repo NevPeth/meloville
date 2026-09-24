@@ -34,6 +34,7 @@ public:
         const QString& artist,
         const QString& album,
         int trackNumber,
+        int year,
         const QString& cachedImagePath
     );
 

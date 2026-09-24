@@ -52,6 +52,7 @@ SongData MetadataReader::readSong(const QString& filePath)
                 );
 
             song.trackNumber = static_cast<int>(file.tag()->track());
+            song.year = static_cast<int>(file.tag()->year());
         }
         if (file.audioProperties()) {
             song.duration = file.audioProperties()->lengthInSeconds();
@@ -339,6 +340,7 @@ QString MetadataReader::saveTagsToFile(
     const QString& artist,
     const QString& album,
     int trackNumber,
+    int year,
     const QString& cachedImagePath)
 {
     if (filePath.isEmpty())
@@ -367,10 +369,11 @@ QString MetadataReader::saveTagsToFile(
         if (!f.isValid()) return {};
 
         auto* tag = f.ID3v2Tag(true); // create if missing
-        tag->setTitle (TagLib::String(title.toUtf8().constData(),  TagLib::String::UTF8));
+        tag->setTitle(TagLib::String(title.toUtf8().constData(),  TagLib::String::UTF8));
         tag->setArtist(TagLib::String(artist.toUtf8().constData(), TagLib::String::UTF8));
-        tag->setAlbum (TagLib::String(album.toUtf8().constData(),  TagLib::String::UTF8));
-        tag->setTrack (trackNumber);
+        tag->setAlbum(TagLib::String(album.toUtf8().constData(),  TagLib::String::UTF8));
+        tag->setTrack(trackNumber);
+        tag->setYear(year);
 
         if (!imageData.isEmpty())
         {
@@ -400,6 +403,7 @@ QString MetadataReader::saveTagsToFile(
         xiphTag->setArtist(TagLib::String(artist.toUtf8().constData(), TagLib::String::UTF8));
         xiphTag->setAlbum (TagLib::String(album.toUtf8().constData(),  TagLib::String::UTF8));
         xiphTag->setTrack (trackNumber);
+        xiphTag->setYear (year);
 
         if (!imageData.isEmpty())
         {
@@ -428,6 +432,7 @@ QString MetadataReader::saveTagsToFile(
         tag->setArtist(TagLib::String(artist.toUtf8().constData(), TagLib::String::UTF8));
         tag->setAlbum (TagLib::String(album.toUtf8().constData(),  TagLib::String::UTF8));
         tag->setTrack (trackNumber);
+        tag->setYear (year);
 
         if (!imageData.isEmpty())
         {
@@ -462,6 +467,7 @@ QString MetadataReader::saveTagsToFile(
         tag->setArtist(TagLib::String(artist.toUtf8().constData(), TagLib::String::UTF8));
         tag->setAlbum (TagLib::String(album.toUtf8().constData(),  TagLib::String::UTF8));
         tag->setTrack (trackNumber);
+        tag->setYear (year);
 
         if (!imageData.isEmpty())
         {

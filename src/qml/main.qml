@@ -297,8 +297,6 @@ ApplicationWindow {
             onExitBigPicture: stackView.pop()
         }
     }
-    property string currentPlaylistName: ""
-    property string currentPlaylistCover: ""
     property string heroSharedSearchText: ""
     property real delegateHeight: backend.delegateHeight
     property real delegateScale: delegateHeight / 62
@@ -524,11 +522,22 @@ ApplicationWindow {
                                 elide: Text.ElideRight
                             }
                             Text {
-                                width: parent.width
+                                width: Math.min(implicitWidth, parent.width)
                                 text: model.artist
                                 color: "#b3b3b3"
                                 font.pixelSize: Math.round(12 * delegateScale)
                                 elide: Text.ElideRight
+                                font.underline: artistMouseArea1.containsMouse
+
+                                MouseArea {
+                                    id: artistMouseArea1
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        backend.loadArtistView(model.artist)
+                                    }
+                                }
                             }
                         }
 
@@ -556,7 +565,18 @@ ApplicationWindow {
                                 color: "#b3b3b3"
                                 font.pixelSize: Math.round(12 * delegateScale)
                                 elide: Text.ElideRight
-                                width: parent.width - parent.children[0].width - parent.children[1].implicitWidth
+                                width: Math.min(implicitWidth, parent.width)
+                                font.underline: artistMouseArea2.containsMouse
+
+                                MouseArea {
+                                    id: artistMouseArea2
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        backend.loadArtistView(model.artist)
+                                    }
+                                }
                             }
                         }
 
@@ -804,7 +824,7 @@ ApplicationWindow {
                             Layout.preferredHeight: 50
                             Layout.minimumHeight: 50
                             Layout.maximumHeight: 50
-                            visible: !backend.isInPlaylistView && !backend.isInAlbumView
+                            visible: !backend.isInPlaylistView && !backend.isInAlbumView && !backend.isInArtistView
                             color: "transparent"
 
                             DragHandler {
@@ -871,7 +891,7 @@ ApplicationWindow {
                             id: stickyBar
 
                             // Only relevant when in playlist view
-                            visible: (backend.isInPlaylistView || backend.isInAlbumView)
+                            visible: (backend.isInPlaylistView || backend.isInAlbumView || backend.isInArtistView)
 
                             parent: mainPageRoot
                             x: frameSidebar.width
@@ -892,7 +912,13 @@ ApplicationWindow {
                                 spacing: 12
 
                                 Text {
-                                    text: backend.isInPlaylistView ? currentPlaylistName : backend.viewingAlbumName
+                                    text: {
+                                        if(backend.isInPlaylistView)
+                                            return backend.viewingPlaylist;
+                                        if(backend.isInAlbumView)
+                                            return backend.viewingAlbumName;
+                                        return backend.viewingArtist;
+                                    }
                                     color: "white"
                                     font.pixelSize: 16
                                     font.bold: true
@@ -924,7 +950,13 @@ ApplicationWindow {
                                         Text {
                                             anchors.fill: parent
                                             verticalAlignment: Text.AlignVCenter
-                                            text: backend.isInPlaylistView ?"Search playlist..." : "Search albums..."
+                                            text: {
+                                                if(backend.isInPlaylistView)
+                                                    return "Search playlist..."
+                                                if(backend.isInAlbumView)
+                                                    return "Search albums..."
+                                                return "Search discography..."
+                                            }
                                             color: "#666666"
                                             font.pixelSize: 13
                                             visible: stickySearchField.text.length === 0 && !stickySearchField.activeFocus
@@ -1022,7 +1054,7 @@ ApplicationWindow {
                             // This is the "hero" or "playlistInfo" so to speak when in playlist or album view
                             // Made it it called "hero" since there's no good specific name as it displays
                             // both playlist and album info
-                            header: (backend.isInPlaylistView || backend.isInAlbumView) ? heroComponent : null
+                            header: (backend.isInPlaylistView || backend.isInAlbumView || backend.isInArtistView) ? heroComponent : null
 
                             Component {
                                 id: heroComponent
@@ -1041,14 +1073,30 @@ ApplicationWindow {
                                     // Resolve cover/title/subtitle from whichever context is active
                                     readonly property bool inPlaylist: backend.isInPlaylistView
                                     readonly property string heroCoverSource: {
+                                        var cover = "";
                                         if (inPlaylist)
-                                            return currentPlaylistCover ? "file://" + currentPlaylistCover : "qrc:/icons/default.svg"
-                                        var cover = backend.viewingAlbumCover
+                                            cover = backend.viewingPlaylistCover
+                                        else if(backend.isInAlbumView)
+                                            cover = backend.viewingAlbumCover
+                                        else
+                                            cover = backend.viewingArtistCoverPath
                                         return cover ? "file://" + cover : "qrc:/icons/default.svg"
                                     }
-                                    readonly property string heroLabel:     inPlaylist ? "Playlist" : "Album"
-                                    readonly property string heroTitle:     inPlaylist ? currentPlaylistName : backend.viewingAlbumName
-                                    readonly property string heroSubtitle:  inPlaylist ? "" : backend.viewingAlbumArtist
+                                    readonly property string heroLabel: {
+                                        if(inPlaylist)
+                                            return "Playlist"
+                                        if(backend.isInAlbumView)
+                                            return "Album"
+                                        return "Artist"
+                                    }
+                                    readonly property string heroTitle: {
+                                        if(inPlaylist)
+                                            return backend.viewingPlaylist
+                                        if(backend.isInAlbumView)
+                                            return backend.viewingAlbumName
+                                        return backend.viewingArtist
+                                    }
+                                    readonly property string heroSubtitle: (inPlaylist || backend.isInArtistView) ? "" : backend.viewingAlbumArtist
                                     property bool coverHovered: false
                                     property bool coverLocked: false
 
@@ -1063,7 +1111,7 @@ ApplicationWindow {
                                         layer.effect: OpacityMask {
                                             maskSource: Rectangle {
                                                 width: heroCover.width; height: heroCover.height
-                                                radius: 8
+                                                radius: backend.isInArtistView ? heroCover.width/2 : 8
                                             }
                                         }
 
@@ -1125,7 +1173,7 @@ ApplicationWindow {
                                             onClicked: {
                                                 if (collectionHero.inPlaylist) {
                                                     heroCover.coverLocked = true
-                                                    playlistDialog.openEdit(currentPlaylistName, currentPlaylistCover)
+                                                    playlistDialog.openEdit(backend.viewingPlaylist, backend.viewingPlaylistCover)
                                                 }
                                             }
                                         }
@@ -1146,7 +1194,7 @@ ApplicationWindow {
                                             font.letterSpacing: 1.5
                                         }
                                         Text {
-                                            width: parent.width
+                                            width: Math.min(implicitWidth, parent.width)
                                             text: collectionHero.heroTitle
                                             color: "white"
                                             font.pixelSize: 28
@@ -1159,19 +1207,30 @@ ApplicationWindow {
                                                 cursorShape: Qt.PointingHandCursor
                                                 onClicked: {
                                                     if (collectionHero.inPlaylist)
-                                                        playlistDialog.openEdit(currentPlaylistName, currentPlaylistCover)
+                                                        playlistDialog.openEdit(backend.viewingPlaylist, backend.viewingPlaylistCover)
                                                 }
                                             }
                                         }
                                         // Artist subtitle — only shown for albums
                                         Text {
-                                            width: parent.width
+                                            width: Math.min(implicitWidth, parent.width)
                                             text: collectionHero.heroSubtitle
                                             color: "#b3b3b3"
                                             font.pixelSize: 15
                                             font.weight: Font.DemiBold
                                             visible: collectionHero.heroSubtitle !== ""
                                             elide: Text.ElideRight
+                                            font.underline: artistMouseArea3.containsMouse
+
+                                            MouseArea {
+                                                id: artistMouseArea3
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: {
+                                                    backend.loadArtistView(collectionHero.heroSubtitle)
+                                                }
+                                            }
                                         }
                                     }
                                     Rectangle {
@@ -1209,9 +1268,13 @@ ApplicationWindow {
                                                 anchors.fill: parent
                                                 verticalAlignment: Text.AlignVCenter
 
-                                                text: backend.isInPlaylistView
-                                                    ? "Search playlist..."
-                                                    : "Search albums..."
+                                                text: {
+                                                    if(backend.isInPlaylistView)
+                                                        return "Search playlist..."
+                                                    if(backend.isInAlbumView)
+                                                        return "Search albums..."
+                                                    return "Search discography..."
+                                                }
 
                                                 color: "#666666"
                                                 font.pixelSize: 13
@@ -1538,6 +1601,17 @@ ApplicationWindow {
                                             color: "#b3b3b3"
                                             font.pixelSize: 11
                                             wrapMode: Text.NoWrap
+                                            font.underline: artistMouseArea4.containsMouse
+
+                                            MouseArea {
+                                                id: artistMouseArea4
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: {
+                                                    backend.loadArtistView(artistText.text)
+                                                }
+                                            }
 
                                             property bool overflows: contentWidth > artistClip.width
                                             property real loopUnit: contentWidth + artistClip.loopGap
@@ -1559,7 +1633,6 @@ ApplicationWindow {
                                                 x: artistText.loopUnit
                                                 text: artistText.text
                                                 color: artistText.color
-                                                font: artistText.font
                                                 wrapMode: Text.NoWrap
                                                 visible: artistText.overflows
                                             }
@@ -2056,35 +2129,11 @@ ApplicationWindow {
 
             Connections {
                 target: backend
-                function onPlaylistNamesChanged() {
-                    if (backend.playlistManager) {
-                        currentPlaylistCover = backend.playlistManager.fullImagePath(backend.viewingPlaylist)
-                    } else {
-                        currentPlaylistCover = ""
-                    }
-                }
-            }
-
-            Connections {
-                target: backend
-                function onIsInPlaylistViewChanged() {
-                    currentPlaylistName = backend.viewingPlaylist
-                    heroSharedSearchText = ""
-                    if (backend.playlistManager) {
-                        currentPlaylistCover = backend.playlistManager.fullImagePath(backend.viewingPlaylist)
-                    } else {
-                        currentPlaylistCover = ""
-                    }
-                }
-            }
-
-            Connections {
-                target: backend
                 function onEditSongRequested(libraryIndex, filePath, coverPath,
-                                            title, artist, album, trackNumber) {
+                                            title, artist, album, trackNumber, year) {
                     editSongDialog.openEdit(
                         libraryIndex, filePath, coverPath,
-                        title, artist, album, trackNumber
+                        title, artist, album, trackNumber, year
                     )
                     editSongDialog.visible = true
                 }

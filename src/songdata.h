@@ -11,4 +11,5 @@ struct SongData {
     QString coverPath;
     int duration = 0;
     int trackNumber;
+    int year;
 };
