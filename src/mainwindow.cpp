@@ -1636,9 +1636,9 @@ void MainWindow::loadArtistView(QString rawArtistName)
         for(int i : indices)
             currentViewSongs.push_back(i);
     }
+    emit viewStateChanged();
     visibleSongs = currentViewSongs;
     songModel->setSongs(&library, &visibleSongs);
-    emit viewStateChanged();
 }
 
 void MainWindow::returnFromAlbumToGrid(){
