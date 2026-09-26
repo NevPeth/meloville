@@ -1225,17 +1225,10 @@ void MainWindow::saveSongEdits(
         currentViewSongs = album.libraryIndices;
         viewingAlbumArtist = album.artist;
         viewingAlbumCoverPath = album.coverPath;
-        std::sort(
-            currentViewSongs.begin(),
-            currentViewSongs.end(),
-            [this](int a, int b) {
-                return library[a].trackNumber < library[b].trackNumber;
-            }
-        );
 
         visibleSongs = currentViewSongs;
 
-        songModel->setSongs( &library, &visibleSongs);
+        songModel->setSongs(&library, &visibleSongs);
 
         // Only change playback ordering when playback is coming from
         // this album rather than a playlist.
