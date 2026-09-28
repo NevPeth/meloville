@@ -612,6 +612,9 @@ ApplicationWindow {
                                 anchors.fill: parent
                                 onClicked: {
                                     var gp = menuArea.mapToGlobal(0, 0)
+                                    var win = menuArea.Window.window
+                                    if (gp.y > win.height-150)
+                                        gp.y -= 80
                                     backend.openSongContextMenu(delegateRoot.DelegateModel.itemsIndex, gp.x, gp.y)
                                 }
                             }
@@ -715,6 +718,57 @@ ApplicationWindow {
                                 clip: true
                                 spacing: 10
                                 ScrollBar.horizontal: ScrollBar { policy: ScrollBar.AlwaysOff }
+
+                                // *should* get pixel‑accurate scrolling on Wayland
+                                pixelAligned: true
+
+                                boundsBehavior: Flickable.StopAtBounds
+                                boundsMovement: Flickable.StopAtBounds
+
+                                // CUSTOM SCROLLING BECAUSE DEFAULT SUCKS BRO
+                                property real velocity: 0
+                                property real threshold: 40
+
+                                WheelHandler {
+                                    acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+
+                                    onWheel: function(event) {
+                                        var delta = event.pixelDelta.y !== 0
+                                                ? event.pixelDelta.y
+                                                : event.angleDelta.y / 4
+
+                                        if (Math.abs(delta) < listWidgetPlaylists.threshold) {
+                                            // Small gestures stop almost immediately.
+                                            listWidgetPlaylists.velocity += delta
+                                        } else {
+                                            // Larger gestures get extra momentum.
+                                            var excess = Math.abs(delta) - listWidgetPlaylists.threshold
+                                            listWidgetPlaylists.velocity += delta + Math.sign(delta) * excess * 0.8
+                                        }
+
+                                        event.accepted = true
+                                    }
+                                }
+
+                                Timer {
+                                    interval: 8
+                                    running: true
+                                    repeat: true
+
+                                    onTriggered: {
+                                        if (Math.abs(listWidgetPlaylists.velocity) < 0.05) {
+                                            listWidgetPlaylists.velocity = 0
+                                            return
+                                        }
+
+                                        listWidgetPlaylists.contentY -= listWidgetPlaylists.velocity
+
+                                        if (Math.abs(listWidgetPlaylists.velocity) < listWidgetPlaylists.threshold)
+                                            listWidgetPlaylists.velocity *= 0.55    // stop quickly
+                                        else
+                                            listWidgetPlaylists.velocity *= 0.90    // glide
+                                    }
+                                }
                                 
                                 delegate: Item {
                                     width: 70
