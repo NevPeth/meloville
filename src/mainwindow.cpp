@@ -1181,7 +1181,7 @@ void MainWindow::saveSongEdits(
         if (currentLibraryIndex >= 0)
             currentLibraryIndex = remapIndex(currentLibraryIndex);
 
-        if (!isInPlaylistView && !isInAlbumView && !isInAlbumsGridView) {
+        if (!isInPlaylistView && !isInAlbumView && !isInAlbumsGridView && !isInArtistView) {
             currentViewSongs.clear();
             for (int i = 0; i < library.size(); ++i)
                 currentViewSongs.push_back(i);
@@ -1245,6 +1245,9 @@ void MainWindow::saveSongEdits(
         }
 
         emit viewStateChanged();
+    }
+    else if (isInArtistView){
+        loadArtistView(viewingArtist);
     }
     else if (isInAlbumsGridView) {
         filterSongsAndAlbums(filterText);
