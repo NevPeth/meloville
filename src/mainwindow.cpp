@@ -1541,6 +1541,8 @@ void MainWindow::goToAlbums(){
     currentViewSongs.clear();
     viewingPlaylist = QString();
     isInPlaylistView = false;
+    isInArtistView = false;
+    viewingArtist = QString();
     filterText.clear();
     emit dragReorderAllowedChanged();
 
@@ -1574,6 +1576,7 @@ void MainWindow::loadAlbumView(QString albumName,
     viewingAlbumCoverPath = coverPath;
     isInAlbumView = true;
     isInArtistView = false;
+    viewingArtist = QString();
 
     filterText.clear();
     emit dragReorderAllowedChanged();
