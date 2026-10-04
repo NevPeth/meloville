@@ -1400,9 +1400,11 @@ void MainWindow::editPlaylist(
     playlistManager->editPlaylist(oldName, newName, selectedImagePath);
 
     if (isInPlaylistView && viewingPlaylist == oldName) {
+        if(currentlyPlayingPlaylist == oldName){
+            currentlyPlayingPlaylist = newName;
+            emit currentlyPlayingPlaylistChanged();
+        }
         loadPlaylistView(newName);
-    } else {
-        viewingPlaylist = newName;
     }
 
     updatePlaylistNames();
