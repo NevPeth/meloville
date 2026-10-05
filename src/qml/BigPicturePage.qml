@@ -79,10 +79,6 @@ Item {
     
     RowLayout {
         anchors.fill: parent
-        anchors.leftMargin: Math.min(5, root.height/200)
-        anchors.rightMargin: Math.min(5, root.height/200)
-        anchors.topMargin: Math.min(5, root.height/200)
-        anchors.bottomMargin: Math.min(5, root.height/200)
         spacing: 0
 
         Item {
