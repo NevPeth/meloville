@@ -12,6 +12,12 @@
 */
 int main(int argc, char *argv[])
 {
+    // Just redundancy for if the QT_AUDIO_BACKEND doesn't work since with new arch updates it
+    // can do funky things.
+    #ifdef Q_OS_LINUX
+        if (!qEnvironmentVariableIsSet("QT_AUDIO_BACKEND"))
+            qputenv("QT_AUDIO_BACKEND", "pulseaudio");
+    #endif
     QApplication app(argc, argv);
     app.setApplicationName("Meloville");
     
