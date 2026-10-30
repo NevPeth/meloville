@@ -502,6 +502,9 @@ ApplicationWindow {
                                 if (model.coverPath === "") return "qrc:/icons/default.svg"
                                 return "file://" + model.coverPath + "?" + mainPageRoot.coverCacheBuster
                             }
+                            asynchronous: true
+                            sourceSize.width:  width  * 2 // decode at 2x display size, to still get nice mipmap
+                            sourceSize.height: height * 2
                         }
 
                         // ── title + artist ───────────────────────────────────────────────
@@ -791,6 +794,9 @@ ApplicationWindow {
                                                 radius: 4
                                             }
                                         }
+                                        asynchronous: true
+                                        sourceSize.width:  width  * 2 // decode at 2x display size, to still get nice mipmap
+                                        sourceSize.height: height * 2
                                     }
                                     
                                     MouseArea {
@@ -1168,6 +1174,9 @@ ApplicationWindow {
                                                 radius: backend.isInArtistView ? heroCover.width/2 : 8
                                             }
                                         }
+                                        asynchronous: true
+                                        sourceSize.width:  width  * 2 // decode at 2x display size, to still get nice mipmap
+                                        sourceSize.height: height * 2
 
                                         property bool coverLocked: false
                                         property bool snapOff: false
@@ -1407,6 +1416,9 @@ ApplicationWindow {
                                         visible: status === Image.Ready
                                         layer.enabled: true
                                         layer.effect: OpacityMask { maskSource: roundMask }
+                                        asynchronous: true
+                                        sourceSize.width:  width  * 2 // decode at 2x display size, to still get nice mipmap
+                                        sourceSize.height: height * 2
                                     }
 
                                     // Placeholder when no art
@@ -1552,7 +1564,11 @@ ApplicationWindow {
                                         source: backend.currentSongCoverPath !== ""
                                                 ? "file://" + backend.currentSongCoverPath
                                                 : "qrc:/icons/default.svg"
+                                        
                                         visible: backend.currentLibraryIndex >= 0
+                                        asynchronous: true
+                                        sourceSize.width:  width  * 2 // decode at 2x display size, to still get nice mipmap
+                                        sourceSize.height: height * 2
                                     }
                                 }
 

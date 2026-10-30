@@ -71,6 +71,9 @@ Item {
                     layer.effect: OpacityMask {
                         maskSource: roundMask
                     }
+                    asynchronous: true
+                    sourceSize.width:  width  * 2 // decode at 2x display size, to still get nice mipmap
+                    sourceSize.height: height * 2
                 }
 
                 // Placeholder for missing art — matches the ♫ tile in AlbumDelegate
