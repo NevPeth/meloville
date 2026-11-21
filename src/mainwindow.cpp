@@ -1057,10 +1057,11 @@ void MainWindow::addToPlaylist(int visibleIndex, const QString& playlistName)
     
     playlistManager->addSongToPlaylist(playlistName, libraryIndex, song);
     
-    if (playlistName == currentlyPlayingPlaylist)
+    if (playlistName == currentlyPlayingPlaylist){
         currentPlaybackSongs.push_back(libraryIndex);
-    if (shuffleMode)
-        unplayedIndices.append(libraryIndex);
+        if (shuffleMode)
+            unplayedIndices.append(libraryIndex);
+    }
 }
 
 // Used in album making, find the string with smallest len and returns it to be the key
